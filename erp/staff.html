@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Management — Ansha Shine Kids School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-wrapper">
+    <header class="header">
+      <button class="header-toggle btn-icon"><i class="fa-solid fa-bars"></i></button>
+      <div class="breadcrumb"><span class="breadcrumb-item">Home</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-item">Staff Management</span></div>
+      <div class="header-right">
+        <div id="header-date" class="header-date"></div>
+        <div class="header-user"><div class="header-avatar" id="header-avatar">SA</div><div class="header-user-info"><div class="name" id="header-user-name">Admin</div><div class="role" id="header-user-role">Role</div></div></div>
+      </div>
+    </header>
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title"><h1>👩‍🏫 Staff Management</h1><p>Manage all staff records · <span id="header-branch"></span></p></div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV(allStaff.map(s=>({Name:s.name,Role:s.role,Dept:s.dept,Phone:s.phone,Salary:s.salary,Status:s.status})),'staff.csv');showToast('Exported!','success')"><i class="fa-solid fa-download"></i> Export</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('addStaffModal')"><i class="fa-solid fa-plus"></i> Add Staff</button>
+        </div>
+      </div>
+
+      <div class="stat-grid mb-24" id="staff-stats"></div>
+
+      <div class="filter-bar mb-16">
+        <div class="search-box" style="flex:1;min-width:200px;"><i class="fa-solid fa-search search-icon"></i><input type="text" class="form-control" id="search-staff" placeholder="Search staff..." oninput="renderStaff()"></div>
+        <select class="form-control" id="filter-dept" onchange="renderStaff()"><option value="">All Departments</option><option>Academic</option><option>Daycare</option><option>Transport</option><option>Security</option><option>Admin</option><option>Support</option><option>Tech</option></select>
+        <select class="form-control" id="filter-role" onchange="renderStaff()"><option value="">All Roles</option><option>Head Teacher</option><option>Teacher</option><option>Assistant Teacher</option><option>Caretaker</option><option>Driver</option><option>Security Guard</option></select>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Staff Directory (<span id="staff-count">0</span>)</span></div>
+        <div class="table-wrapper">
+          <table class="table" id="staff-table">
+            <thead><tr><th>#</th><th>Staff Member</th><th>Role</th><th>Department</th><th>Program</th><th>Phone</th><th>Join Date</th><th>Salary</th><th>Today</th><th>Actions</th></tr></thead>
+            <tbody id="staff-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Staff Detail Modal -->
+<div class="modal-overlay" id="staffModal">
+  <div class="modal modal-lg">
+    <div class="modal-header"><h3>👩‍🏫 Staff Profile</h3><button class="modal-close" onclick="closeModal('staffModal')">✕</button></div>
+    <div class="modal-body" id="staff-detail-body"></div>
+  </div>
+</div>
+
+<!-- Add Staff Modal -->
+<div class="modal-overlay" id="addStaffModal">
+  <div class="modal modal-lg">
+    <div class="modal-header"><h3><i class="fa-solid fa-user-plus"></i> Add New Staff</h3><button class="modal-close" onclick="closeModal('addStaffModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid form-grid-2">
+        <div class="form-group"><label class="form-label">Full Name <span style="color:red;">*</span></label><input type="text" class="form-control" id="new-name" placeholder="Full name"></div>
+        <div class="form-group"><label class="form-label">Role <span style="color:red;">*</span></label><select class="form-control" id="new-role"><option>Head Teacher</option><option>Teacher</option><option>Assistant Teacher</option><option>Caretaker</option><option>Driver</option><option>Security Guard</option><option>Admin Clerk</option><option>Cook / Ayah</option></select></div>
+        <div class="form-group"><label class="form-label">Department</label><select class="form-control" id="new-dept"><option>Academic</option><option>Daycare</option><option>Transport</option><option>Security</option><option>Admin</option><option>Support</option></select></div>
+        <div class="form-group"><label class="form-label">Gender</label><select class="form-control" id="new-gender"><option value="F">Female</option><option value="M">Male</option></select></div>
+        <div class="form-group"><label class="form-label">Phone</label><input type="tel" class="form-control" id="new-phone" placeholder="10-digit mobile"></div>
+        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-control" id="new-email"></div>
+        <div class="form-group"><label class="form-label">Date of Joining</label><input type="date" class="form-control" id="new-join"></div>
+        <div class="form-group"><label class="form-label">Monthly Salary (₹)</label><input type="number" class="form-control" id="new-salary" placeholder="e.g. 18000"></div>
+        <div class="form-group"><label class="form-label">Programs Assigned</label><input type="text" class="form-control" id="new-prog" placeholder="e.g. NUR,PKG"></div>
+        <div class="form-group"><label class="form-label">Qualification</label><input type="text" class="form-control" id="new-qual" placeholder="e.g. B.Ed, Montessori Certified"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addStaffModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addStaff()"><i class="fa-solid fa-save"></i> Save Staff</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+  const session = requireAuth();
+  buildSidebar('staff');
+
+  let allStaff = getStaffByBranch(getCurrentBranchId());
+
+  document.getElementById('new-join').value = new Date().toISOString().split('T')[0];
+
+  function renderStaff() {
+    const q = document.getElementById('search-staff').value.toLowerCase();
+    const dept = document.getElementById('filter-dept').value;
+    const role = document.getElementById('filter-role').value;
+    const filtered = allStaff.filter(s =>
+      (!q || s.name.toLowerCase().includes(q) || s.role.toLowerCase().includes(q)) &&
+      (!dept || s.dept === dept) &&
+      (!role || s.role === role)
+    );
+    document.getElementById('staff-count').textContent = filtered.length;
+
+    const deptColors = { Academic:'badge-blue', Daycare:'badge-purple', Transport:'badge-orange', Security:'badge-red', Admin:'badge-teal', Support:'badge-green', Tech:'badge-yellow' };
+
+    document.getElementById('staff-tbody').innerHTML = filtered.map((s, i) => `
+      <tr>
+        <td>${i+1}</td>
+        <td><div class="flex items-center gap-8">
+          <div class="avatar avatar-sm ${s.gender==='F'?'av-orange':'av-blue'}">${s.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div>
+          <div><div style="font-weight:600;">${s.name}</div><div class="text-sm text-muted">${s.email}</div></div>
+        </div></td>
+        <td><span style="font-size:13px;">${s.role}</span></td>
+        <td><span class="badge ${deptColors[s.dept]||'badge-gray'}">${s.dept}</span></td>
+        <td style="font-size:12px;">${s.prog}</td>
+        <td><a href="tel:${s.phone}">${s.phone}</a></td>
+        <td>${fmtDate(s.join)}</td>
+        <td><strong style="color:var(--success);">${currencyINR(s.salary)}</strong></td>
+        <td>${statusBadge(s.att)}</td>
+        <td class="actions">
+          <button class="btn btn-ghost btn-icon btn-sm" onclick="viewStaff('${s.id}')"><i class="fa-solid fa-eye"></i></button>
+          <button class="btn btn-ghost btn-icon btn-sm" title="Payslip" onclick="window.location.href='payroll.html'"><i class="fa-solid fa-file-invoice-dollar"></i></button>
+          <button class="btn btn-ghost btn-icon btn-sm" style="color:var(--danger);" onclick="deleteRow(this)"><i class="fa-solid fa-trash"></i></button>
+        </td>
+      </tr>`).join('') || '<tr><td colspan="10" class="text-center text-muted" style="padding:24px;">No staff found</td></tr>';
+  }
+
+  function viewStaff(id) {
+    const s = allStaff.find(st => st.id === id);
+    if (!s) return;
+    const initials = s.name.split(' ').map(n=>n[0]).join('').slice(0,2);
+    document.getElementById('staff-detail-body').innerHTML = `
+      <div class="flex gap-16 mb-20">
+        <div class="avatar avatar-xl ${s.gender==='F'?'av-orange':'av-blue'}">${initials}</div>
+        <div>
+          <h2>${s.name}</h2>
+          <div class="flex gap-8 mt-6"><span class="badge badge-blue">${s.role}</span><span class="badge badge-green">${s.dept}</span>${statusBadge(s.status)}</div>
+          <div class="text-sm text-muted mt-6">Employee ID: ${s.id} · Joined ${fmtDate(s.join)}</div>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div><div class="section-title">Contact</div>
+          <div class="info-row"><span class="lbl">Phone</span><span class="val">${s.phone}</span></div>
+          <div class="info-row"><span class="lbl">Email</span><span class="val">${s.email}</span></div>
+        </div>
+        <div><div class="section-title">Employment</div>
+          <div class="info-row"><span class="lbl">Role</span><span class="val">${s.role}</span></div>
+          <div class="info-row"><span class="lbl">Department</span><span class="val">${s.dept}</span></div>
+          <div class="info-row"><span class="lbl">Programs</span><span class="val">${s.prog}</span></div>
+          <div class="info-row"><span class="lbl">Monthly Salary</span><span class="val" style="color:var(--success);font-weight:700;">${currencyINR(s.salary)}</span></div>
+          <div class="info-row"><span class="lbl">Join Date</span><span class="val">${fmtDate(s.join)}</span></div>
+        </div>
+      </div>`;
+    openModal('staffModal');
+  }
+
+  function addStaff() {
+    const name = document.getElementById('new-name').value;
+    if (!name) { showToast('Please enter staff name', 'danger'); return; }
+    const newStaff = {
+      id: nextStaffId(),
+      branchId: getCurrentBranchId(),
+      name, role: document.getElementById('new-role').value,
+      dept: document.getElementById('new-dept').value,
+      phone: document.getElementById('new-phone').value,
+      email: document.getElementById('new-email').value,
+      join: document.getElementById('new-join').value,
+      salary: parseInt(document.getElementById('new-salary').value) || 0,
+      prog: document.getElementById('new-prog').value || '-',
+      gender: document.getElementById('new-gender').value,
+      status: 'active', att: 'P',
+    };
+    allStaff.push(newStaff);
+    STAFF.push(newStaff);
+    _saveStored('asks_erp_staff', STAFF);
+    closeModal('addStaffModal');
+    renderStaff(); renderStats();
+    showToast(`${name} added successfully!`, 'success');
+  }
+
+  function renderStats() {
+    const stats = [
+      { label:'Total Staff', value: allStaff.length, icon:'👩‍🏫', color:'blue' },
+      { label:'Teachers', value: allStaff.filter(s=>s.dept==='Academic').length, icon:'📚', color:'green' },
+      { label:'Support Staff', value: allStaff.filter(s=>s.dept!=='Academic').length, icon:'🛠️', color:'orange' },
+      { label:'Monthly Payroll', value: currencyINR(allStaff.reduce((a,s)=>a+s.salary,0)), icon:'💰', color:'purple' },
+    ];
+    document.getElementById('staff-stats').innerHTML = stats.map(s =>
+      `<div class="stat-card ${s.color}"><div class="stat-icon">${s.icon}</div><div class="stat-body"><div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div></div></div>`
+    ).join('');
+  }
+
+  renderStats(); renderStaff();
+</script>
+</body>
+</html>

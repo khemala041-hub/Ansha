@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Ansha Shine Kids School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div class="main-wrapper">
+    <header class="header">
+      <button class="header-toggle btn-icon"><i class="fa-solid fa-bars"></i></button>
+      <div class="breadcrumb">
+        <span class="breadcrumb-item">🏠 Home</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item">Dashboard</span>
+      </div>
+      <div class="header-right">
+        <div id="header-date" class="header-date"></div>
+        <button class="header-btn" title="Notifications"><i class="fa-solid fa-bell"></i><span class="notif-dot"></span></button>
+        <div class="header-user" onclick="window.location.href='index.html'">
+          <div class="header-avatar" id="header-avatar">SA</div>
+          <div class="header-user-info">
+            <div class="name" id="header-user-name">Admin</div>
+            <div class="role" id="header-user-role">Role</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>📊 Dashboard Overview</h1>
+          <p id="dash-subtitle">Real-time overview of all branches · <span id="header-branch"></span></p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="window.print()"><i class="fa-solid fa-print"></i> Print</button>
+          <button class="btn btn-primary btn-sm" onclick="window.location.href='admission.html'"><i class="fa-solid fa-plus"></i> New Admission</button>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="stat-grid" id="stat-cards"></div>
+
+      <!-- Row: Charts + Quick Info -->
+      <div class="grid-2 mb-24" id="chart-row">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><span class="card-icon" style="background:#E8EEF7;color:#1E3A5F;">📈</span> Monthly Fee Collection</span>
+            <select class="form-control" style="width:auto;padding:5px 10px;font-size:12px;" id="fee-chart-filter">
+              <option>2026</option><option>2025</option>
+            </select>
+          </div>
+          <canvas id="feeChart" height="200"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><span class="card-icon" style="background:#E6F5ED;color:#1A7A4A;">🍩</span> Program Enrollment</span>
+          </div>
+          <div style="max-width:280px;margin:0 auto;">
+            <canvas id="programChart" height="220"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row: Attendance + Branches -->
+      <div class="grid-2 mb-24">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><span class="card-icon" style="background:#FFF0E0;color:#E8832A;">✅</span> Today's Attendance</span>
+            <a href="attendance.html" class="btn btn-ghost btn-sm">View All</a>
+          </div>
+          <div id="attendance-summary"></div>
+          <div style="margin-top:14px;">
+            <canvas id="attChart" height="60"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><span class="card-icon" style="background:#E8EEF7;color:#1E3A5F;">🏫</span> Branch Status</span>
+            <a href="branches.html" class="btn btn-ghost btn-sm">Manage</a>
+          </div>
+          <div id="branch-summary"></div>
+        </div>
+      </div>
+
+      <!-- Row: Recent Admissions + Pending Fees -->
+      <div class="grid-2 mb-24">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><span class="card-icon" style="background:#E6F5ED;color:#1A7A4A;">🆕</span> Recent Admissions</span>
+            <a href="students.html" class="btn btn-ghost btn-sm">View All</a>
+          </div>
+          <div class="table-wrapper">
+            <table class="table" id="recent-admissions-table">
+              <thead><tr><th>Student</th><th>Program</th><th>Branch</th><th>Date</th></tr></thead>
+              <tbody id="recent-admissions"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><span class="card-icon" style="background:#FDEDEC;color:#C0392B;">⚠️</span> Fee Pending</span>
+            <a href="fees.html" class="btn btn-ghost btn-sm">Collect</a>
+          </div>
+          <div class="table-wrapper">
+            <table class="table">
+              <thead><tr><th>Student</th><th>Program</th><th>Balance</th><th>Action</th></tr></thead>
+              <tbody id="pending-fees"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row: Quick Calendar + Notices -->
+      <div class="grid-2 mb-24">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><span class="card-icon" style="background:#E8EEF7;color:#1E3A5F;">📅</span> Calendar</span>
+          </div>
+          <div class="mini-calendar" id="mini-calendar"></div>
+          <div style="margin-top:14px;">
+            <div class="section-title" style="font-size:13px;">Upcoming Events</div>
+            <div id="events-list"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><span class="card-icon" style="background:#FFF9C4;color:#D4960B;">📢</span> Notice Board</span>
+            <button class="btn btn-ghost btn-sm"><i class="fa-solid fa-plus"></i></button>
+          </div>
+          <div id="notice-board"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+  const session = requireAuth();
+  if (session) {
+    buildSidebar('dashboard');
+    initDashboard();
+  }
+
+  function initDashboard() {
+    const branchId = getCurrentBranchId();
+    const isSA = session.role === 'superadmin';
+    const summary = isSA ? getAllBranchesSummary() : getBranchSummary(branchId);
+    const b001Summary = getBranchSummary('B001');
+
+    // Update subtitle
+    if (isSA) {
+      document.getElementById('dash-subtitle').innerHTML = `Real-time overview · <strong>All ${summary.activeBranches} Active Branches</strong>`;
+    }
+
+    // Stat Cards
+    const cards = isSA ? [
+      { label:'Total Students', value: summary.totalStudents, icon:'👧', color:'blue', change:'+12 this month', dir:'up' },
+      { label:'Total Branches', value: summary.totalBranches, icon:'🏫', color:'orange', change:'3 in setup', dir:'up' },
+      { label:'Total Staff', value: summary.totalStaff, icon:'👩‍🏫', color:'green', change:'+4 this month', dir:'up' },
+      { label:'Fee Collected', value: currencyINR(b001Summary.collectedFees), icon:'💰', color:'purple', change:'B001 branch', dir:'up' },
+      { label:'Pending Fees', value: currencyINR(b001Summary.pendingFees), icon:'⚠️', color:'red', change:'Needs collection', dir:'down' },
+      { label:'Today Present', value: b001Summary.presentToday, icon:'✅', color:'teal', change:'B001 today', dir:'up' },
+    ] : [
+      { label:'Total Students', value: b001Summary.students, icon:'👧', color:'blue', change:'+3 this month', dir:'up' },
+      { label:'Staff Count', value: b001Summary.staff, icon:'👩‍🏫', color:'green', change:'All active', dir:'up' },
+      { label:'Today Present', value: b001Summary.presentToday, icon:'✅', color:'teal', change:'Students present', dir:'up' },
+      { label:'Fee Collected', value: currencyINR(b001Summary.collectedFees), icon:'💰', color:'purple', change:'This month', dir:'up' },
+      { label:'Pending Fees', value: currencyINR(b001Summary.pendingFees), icon:'⚠️', color:'red', change:'To collect', dir:'down' },
+      { label:'Active Routes', value: getRoutesByBranch(branchId).length, icon:'🚌', color:'orange', change:'Transport routes', dir:'up' },
+    ];
+
+    document.getElementById('stat-cards').innerHTML = cards.map(c => `
+      <div class="stat-card ${c.color}">
+        <div class="stat-icon">${c.icon}</div>
+        <div class="stat-body">
+          <div class="stat-label">${c.label}</div>
+          <div class="stat-value">${c.value}</div>
+          <div class="stat-change ${c.dir}">${c.dir==='up'?'▲':'▼'} ${c.change}</div>
+        </div>
+      </div>`).join('');
+
+    // Fee Chart
+    const feeCtx = document.getElementById('feeChart').getContext('2d');
+    new Chart(feeCtx, {
+      type: 'bar',
+      data: {
+        labels: ['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'],
+        datasets: [
+          { label:'Collected', data:[280000,295000,310000,285000,320000,305000,330000,298000,315000,340000,328000,295000], backgroundColor:'rgba(30,58,95,0.8)', borderRadius:4 },
+          { label:'Expected', data:[320000,320000,320000,320000,340000,340000,360000,340000,340000,360000,360000,340000], backgroundColor:'rgba(232,131,42,0.3)', borderRadius:4 },
+        ]
+      },
+      options: { responsive:true, plugins:{ legend:{ position:'bottom' } }, scales:{ y:{ ticks:{ callback:v=>'₹'+v.toLocaleString('en-IN') } } } }
+    });
+
+    // Program Donut Chart
+    const progCtx = document.getElementById('programChart').getContext('2d');
+    const progCounts = PROGRAMS.map(p => STUDENTS.filter(s => s.program === p.code).length);
+    new Chart(progCtx, {
+      type: 'doughnut',
+      data: {
+        labels: PROGRAMS.map(p => p.name),
+        datasets: [{ data: progCounts, backgroundColor:['#7D3C98','#E65100','#1565C0','#1A7A4A','#B7950B','#C62828','#00838F'], borderWidth:2, borderColor:'#fff' }]
+      },
+      options: { responsive:true, plugins:{ legend:{ position:'bottom', labels:{ font:{ size:11 } } } } }
+    });
+
+    // Attendance Bar
+    const attData = getTodayAttendance();
+    const P = Object.values(attData).filter(v=>v==='P').length;
+    const A = Object.values(attData).filter(v=>v==='A').length;
+    const L = Object.values(attData).filter(v=>v==='L').length;
+    const total = P + A + L;
+    document.getElementById('attendance-summary').innerHTML = `
+      <div class="flex gap-16 mb-12" style="flex-wrap:wrap;">
+        <div style="text-align:center;"><div style="font-size:28px;font-weight:800;color:var(--success);">${P}</div><div class="text-sm text-muted">Present</div></div>
+        <div style="text-align:center;"><div style="font-size:28px;font-weight:800;color:var(--danger);">${A}</div><div class="text-sm text-muted">Absent</div></div>
+        <div style="text-align:center;"><div style="font-size:28px;font-weight:800;color:var(--warning);">${L}</div><div class="text-sm text-muted">Leave</div></div>
+        <div style="text-align:center;"><div style="font-size:28px;font-weight:800;color:var(--text);">${total}</div><div class="text-sm text-muted">Total</div></div>
+      </div>
+      <div class="progress" style="height:12px;">
+        <div class="progress-bar progress-green" style="width:${(P/total*100).toFixed(0)}%;float:left;border-radius:4px 0 0 4px;"></div>
+        <div class="progress-bar progress-red" style="width:${(A/total*100).toFixed(0)}%;float:left;background:var(--danger);"></div>
+        <div class="progress-bar progress-orange" style="width:${(L/total*100).toFixed(0)}%;float:left;background:var(--warning);border-radius:0 4px 4px 0;"></div>
+      </div>
+      <div style="margin-top:6px;font-size:12px;color:var(--text-3);">Attendance rate: <strong style="color:var(--success);">${(P/total*100).toFixed(1)}%</strong></div>`;
+
+    const attCtx = document.getElementById('attChart').getContext('2d');
+    new Chart(attCtx, {
+      type: 'bar',
+      data: {
+        labels:['Mon','Tue','Wed','Thu','Fri','Mon','Tue','Wed','Thu','Fri','Mon','Tue','Fri','Mon'],
+        datasets:[{ label:'Attendance %', data:[92,88,95,91,89,94,90,96,88,92,93,87,91,89], backgroundColor:'rgba(30,58,95,0.6)', borderRadius:3 }]
+      },
+      options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{min:70,max:100,ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}} }
+    });
+
+    // Branch Summary
+    document.getElementById('branch-summary').innerHTML = BRANCHES.slice(0,8).map(b => `
+      <div class="flex items-center gap-12 mb-12" style="padding:8px 0;border-bottom:1px solid var(--border);">
+        <div class="avatar avatar-sm av-blue">${b.name[0]}</div>
+        <div style="flex:1;">
+          <div style="font-size:13px;font-weight:600;">${b.name}</div>
+          <div style="font-size:11.5px;color:var(--text-3);">${b.students} students · ${b.staff} staff</div>
+        </div>
+        ${statusBadge(b.status)}
+      </div>`).join('');
+
+    // Recent Admissions
+    const recent = STUDENTS.sort((a,b) => b.admDate.localeCompare(a.admDate)).slice(0,6);
+    document.getElementById('recent-admissions').innerHTML = recent.map(s => `
+      <tr>
+        <td><div class="flex items-center gap-8"><div class="avatar avatar-sm ${s.gender==='F'?'av-orange':'av-blue'}">${s.photoInit}</div><div><div style="font-size:13px;font-weight:600;">${s.name}</div><div class="text-sm text-muted">${s.admNo}</div></div></div></td>
+        <td>${statusBadge(s.program)}</td>
+        <td><span style="font-size:12px;">${getBranchById(s.branchId)?.name||s.branchId}</span></td>
+        <td><span style="font-size:12px;">${fmtDate(s.admDate)}</span></td>
+      </tr>`).join('');
+
+    // Pending Fees
+    const pending = FEE_RECORDS.filter(f => f.status !== 'paid').slice(0,6);
+    document.getElementById('pending-fees').innerHTML = pending.map(f => `
+      <tr>
+        <td><div style="font-size:13px;font-weight:600;">${f.studentName}</div></td>
+        <td>${statusBadge(f.program)}</td>
+        <td><span style="color:var(--danger);font-weight:700;">${currencyINR(f.balance)}</span></td>
+        <td><a href="fees.html" class="btn btn-accent btn-sm">Collect</a></td>
+      </tr>`).join('');
+
+    // Calendar
+    buildCalendar();
+
+    // Events
+    const events = [
+      { date:'2026-03-20', name:'Annual Sports Day', type:'🏃' },
+      { date:'2026-03-22', name:'Parent-Teacher Meeting', type:'👨‍👩‍👧' },
+      { date:'2026-03-25', name:'Summer Camp Registration Opens', type:'☀️' },
+      { date:'2026-04-01', name:'New Academic Year Begins', type:'🎒' },
+      { date:'2026-04-14', name:'Tamil New Year Holiday', type:'🎊' },
+    ];
+    document.getElementById('events-list').innerHTML = events.map(ev => `
+      <div class="flex items-center gap-10 mb-8" style="padding:8px 10px;background:var(--body-bg);border-radius:6px;">
+        <span style="font-size:20px;">${ev.type}</span>
+        <div><div style="font-size:13px;font-weight:600;">${ev.name}</div><div class="text-sm text-muted">${fmtDate(ev.date)}</div></div>
+      </div>`).join('');
+
+    // Notice Board
+    const notices = [
+      { title:'Summer Camp 2026 Registration', body:'Registration opens March 25. Early bird discount available.', type:'info', date:'2026-03-15' },
+      { title:'Annual Fee Revision – AY 2026-27', body:'Revised fee structure effective from April 2026. Please review the circular.', type:'warning', date:'2026-03-10' },
+      { title:'Safety Drill – March 20', body:'Fire safety drill scheduled for all branches on March 20, 2026 at 10:00 AM.', type:'success', date:'2026-03-08' },
+      { title:'New Branch Opening – Chromepet', body:'Chromepet branch admission starts from June 2026. Apply early.', type:'info', date:'2026-03-01' },
+    ];
+    document.getElementById('notice-board').innerHTML = notices.map(n => `
+      <div class="alert alert-${n.type}" style="flex-direction:column;align-items:flex-start;margin-bottom:10px;">
+        <div style="font-weight:700;margin-bottom:3px;">${n.title}</div>
+        <div style="font-size:12.5px;">${n.body}</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:4px;">${fmtDate(n.date)}</div>
+      </div>`).join('');
+  }
+
+  // Mini Calendar
+  function buildCalendar() {
+    const now = new Date();
+    const year = now.getFullYear(), month = now.getMonth();
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const first = new Date(year, month, 1).getDay();
+    const days = new Date(year, month+1, 0).getDate();
+    const today = now.getDate();
+    const eventDays = [20,22,25];
+
+    let html = `<div class="cal-header">
+      <button onclick="void(0)">‹</button>
+      <span class="cal-title">${months[month]} ${year}</span>
+      <button onclick="void(0)">›</button>
+    </div><div class="cal-grid">`;
+    ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d => html += `<div class="cal-day-name">${d}</div>`);
+    for (let i=0;i<first;i++) html += `<button class="cal-day" style="color:transparent;">-</button>`;
+    for (let d=1;d<=days;d++) {
+      const isToday = d===today;
+      const hasEvent = eventDays.includes(d);
+      html += `<button class="cal-day ${isToday?'today':''} ${hasEvent?'has-event':''}">${d}</button>`;
+    }
+    html += '</div>';
+    document.getElementById('mini-calendar').innerHTML = html;
+  }
+</script>
+</body>
+</html>

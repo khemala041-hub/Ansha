@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Backup & Restore — Ansha Shine Kids School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    .backup-grid { display:grid; grid-template-columns:1fr 1fr; gap:var(--space-5,20px); margin-bottom:24px; }
+    .section-row { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:#f8fafc; border-radius:10px; margin-bottom:10px; border:1px solid #e8edf2; }
+    .section-row:last-child { margin-bottom:0; }
+    .section-row .sec-icon { font-size:1.6rem; margin-right:12px; }
+    .section-row .sec-info .sec-title { font-size:13.5px; font-weight:600; color:#1E3A5F; }
+    .section-row .sec-info .sec-count { font-size:12px; color:#64748b; margin-top:2px; }
+    .drop-zone { border:2.5px dashed #cbd5e1; border-radius:14px; padding:40px 20px; text-align:center; cursor:pointer; transition:all .25s; }
+    .drop-zone:hover, .drop-zone.drag-over { border-color:var(--primary,#1E3A5F); background:#f0f5ff; }
+    .drop-zone i { font-size:2.8rem; color:#94a3b8; margin-bottom:12px; display:block; }
+    .warn-box { background:#fff8e1; border:1.5px solid #f59e0b; border-radius:10px; padding:14px 16px; margin-bottom:20px; }
+    .warn-box p { font-size:13px; color:#92400e; margin:0; }
+    .restore-preview-box { background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:14px 16px; margin-top:16px; }
+    .restore-preview-box .rp-name { font-size:13.5px; font-weight:600; color:#1E3A5F; }
+    .restore-preview-box .rp-meta { font-size:12px; color:#64748b; margin-top:4px; }
+    .history-empty { padding:36px; text-align:center; color:#94a3b8; font-size:14px; }
+    .schedule-box { background:#f0fdf4; border:1.5px solid #86efac; border-radius:12px; padding:20px; }
+    .schedule-box h3 { font-size:15px; font-weight:700; color:#166534; margin-bottom:12px; }
+    .schedule-item { display:flex; align-items:center; gap:10px; padding:10px 14px; background:#fff; border-radius:8px; margin-bottom:8px; border:1px solid #bbf7d0; }
+    .schedule-item:last-child { margin-bottom:0; }
+    .schedule-item .sched-icon { color:#16a34a; font-size:1.2rem; width:28px; text-align:center; }
+    .schedule-item .sched-info { flex:1; font-size:13px; color:#1E3A5F; }
+    .schedule-item .sched-info small { color:#64748b; display:block; font-size:11.5px; }
+    .integrity-row { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:8px; margin-bottom:8px; }
+    .integrity-row.ok { background:#f0fdf4; border:1px solid #bbf7d0; }
+    .integrity-row.warn { background:#fff8e1; border:1px solid #fde68a; }
+    .integrity-row.err { background:#fef2f2; border:1px solid #fecaca; }
+    .integrity-row .int-icon { font-size:1.3rem; width:28px; text-align:center; }
+    .integrity-row .int-label { font-size:13px; font-weight:600; }
+    .integrity-row .int-value { font-size:12px; color:#64748b; margin-top:2px; }
+    .btn-full { width:100%; }
+    .mt-4 { margin-top:16px; }
+    .mt-3 { margin-top:12px; }
+    .flex-end { display:flex; justify-content:flex-end; }
+    @media(max-width:768px) { .backup-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-content">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <button class="header-toggle"><i class="fa-solid fa-bars"></i></button>
+        <div class="header-branch-info">
+          <span id="header-branch" class="header-branch-name"></span>
+          <span class="header-sep">|</span>
+          <span id="header-date" class="header-date"></span>
+        </div>
+      </div>
+      <div class="header-right">
+        <span id="header-clock" class="header-clock"></span>
+        <div class="header-user">
+          <div class="avatar avatar-sm av-orange" id="header-avatar"></div>
+          <div class="header-user-info">
+            <span id="header-user-name"></span>
+            <small id="header-user-role"></small>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="page-content">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1 class="page-title-main"><i class="fa-solid fa-database" style="color:var(--accent)"></i> Backup &amp; Restore</h1>
+          <p class="page-subtitle">Protect your ERP data — export, restore, and schedule automatic backups</p>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-outline" onclick="cloudSync()">
+            <i class="fa-solid fa-cloud-arrow-down"></i> Sync from Cloud
+          </button>
+          <button class="btn btn-outline" onclick="cloudPush()">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Push to Cloud
+          </button>
+          <button class="btn btn-primary" onclick="backupAll()">
+            <i class="fa-solid fa-download"></i> Download Full Backup
+          </button>
+        </div>
+      </div>
+
+      <!-- Stat Cards -->
+      <div class="stats-grid" id="backup-stats"></div>
+
+      <!-- Last Backup Info -->
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-header">
+          <h2><i class="fa-solid fa-clock-rotate-left"></i> Last Backup Status</h2>
+          <button class="btn btn-outline btn-sm" onclick="backupAll()">
+            <i class="fa-solid fa-download"></i> Backup Now
+          </button>
+        </div>
+        <div class="card-body">
+          <p id="last-backup-info" class="text-muted" style="font-size:14px;">No backup has been made yet in this session.</p>
+        </div>
+      </div>
+
+      <!-- Export + Restore -->
+      <div class="backup-grid">
+
+        <!-- Export -->
+        <div class="card">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-file-export"></i> Export Data</h2>
+          </div>
+          <div class="card-body">
+            <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Export individual ERP modules as JSON files for targeted backups.</p>
+
+            <div class="section-row">
+              <div style="display:flex;align-items:center;">
+                <span class="sec-icon">👩‍🎓</span>
+                <div class="sec-info">
+                  <div class="sec-title">Students &amp; Admissions</div>
+                  <div class="sec-count" id="cnt-students">— records</div>
+                </div>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="exportSection('students')">Export</button>
+            </div>
+
+            <div class="section-row">
+              <div style="display:flex;align-items:center;">
+                <span class="sec-icon">👩‍🏫</span>
+                <div class="sec-info">
+                  <div class="sec-title">Staff &amp; HR</div>
+                  <div class="sec-count" id="cnt-staff">— records</div>
+                </div>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="exportSection('staff')">Export</button>
+            </div>
+
+            <div class="section-row">
+              <div style="display:flex;align-items:center;">
+                <span class="sec-icon">✅</span>
+                <div class="sec-info">
+                  <div class="sec-title">Attendance Records</div>
+                  <div class="sec-count" id="cnt-attendance">— entries</div>
+                </div>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="exportSection('attendance')">Export</button>
+            </div>
+
+            <div class="section-row">
+              <div style="display:flex;align-items:center;">
+                <span class="sec-icon">💰</span>
+                <div class="sec-info">
+                  <div class="sec-title">Fees &amp; Finance</div>
+                  <div class="sec-count" id="cnt-fees">— records</div>
+                </div>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="exportSection('fees')">Export</button>
+            </div>
+
+            <div class="section-row">
+              <div style="display:flex;align-items:center;">
+                <span class="sec-icon">🚌</span>
+                <div class="sec-info">
+                  <div class="sec-title">Transport Routes</div>
+                  <div class="sec-count" id="cnt-transport">— routes</div>
+                </div>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="exportSection('transport')">Export</button>
+            </div>
+
+            <div class="section-row">
+              <div style="display:flex;align-items:center;">
+                <span class="sec-icon">🏫</span>
+                <div class="sec-info">
+                  <div class="sec-title">Branches &amp; Config</div>
+                  <div class="sec-count" id="cnt-branches">— branches</div>
+                </div>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="exportSection('branches')">Export</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Restore -->
+        <div class="card">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-file-import"></i> Restore Data</h2>
+          </div>
+          <div class="card-body">
+            <div class="warn-box">
+              <p><i class="fa-solid fa-triangle-exclamation"></i> <strong>Warning:</strong> Restoring overwrites all existing ERP data. This action cannot be undone. Always create a fresh backup before restoring.</p>
+            </div>
+
+            <div class="drop-zone" id="drop-zone"
+              onclick="document.getElementById('restore-file').click()"
+              ondragover="event.preventDefault();this.classList.add('drag-over')"
+              ondragleave="this.classList.remove('drag-over')"
+              ondrop="handleDrop(event)">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              <p style="font-weight:600;font-size:14px;margin-bottom:6px;">Click or drag &amp; drop backup file</p>
+              <p style="font-size:12px;color:#94a3b8;">Supports .json ERP backup files only</p>
+            </div>
+            <input type="file" id="restore-file" accept=".json" style="display:none" onchange="handleFileSelect(event)">
+
+            <div id="restore-preview" style="display:none;">
+              <div class="restore-preview-box">
+                <div class="rp-name" id="restore-file-name"></div>
+                <div class="rp-meta" id="restore-file-info"></div>
+              </div>
+              <button class="btn btn-danger btn-full mt-3" onclick="confirmRestore()">
+                <i class="fa-solid fa-rotate-left"></i> Restore This Backup
+              </button>
+              <button class="btn btn-outline btn-full mt-3" onclick="cancelRestore()">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule & Data Integrity row -->
+      <div class="backup-grid">
+
+        <!-- Schedule -->
+        <div class="card">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-calendar-check"></i> Backup Schedule</h2>
+          </div>
+          <div class="card-body">
+            <div class="schedule-box">
+              <h3><i class="fa-solid fa-robot"></i> Recommended Auto-Backup Plan</h3>
+              <div class="schedule-item">
+                <span class="sched-icon"><i class="fa-solid fa-sun"></i></span>
+                <div class="sched-info">
+                  Daily Backup — 6:00 PM
+                  <small>Full ERP data snapshot every day after school hours</small>
+                </div>
+              </div>
+              <div class="schedule-item">
+                <span class="sched-icon"><i class="fa-solid fa-calendar-week"></i></span>
+                <div class="sched-info">
+                  Weekly Archive — Every Friday 8:00 PM
+                  <small>Compressed weekly archive kept for 4 weeks</small>
+                </div>
+              </div>
+              <div class="schedule-item">
+                <span class="sched-icon"><i class="fa-solid fa-calendar-days"></i></span>
+                <div class="sched-info">
+                  Monthly Snapshot — 1st of every month
+                  <small>Long-term monthly backup stored for 12 months</small>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:16px;padding:14px 16px;background:#eff6ff;border-radius:10px;border:1px solid #bfdbfe;">
+              <p style="font-size:12.5px;color:#1e40af;margin:0;">
+                <i class="fa-solid fa-circle-info"></i>
+                <strong>Tip:</strong> For Docker deployments, use the <code>backup.sh</code> script in the repo root to schedule automatic backups via cron. Run <code>crontab -e</code> and add the cron line from the script comments.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data Integrity -->
+        <div class="card">
+          <div class="card-header">
+            <h2><i class="fa-solid fa-shield-check"></i> Data Integrity Check</h2>
+            <button class="btn btn-outline btn-sm" onclick="runIntegrityCheck()">
+              <i class="fa-solid fa-rotate"></i> Check Now
+            </button>
+          </div>
+          <div class="card-body" id="integrity-panel">
+            <p style="font-size:13px;color:#64748b;margin-bottom:16px;">Click "Check Now" to verify all ERP data modules.</p>
+            <div class="integrity-row ok">
+              <span class="int-icon">⏳</span>
+              <div>
+                <div class="int-label">Awaiting Check</div>
+                <div class="int-value">Run an integrity check to see your data health</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Backup History -->
+      <div class="card">
+        <div class="card-header">
+          <h2><i class="fa-solid fa-history"></i> Backup History</h2>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline btn-sm" onclick="exportHistory()">
+              <i class="fa-solid fa-file-csv"></i> Export Log
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="clearHistory()">
+              <i class="fa-solid fa-trash"></i> Clear
+            </button>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table id="history-table">
+            <thead>
+              <tr>
+                <th>Date &amp; Time</th>
+                <th>Type</th>
+                <th>Modules</th>
+                <th>Records</th>
+                <th>File Size</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="history-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <h3 id="confirm-title">Confirm Action</h3>
+      <button class="modal-close" onclick="closeModal('confirm-modal')">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-msg" style="font-size:14px;color:#374151;"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('confirm-modal')">Cancel</button>
+      <button class="btn btn-danger" id="confirm-ok-btn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+/* =====================================================================
+   ERP Backup & Restore
+   ===================================================================== */
+const BACKUP_HISTORY_KEY = 'asks_erp_backup_history';
+const ERP_VERSION = '1.0';
+let pendingRestoreData = null;
+let confirmCallback = null;
+
+/* ---- Init ---- */
+requireAuth(['superadmin', 'admin']);
+buildSidebar('backup');
+renderPage();
+
+function renderPage() {
+  renderStats();
+  renderCounts();
+  renderLastBackup();
+  renderHistory();
+}
+
+/* ---- Stat Cards ---- */
+function renderStats() {
+  const history = getHistory();
+  const full    = history.filter(h => h.type === 'Full Backup').length;
+  const last    = history.length ? history[history.length - 1] : null;
+  const daysSince = last ? Math.floor((Date.now() - new Date(last.date)) / 86400000) : null;
+  const health  = daysSince === null ? '—' : daysSince === 0 ? '✅ Today' : daysSince === 1 ? '✅ Yesterday' : daysSince <= 7 ? `⚠️ ${daysSince}d ago` : `❌ ${daysSince}d ago`;
+
+  document.getElementById('backup-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-icon blue"><i class="fa-solid fa-database"></i></div>
+      <div class="stat-info"><div class="stat-value">${history.length}</div><div class="stat-label">Total Backups</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green"><i class="fa-solid fa-box-archive"></i></div>
+      <div class="stat-info"><div class="stat-value">${full}</div><div class="stat-label">Full Backups</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange"><i class="fa-solid fa-clock"></i></div>
+      <div class="stat-info"><div class="stat-value" style="font-size:15px;">${health}</div><div class="stat-label">Last Backup</div></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple"><i class="fa-solid fa-shield-check"></i></div>
+      <div class="stat-info"><div class="stat-value">${getAllRecordCount()}</div><div class="stat-label">Total Records</div></div>
+    </div>`;
+}
+
+function getAllRecordCount() {
+  const branchId = getCurrentBranchId();
+  return STUDENTS.length + STAFF.length + FEE_RECORDS.length + TRANSPORT_ROUTES.length + BRANCHES.length;
+}
+
+/* ---- Counts ---- */
+function renderCounts() {
+  document.getElementById('cnt-students').textContent   = STUDENTS.length + ' students';
+  document.getElementById('cnt-staff').textContent      = STAFF.length + ' staff members';
+  const attKeys = Object.keys(localStorage).filter(k => k.startsWith('asks_att_')).length;
+  document.getElementById('cnt-attendance').textContent = attKeys + ' attendance entries';
+  document.getElementById('cnt-fees').textContent       = FEE_RECORDS.length + ' fee records';
+  document.getElementById('cnt-transport').textContent  = TRANSPORT_ROUTES.length + ' routes';
+  document.getElementById('cnt-branches').textContent   = BRANCHES.length + ' branches';
+}
+
+/* ---- Last Backup ---- */
+function renderLastBackup() {
+  const history = getHistory();
+  const el = document.getElementById('last-backup-info');
+  if (!history.length) {
+    el.innerHTML = '<span style="color:#ef4444;"><i class="fa-solid fa-circle-xmark"></i></span> No backup has been created yet. <strong>Create a backup now</strong> to protect your data.';
+    return;
+  }
+  const last = history[history.length - 1];
+  const daysSince = Math.floor((Date.now() - new Date(last.date)) / 86400000);
+  const color = daysSince === 0 ? '#16a34a' : daysSince <= 3 ? '#d97706' : '#ef4444';
+  const icon  = daysSince === 0 ? 'fa-circle-check' : daysSince <= 3 ? 'fa-triangle-exclamation' : 'fa-circle-xmark';
+  el.innerHTML = `<span style="color:${color};"><i class="fa-solid ${icon}"></i></span> Last backup: <strong>${formatDateTime(last.date)}</strong> &nbsp;|&nbsp; Type: <strong>${last.type}</strong> &nbsp;|&nbsp; Records: <strong>${last.records}</strong> &nbsp;|&nbsp; Size: <strong>${last.size}</strong>`;
+}
+
+/* ---- Full Backup ---- */
+function backupAll() {
+  const branchId = getCurrentBranchId();
+  const attData  = collectAttendanceData();
+
+  const data = {
+    _meta: {
+      exportedAt:  new Date().toISOString(),
+      version:     ERP_VERSION,
+      institute:   'Ansha Shine Kids School',
+      exportedBy:  getSession()?.name || 'Unknown',
+      branchId:    branchId,
+      branchName:  getBranchById(branchId)?.name || 'All Branches',
+    },
+    branches:    BRANCHES,
+    programs:    PROGRAMS,
+    staff:       STAFF,
+    students:    STUDENTS,
+    feeRecords:  FEE_RECORDS,
+    ledger:      LEDGER,
+    routes:      TRANSPORT_ROUTES,
+    cameras:     CCTV_CAMERAS,
+    attendance:  attData,
+    users:       USERS.map(u => ({ ...u, password: '***' })), // mask passwords
+  };
+
+  const json    = JSON.stringify(data, null, 2);
+  const records = STUDENTS.length + STAFF.length + FEE_RECORDS.length + LEDGER.length + TRANSPORT_ROUTES.length;
+  const size    = formatBytes(new Blob([json]).size);
+
+  downloadJSON(json, 'ansha-erp-full-backup-' + dateStamp() + '.json');
+  addHistory({ type: 'Full Backup', modules: 'All Modules', records, size });
+  renderPage();
+  showToast('✅ Full backup downloaded successfully!', 'success');
+}
+
+/* ---- Section Export ---- */
+function exportSection(section) {
+  const map = {
+    students:  { label:'Students & Admissions', data: () => ({ students: STUDENTS }) },
+    staff:     { label:'Staff & HR',            data: () => ({ staff: STAFF }) },
+    attendance:{ label:'Attendance',            data: () => ({ attendance: collectAttendanceData() }) },
+    fees:      { label:'Fees & Finance',        data: () => ({ feeRecords: FEE_RECORDS, ledger: LEDGER }) },
+    transport: { label:'Transport',             data: () => ({ routes: TRANSPORT_ROUTES }) },
+    branches:  { label:'Branches & Config',     data: () => ({ branches: BRANCHES, programs: PROGRAMS, cameras: CCTV_CAMERAS }) },
+  };
+  const s = map[section];
+  if (!s) return;
+
+  const payload = s.data();
+  const data = {
+    _meta: { exportedAt: new Date().toISOString(), version: ERP_VERSION, section: s.label, institute: 'Ansha Shine Kids School' },
+    ...payload
+  };
+
+  const json    = JSON.stringify(data, null, 2);
+  const records = Object.values(payload).filter(Array.isArray).reduce((sum, arr) => sum + arr.length, 0);
+  const size    = formatBytes(new Blob([json]).size);
+
+  downloadJSON(json, 'ansha-erp-' + section + '-' + dateStamp() + '.json');
+  addHistory({ type: s.label + ' Export', modules: s.label, records, size });
+  renderPage();
+  showToast('✅ ' + s.label + ' exported!', 'success');
+}
+
+/* ---- Restore ---- */
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) readBackupFile(file);
+}
+
+function handleDrop(event) {
+  event.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = event.dataTransfer.files[0];
+  if (file && file.name.endsWith('.json')) readBackupFile(file);
+  else showToast('Please drop a valid .json ERP backup file', 'danger');
+}
+
+function readBackupFile(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data._meta) throw new Error('Invalid backup file — missing metadata');
+      pendingRestoreData = data;
+      document.getElementById('restore-file-name').textContent = '📁 ' + file.name;
+      const records = Object.values(data).filter(Array.isArray).reduce((s, a) => s + a.length, 0);
+      document.getElementById('restore-file-info').textContent =
+        'Exported: ' + (data._meta ? formatDateTime(data._meta.exportedAt) : 'Unknown') +
+        '  •  ' + records + ' total records  •  Size: ' + formatBytes(file.size) +
+        (data._meta.branchName ? '  •  Branch: ' + data._meta.branchName : '');
+      document.getElementById('restore-preview').style.display = 'block';
+    } catch(err) {
+      showToast('Invalid backup file: ' + err.message, 'danger');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function confirmRestore() {
+  if (!pendingRestoreData) return;
+  showConfirm(
+    'This will overwrite ALL current ERP data with the selected backup. This cannot be undone. Are you absolutely sure?',
+    () => {
+      const d = pendingRestoreData;
+      // Restore arrays to localStorage overrides
+      if (Array.isArray(d.students))   localStorage.setItem('asks_erp_students',   JSON.stringify(d.students));
+      if (Array.isArray(d.staff))      localStorage.setItem('asks_erp_staff',      JSON.stringify(d.staff));
+      if (Array.isArray(d.feeRecords)) localStorage.setItem('asks_erp_fees',       JSON.stringify(d.feeRecords));
+      if (Array.isArray(d.ledger))     localStorage.setItem('asks_erp_ledger',     JSON.stringify(d.ledger));
+      if (Array.isArray(d.routes))     localStorage.setItem('asks_erp_routes',     JSON.stringify(d.routes));
+      if (Array.isArray(d.branches))   localStorage.setItem('asks_erp_branches',   JSON.stringify(d.branches));
+      // Restore attendance entries
+      if (d.attendance && typeof d.attendance === 'object') {
+        Object.entries(d.attendance).forEach(([key, val]) => {
+          localStorage.setItem(key, JSON.stringify(val));
+        });
+      }
+      pendingRestoreData = null;
+      document.getElementById('restore-preview').style.display = 'none';
+      document.getElementById('restore-file').value = '';
+      addHistory({ type: 'Restore', modules: 'Full Restore', records: '—', size: '—' });
+      renderPage();
+      showToast('✅ Data restored successfully! Reload pages to see changes.', 'success');
+    },
+    'Confirm Restore'
+  );
+}
+
+function cancelRestore() {
+  pendingRestoreData = null;
+  document.getElementById('restore-preview').style.display = 'none';
+  document.getElementById('restore-file').value = '';
+}
+
+/* ---- Integrity Check ---- */
+function runIntegrityCheck() {
+  const panel = document.getElementById('integrity-panel');
+  const checks = [
+    { label:'Students Data',    value: STUDENTS.length + ' records', ok: STUDENTS.length > 0 },
+    { label:'Staff Records',    value: STAFF.length + ' records',    ok: STAFF.length > 0 },
+    { label:'Fee Records',      value: FEE_RECORDS.length + ' records', ok: FEE_RECORDS.length >= 0 },
+    { label:'Branch Config',    value: BRANCHES.length + ' branches', ok: BRANCHES.length > 0 },
+    { label:'Transport Routes', value: TRANSPORT_ROUTES.length + ' routes', ok: TRANSPORT_ROUTES.length >= 0 },
+    { label:'CCTV Cameras',     value: CCTV_CAMERAS.length + ' cameras', ok: CCTV_CAMERAS.length >= 0 },
+    { label:'Session Auth',     value: getSession() ? 'Active' : 'None', ok: !!getSession() },
+    { label:'localStorage',     value: localStorage.length + ' keys total', ok: true },
+  ];
+
+  const html = checks.map(c => `
+    <div class="integrity-row ${c.ok ? 'ok' : 'err'}">
+      <span class="int-icon">${c.ok ? '✅' : '❌'}</span>
+      <div>
+        <div class="int-label">${c.label}</div>
+        <div class="int-value">${c.value}</div>
+      </div>
+    </div>`).join('');
+
+  const allOk = checks.every(c => c.ok);
+  panel.innerHTML = html + `
+    <div style="margin-top:12px;padding:10px 14px;border-radius:8px;background:${allOk?'#f0fdf4':'#fef2f2'};border:1px solid ${allOk?'#86efac':'#fca5a5'};">
+      <p style="font-size:13px;font-weight:600;color:${allOk?'#166534':'#991b1b'};margin:0;">
+        ${allOk ? '✅ All checks passed — your data is healthy!' : '⚠️ Some checks failed — review and consider restoring from backup.'}
+      </p>
+    </div>`;
+
+  showToast(allOk ? 'Data integrity: All checks passed ✅' : 'Some integrity checks failed ⚠️', allOk ? 'success' : 'warning');
+}
+
+/* ---- History ---- */
+function renderHistory() {
+  const history = getHistory();
+  const tbody = document.getElementById('history-tbody');
+  if (!history.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="history-empty">No backups yet. Create your first backup above.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = history.slice().reverse().map(h => `
+    <tr>
+      <td style="font-size:13px;">${formatDateTime(h.date)}</td>
+      <td><span class="badge ${h.type.includes('Restore') ? 'badge-yellow' : h.type.includes('Full') ? 'badge-green' : 'badge-blue'}">${h.type}</span></td>
+      <td style="font-size:12px;color:#64748b;">${h.modules || '—'}</td>
+      <td style="font-size:13px;">${h.records}</td>
+      <td style="font-size:13px;">${h.size}</td>
+      <td><span class="badge badge-green">Success</span></td>
+    </tr>`).join('');
+}
+
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem(BACKUP_HISTORY_KEY)) || []; }
+  catch { return []; }
+}
+function addHistory(entry) {
+  const history = getHistory();
+  history.push({ ...entry, date: new Date().toISOString() });
+  localStorage.setItem(BACKUP_HISTORY_KEY, JSON.stringify(history));
+}
+function clearHistory() {
+  showConfirm('Clear all backup history records?', () => {
+    localStorage.removeItem(BACKUP_HISTORY_KEY);
+    renderPage();
+    showToast('History cleared', 'success');
+  }, 'Clear History');
+}
+
+function exportHistory() {
+  const history = getHistory();
+  if (!history.length) { showToast('No history to export', 'warning'); return; }
+  exportCSV(history.map(h => ({
+    Date: formatDateTime(h.date),
+    Type: h.type,
+    Modules: h.modules || '',
+    Records: h.records,
+    Size: h.size,
+    Status: 'Success'
+  })), 'ansha-erp-backup-log-' + dateStamp() + '.csv');
+}
+
+/* ---- Confirm Dialog ---- */
+function showConfirm(msg, cb, title='Confirm') {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent   = msg;
+  confirmCallback = cb;
+  openModal('confirm-modal');
+}
+document.getElementById('confirm-ok-btn').onclick = function() {
+  closeModal('confirm-modal');
+  if (confirmCallback) { confirmCallback(); confirmCallback = null; }
+};
+
+/* ---- Cloud Sync / Push ---- */
+async function cloudSync() {
+  showToast('Syncing from Supabase cloud…', 'info');
+  const ok = await syncFromSupabase();
+  if (ok) {
+    addHistory({ type: 'Cloud Sync', modules: 'All Modules', records: getAllRecordCount(), size: '—' });
+    showToast('✅ Data synced from cloud! Reloading…', 'success');
+    setTimeout(() => window.location.reload(), 1200);
+  } else {
+    showToast('⚠️ Nothing to sync or Supabase unavailable.', 'warning');
+  }
+}
+
+async function cloudPush() {
+  showToast('Pushing data to Supabase cloud…', 'info');
+  const ok = await pushAllToSupabase();
+  if (ok) {
+    addHistory({ type: 'Cloud Push', modules: 'All Modules', records: getAllRecordCount(), size: '—' });
+    renderPage();
+    showToast('✅ All data pushed to cloud successfully!', 'success');
+  } else {
+    showToast('❌ Push failed. Check Supabase connection.', 'danger');
+  }
+}
+
+/* ---- Helpers ---- */
+function collectAttendanceData() {
+  const att = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('asks_att_')) {
+      try { att[key] = JSON.parse(localStorage.getItem(key)); } catch {}
+    }
+  }
+  return att;
+}
+
+function downloadJSON(json, filename) {
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function dateStamp() { return new Date().toISOString().slice(0, 10); }
+
+function formatDateTime(iso) {
+  try {
+    return new Date(iso).toLocaleString('en-IN', {
+      day:'2-digit', month:'short', year:'numeric',
+      hour:'2-digit', minute:'2-digit'
+    });
+  } catch { return iso; }
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024)    return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+</script>
+</body>
+</html>

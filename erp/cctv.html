@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCTV Monitor — Ansha Shine Kids School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-wrapper">
+    <header class="header">
+      <button class="header-toggle btn-icon"><i class="fa-solid fa-bars"></i></button>
+      <div class="breadcrumb"><span class="breadcrumb-item">Home</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-item">CCTV Monitor</span></div>
+      <div class="header-right">
+        <div id="header-date" class="header-date"></div>
+        <div class="header-user"><div class="header-avatar" id="header-avatar">SA</div><div class="header-user-info"><div class="name" id="header-user-name">Admin</div><div class="role" id="header-user-role">Role</div></div></div>
+      </div>
+    </header>
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title"><h1>📹 CCTV Monitor</h1><p>Live camera feeds — curriculum and premises monitoring · <span id="header-branch"></span></p></div>
+        <div class="page-actions">
+          <div class="flex items-center gap-8">
+            <span class="badge badge-green"><span class="badge-dot"></span> <span id="online-count">0</span> Online</span>
+            <span class="badge badge-red"><span class="badge-dot"></span> <span id="offline-count">0</span> Offline</span>
+          </div>
+          <select class="form-control btn-sm" style="width:auto;" id="layout-sel" onchange="changeLayout()">
+            <option value="4">2×2 Grid</option>
+            <option value="9" selected>3×3 Grid</option>
+            <option value="12">4×3 Grid</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" id="fullscreen-btn" onclick="toggleFullscreen()"><i class="fa-solid fa-expand"></i> Fullscreen</button>
+        </div>
+      </div>
+
+      <!-- Camera Status Bar -->
+      <div class="card mb-16" style="padding:12px 16px;">
+        <div class="flex gap-8" style="flex-wrap:wrap;" id="cam-quick-bar"></div>
+      </div>
+
+      <!-- CCTV Grid -->
+      <div id="cctv-container">
+        <div class="cctv-grid" id="cctv-grid"></div>
+      </div>
+
+      <!-- Activity Log -->
+      <div class="card mt-16">
+        <div class="card-header"><span class="card-title">📋 Camera Activity Log</span><button class="btn btn-ghost btn-sm" onclick="clearLog()">Clear</button></div>
+        <div id="activity-log" style="max-height:200px;overflow-y:auto;font-size:12.5px;"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Camera Detail Modal -->
+<div class="modal-overlay" id="camModal">
+  <div class="modal modal-lg">
+    <div class="modal-header"><h3 id="cam-modal-title">Camera View</h3><button class="modal-close" onclick="closeModal('camModal')">✕</button></div>
+    <div class="modal-body" id="cam-modal-body"></div>
+    <div class="modal-footer">
+      <div class="flex gap-8">
+        <button class="btn btn-ghost" onclick="closeModal('camModal')">Close</button>
+        <button class="btn btn-primary"><i class="fa-solid fa-download"></i> Download Snapshot</button>
+        <button class="btn btn-danger"><i class="fa-solid fa-record-vinyl"></i> Start Recording</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+  const session = requireAuth();
+  buildSidebar('cctv');
+
+  const branchId = getCurrentBranchId();
+  const cameras = getCamerasByBranch(branchId);
+
+  const onlineCount = cameras.filter(c=>c.status==='online').length;
+  const offlineCount = cameras.filter(c=>c.status==='offline').length;
+  document.getElementById('online-count').textContent = onlineCount;
+  document.getElementById('offline-count').textContent = offlineCount;
+
+  // Quick status bar
+  document.getElementById('cam-quick-bar').innerHTML = cameras.map(c =>
+    `<button class="chip ${c.status==='online'?'active':''}" onclick="focusCam('${c.id}')" title="${c.location}">
+      ${c.icon} ${c.name} <span class="badge ${c.status==='online'?'badge-green':'badge-red'}" style="margin-left:4px;">${c.status==='online'?'●':'○'}</span>
+    </button>`
+  ).join('');
+
+  // Activity log entries
+  const logEntries = [
+    { time:'08:01', cam:'Main Entrance', event:'Motion detected — School opening', type:'info' },
+    { time:'08:05', cam:'Day Care Room', event:'Children arriving — Caretaker present', type:'success' },
+    { time:'08:15', cam:'LKG Classroom', event:'Teacher Deepa Rajan checked in', type:'success' },
+    { time:'08:30', cam:'Play Area', event:'Supervised play activity started', type:'info' },
+    { time:'09:00', cam:'PreKG Classroom', event:'Morning assembly recorded', type:'info' },
+    { time:'10:15', cam:'Cafeteria', event:'Camera offline — Scheduled maintenance', type:'warning' },
+    { time:'11:30', cam:'Main Entrance', event:'Parent pickup notification', type:'info' },
+  ];
+
+  function renderLog() {
+    document.getElementById('activity-log').innerHTML = logEntries.map(e => `
+      <div class="flex items-center gap-10" style="padding:7px 12px;border-bottom:1px solid var(--border);">
+        <span style="color:var(--text-3);font-family:monospace;flex-shrink:0;">${e.time}</span>
+        <span class="badge ${e.type==='success'?'badge-green':e.type==='warning'?'badge-yellow':'badge-blue'}" style="flex-shrink:0;">${e.cam}</span>
+        <span>${e.event}</span>
+      </div>`).join('');
+  }
+
+  function clearLog() {
+    logEntries.length = 0;
+    renderLog();
+    showToast('Activity log cleared', 'info');
+  }
+
+  // Add log entry
+  function addLog(cam, event, type='info') {
+    const now = new Date();
+    const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    logEntries.unshift({ time, cam, event, type });
+    renderLog();
+  }
+
+  // Colors for different room types
+  const roomColors = {
+    'Classroom': ['#1a2040', '#0d1520'],
+    'Daycare':   ['#1a1030', '#0d0820'],
+    'Outdoor':   ['#0d2010', '#051208'],
+    'Office':    ['#201a10', '#100d08'],
+    'Exterior':  ['#202020', '#101010'],
+    default:     ['#0a1428', '#050a14'],
+  };
+
+  function getRoomColor(location) {
+    for (const [key, val] of Object.entries(roomColors)) {
+      if (location.includes(key)) return val;
+    }
+    return roomColors.default;
+  }
+
+  function buildCameraFeed(cam) {
+    const colors = getRoomColor(cam.location);
+    const isOnline = cam.status === 'online';
+
+    // Curriculum activity indicators (simulated)
+    const activities = {
+      'Nursery Room':    'Nursery Circle Time',
+      'PreKG Classroom': 'Phonics Activity',
+      'LKG Classroom':   'Drawing & Coloring',
+      'UKG Classroom':   'Mathematics - Numbers',
+      'Day Care Room':   'Nap Time / Rest',
+      'Play Area':       'Outdoor Play',
+      'Main Entrance':   'Entry / Exit',
+      'Admin Office':    'Administrative Work',
+    };
+    const activity = activities[cam.name] || 'Monitoring';
+
+    return `
+    <div class="cctv-feed ${isOnline?'active':''}" id="feed-${cam.id}">
+      <div class="cctv-screen" style="background:linear-gradient(135deg,${colors[0]} 0%,${colors[1]} 100%);cursor:pointer;" onclick="focusCam('${cam.id}')">
+        <div class="cctv-overlay"></div>
+        ${isOnline ? `
+        <div class="cctv-sim-content">
+          <span class="room-icon">${cam.icon}</span>
+          <p style="font-size:11px;color:rgba(255,255,255,0.5);">${cam.location}</p>
+          <div style="margin-top:6px;padding:3px 8px;background:rgba(255,255,255,0.1);border-radius:4px;font-size:10px;color:rgba(255,255,255,0.7);">${activity}</div>
+        </div>
+        <div class="cctv-live-badge"><span style="width:6px;height:6px;background:#fff;border-radius:50%;display:inline-block;animation:pulse 1s infinite;"></span> LIVE</div>
+        <div class="cctv-time" id="time-${cam.id}"></div>
+        <div style="position:absolute;bottom:8px;right:8px;color:rgba(255,255,255,0.4);font-size:10px;">${cam.resolution}</div>
+        ` : `
+        <div class="cctv-sim-content">
+          <span class="room-icon" style="opacity:0.3;">📴</span>
+          <p style="color:rgba(255,255,255,0.3);">Camera Offline</p>
+          <p style="font-size:10px;color:rgba(255,255,255,0.2);">${cam.location}</p>
+        </div>
+        `}
+      </div>
+      <div class="cctv-footer">
+        <span class="cam-name">${cam.name}</span>
+        <span class="cam-status ${isOnline?'badge badge-green':'badge badge-red'}">${isOnline?'● Online':'○ Offline'}</span>
+      </div>
+    </div>`;
+  }
+
+  function renderGrid() {
+    document.getElementById('cctv-grid').innerHTML = cameras.map(c => buildCameraFeed(c)).join('');
+    updateClocks();
+  }
+
+  function changeLayout() {
+    const n = parseInt(document.getElementById('layout-sel').value);
+    const cols = n <= 4 ? 2 : n <= 9 ? 3 : 4;
+    document.getElementById('cctv-grid').style.gridTemplateColumns = `repeat(${cols},1fr)`;
+  }
+
+  function updateClocks() {
+    cameras.forEach(c => {
+      const el = document.getElementById('time-'+c.id);
+      if (el) el.textContent = new Date().toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    });
+  }
+
+  function focusCam(camId) {
+    const cam = cameras.find(c => c.id === camId);
+    if (!cam) return;
+    document.getElementById('cam-modal-title').innerHTML = `${cam.icon} ${cam.name} — ${cam.location}`;
+    const colors = getRoomColor(cam.location);
+    document.getElementById('cam-modal-body').innerHTML = `
+      <div style="background:linear-gradient(135deg,${colors[0]} 0%,${colors[1]} 100%);border-radius:var(--radius);aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;margin-bottom:14px;">
+        <div style="text-align:center;color:rgba(255,255,255,0.5);">
+          <div style="font-size:80px;margin-bottom:10px;">${cam.icon}</div>
+          <div>${cam.location}</div>
+          ${cam.status==='online'?'<div style="margin-top:6px;"><span style="background:var(--danger);color:#fff;padding:2px 10px;border-radius:4px;font-size:12px;font-weight:700;animation:pulse 2s infinite;">● LIVE FEED</span></div>':'<div style="margin-top:6px;color:rgba(255,255,255,0.3);">OFFLINE</div>'}
+        </div>
+        <div style="position:absolute;top:10px;right:10px;color:rgba(255,255,255,0.6);font-size:12px;font-family:monospace;">${new Date().toLocaleTimeString('en-IN')}</div>
+      </div>
+      <div class="form-grid">
+        <div><div class="info-row"><span class="lbl">Camera ID</span><span class="val">${cam.id}</span></div>
+          <div class="info-row"><span class="lbl">Location</span><span class="val">${cam.location}</span></div>
+          <div class="info-row"><span class="lbl">Resolution</span><span class="val">${cam.resolution}</span></div></div>
+        <div><div class="info-row"><span class="lbl">Status</span><span class="val">${statusBadge(cam.status)}</span></div>
+          <div class="info-row"><span class="lbl">Branch</span><span class="val">${getBranchById(cam.branchId)?.name}</span></div></div>
+      </div>
+      ${cam.status==='online'?`
+      <div class="alert alert-success mt-12">
+        <i class="fa-solid fa-circle-check"></i> Camera is online and streaming. Curriculum monitoring active.
+        <div style="margin-top:6px;font-size:12px;">Connect your RTSP/IP camera URL to display live feed in production.</div>
+      </div>`:`
+      <div class="alert alert-danger mt-12">
+        <i class="fa-solid fa-triangle-exclamation"></i> Camera is currently offline. Please check the camera connection.
+      </div>`}`;
+    addLog(cam.name, `Camera view opened — ${cam.location}`, 'info');
+    openModal('camModal');
+  }
+
+  function toggleFullscreen() {
+    const el = document.getElementById('cctv-container');
+    if (!document.fullscreenElement) {
+      el.requestFullscreen?.();
+      el.style.background = '#000'; el.style.padding = '10px';
+    } else {
+      document.exitFullscreen?.();
+      el.style.background = ''; el.style.padding = '';
+    }
+  }
+
+  renderGrid();
+  renderLog();
+  changeLayout();
+  setInterval(updateClocks, 1000);
+
+  // Simulate random events
+  setInterval(() => {
+    const cam = cameras[Math.floor(Math.random()*cameras.length)];
+    if (cam.status === 'online') {
+      const events = ['Movement detected', 'Child activity observed', 'Teacher interaction', 'Normal activity'];
+      addLog(cam.name, events[Math.floor(Math.random()*events.length)], 'info');
+    }
+  }, 30000);
+</script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transport — Ansha Shine Kids School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-wrapper">
+    <header class="header">
+      <button class="header-toggle btn-icon"><i class="fa-solid fa-bars"></i></button>
+      <div class="breadcrumb"><span class="breadcrumb-item">Home</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-item">Transport</span></div>
+      <div class="header-right">
+        <div id="header-date" class="header-date"></div>
+        <div class="header-user"><div class="header-avatar" id="header-avatar">SA</div><div class="header-user-info"><div class="name" id="header-user-name">Admin</div><div class="role" id="header-user-role">Role</div></div></div>
+      </div>
+    </header>
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title"><h1>🚌 Transport Management</h1><p>Manage routes, vehicles, and student transport · <span id="header-branch"></span></p></div>
+        <div class="page-actions">
+          <button class="btn btn-primary btn-sm" onclick="openModal('addRouteModal')"><i class="fa-solid fa-plus"></i> Add Route</button>
+        </div>
+      </div>
+
+      <div class="stat-grid mb-24" id="transport-stats"></div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('routes',this)">🚍 Routes</button>
+        <button class="tab-btn" onclick="switchTab('students',this)">👧 Transport Students</button>
+        <button class="tab-btn" onclick="switchTab('drivers',this)">👨‍✈️ Drivers</button>
+      </div>
+
+      <!-- Routes Tab -->
+      <div class="tab-panel active" id="tab-routes">
+        <div class="grid-2" id="routes-grid"></div>
+      </div>
+
+      <!-- Transport Students Tab -->
+      <div class="tab-panel hidden" id="tab-students">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Students Using Transport</span>
+            <select class="form-control btn-sm" style="width:auto;" id="filter-route" onchange="renderTransportStudents()">
+              <option value="">All Routes</option>
+            </select>
+          </div>
+          <div class="table-wrapper">
+            <table class="table">
+              <thead><tr><th>Student</th><th>Program</th><th>Route</th><th>Pickup Stop</th><th>Parent Phone</th><th>Monthly Fee</th><th>Status</th></tr></thead>
+              <tbody id="transport-students-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drivers Tab -->
+      <div class="tab-panel hidden" id="tab-drivers">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Drivers & Vehicles</span></div>
+          <div class="table-wrapper">
+            <table class="table">
+              <thead><tr><th>Driver</th><th>Phone</th><th>Vehicle No.</th><th>Route</th><th>Capacity</th><th>Students</th><th>Occupancy</th></tr></thead>
+              <tbody id="drivers-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Add Route Modal -->
+<div class="modal-overlay" id="addRouteModal">
+  <div class="modal">
+    <div class="modal-header"><h3>🚌 Add Transport Route</h3><button class="modal-close" onclick="closeModal('addRouteModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid form-grid-2">
+        <div class="form-group"><label class="form-label">Route Name <span style="color:red;">*</span></label><input type="text" class="form-control" id="route-name" placeholder="e.g. Velachery Route"></div>
+        <div class="form-group"><label class="form-label">Vehicle Number</label><input type="text" class="form-control" id="route-vehicle" placeholder="e.g. TN 01 AB 1234"></div>
+        <div class="form-group"><label class="form-label">Capacity</label><input type="number" class="form-control" id="route-cap" value="20" min="5" max="50"></div>
+        <div class="form-group"><label class="form-label">Monthly Fee (₹)</label><input type="number" class="form-control" id="route-fee" value="800"></div>
+      </div>
+      <div class="form-group mt-12"><label class="form-label">Stops (one per line: Stop Name - Time)</label>
+        <textarea class="form-control" id="route-stops" rows="4" placeholder="e.g.&#10;Tambaram Bus Stand - 07:30&#10;GST Road - 07:45&#10;School - 08:15"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addRouteModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addRoute()"><i class="fa-solid fa-save"></i> Add Route</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+  const session = requireAuth();
+  buildSidebar('transport');
+
+  const branchId = getCurrentBranchId();
+  let routes = getRoutesByBranch(branchId);
+  const students = getStudentsByBranch(branchId);
+  const allStaff = getStaffByBranch(branchId);
+
+  function renderStats() {
+    const totalStudents = routes.reduce((a,r)=>a+r.students,0);
+    const totalCap = routes.reduce((a,r)=>a+r.capacity,0);
+    const drivers = allStaff.filter(s=>s.role==='Driver');
+    const monthlyRevenue = students.filter(s=>s.transport).length * 800;
+    document.getElementById('transport-stats').innerHTML = [
+      { label:'Total Routes', value:routes.length, icon:'🗺️', color:'blue' },
+      { label:'Total Students', value:totalStudents, icon:'👧', color:'green' },
+      { label:'Fleet Capacity', value:totalCap+' seats', icon:'🚌', color:'orange' },
+      { label:'Drivers', value:drivers.length, icon:'👨‍✈️', color:'purple' },
+      { label:'Monthly Revenue', value:currencyINR(monthlyRevenue), icon:'💰', color:'teal' },
+    ].map(s=>`<div class="stat-card ${s.color}"><div class="stat-icon">${s.icon}</div><div class="stat-body"><div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div></div></div>`).join('');
+  }
+
+  function renderRoutes() {
+    document.getElementById('routes-grid').innerHTML = routes.map(r => {
+      const occupancy = Math.round((r.students/r.capacity)*100);
+      const driver = allStaff.find(s=>s.id===r.driver);
+      return `<div class="route-card">
+        <div class="route-header">
+          <span class="route-no">${r.id}</span>
+          <span class="route-name">🚌 ${r.name}</span>
+          <div style="margin-left:auto;display:flex;gap:8px;">
+            <button class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:#fff;font-size:11px;padding:4px 10px;" onclick="editRoute('${r.id}')">Edit</button>
+          </div>
+        </div>
+        <div class="route-body">
+          <div class="flex gap-16 mb-12" style="flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--border);">
+            <div><div class="text-sm text-muted">Vehicle</div><div style="font-weight:600;">${r.vehicle}</div></div>
+            <div><div class="text-sm text-muted">Driver</div><div style="font-weight:600;">${driver ? driver.name : r.driverName}</div></div>
+            <div><div class="text-sm text-muted">Students</div><div style="font-weight:600;">${r.students}/${r.capacity}</div></div>
+          </div>
+          <div class="mb-8">
+            <div class="flex justify-between text-sm text-muted mb-4">
+              <span>Occupancy</span><span>${occupancy}%</span>
+            </div>
+            <div class="progress"><div class="progress-bar ${occupancy>85?'progress-red':occupancy>60?'progress-orange':'progress-green'}" style="width:${occupancy}%;"></div></div>
+          </div>
+          <div class="stop-list mt-12">
+            ${r.stops.map((stop, i) => `
+            <div class="stop-item">
+              <div class="stop-dot ${i===0?'first':i===r.stops.length-1?'last':''}"></div>
+              <div class="stop-name">${stop.name}</div>
+              <div class="stop-time">${stop.time}</div>
+              <span class="badge ${stop.pickup?'badge-blue':'badge-green'}" style="font-size:10px;">${stop.pickup?'Pickup':'Drop'}</span>
+            </div>`).join('')}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderTransportStudents() {
+    const routeFilter = document.getElementById('filter-route').value;
+    const transportStudents = students.filter(s => s.transport && (!routeFilter || s.transport === routeFilter));
+    document.getElementById('transport-students-tbody').innerHTML = transportStudents.map(s => {
+      const route = routes.find(r => r.id === s.transport);
+      const stop = route ? route.stops[1] : null;
+      return `<tr>
+        <td><div class="flex items-center gap-8"><div class="avatar avatar-sm ${s.gender==='F'?'av-orange':'av-blue'}">${s.photoInit}</div><div style="font-weight:600;">${s.name}</div></div></td>
+        <td>${statusBadge(s.program)}</td>
+        <td><span class="badge badge-blue">${route?.name||s.transport}</span></td>
+        <td style="font-size:12.5px;">${stop ? stop.name : '–'}</td>
+        <td>${s.parentPhone}</td>
+        <td style="font-weight:600;color:var(--success);">₹800/mo</td>
+        <td><span class="badge badge-green">Active</span></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="7" class="text-center text-muted" style="padding:24px;">No transport students</td></tr>';
+  }
+
+  function renderDrivers() {
+    document.getElementById('drivers-tbody').innerHTML = routes.map((r, i) => {
+      const driver = allStaff.find(s=>s.id===r.driver);
+      const occ = Math.round((r.students/r.capacity)*100);
+      return `<tr>
+        <td><div class="flex items-center gap-8"><div class="avatar avatar-sm av-blue">🚌</div><div style="font-weight:600;">${driver ? driver.name : r.driverName}</div></div></td>
+        <td>${driver ? driver.phone : '–'}</td>
+        <td><span class="badge badge-gray">${r.vehicle}</span></td>
+        <td>${r.name}</td>
+        <td>${r.capacity}</td>
+        <td>${r.students}</td>
+        <td>
+          <div class="flex items-center gap-8">
+            <div class="progress" style="width:80px;"><div class="progress-bar ${occ>85?'progress-red':'progress-green'}" style="width:${occ}%;"></div></div>
+            <span style="font-size:12px;">${occ}%</span>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function addRoute() {
+    const name = document.getElementById('route-name').value;
+    if (!name) { showToast('Please enter route name','danger'); return; }
+    const stopsText = document.getElementById('route-stops').value;
+    const stops = stopsText.split('\n').filter(l=>l.trim()).map(l => {
+      const [sname, time] = l.split(' - ');
+      return { name: sname?.trim()||l, time: time?.trim()||'–', pickup: true };
+    });
+    if (stops.length) stops[stops.length-1].pickup = false;
+    routes.push({
+      id: 'R'+String(routes.length+1).padStart(3,'0'),
+      branchId,
+      name,
+      vehicle: document.getElementById('route-vehicle').value || 'TBA',
+      driver: null,
+      driverName: 'TBA',
+      capacity: parseInt(document.getElementById('route-cap').value)||20,
+      students: 0,
+      stops: stops.length ? stops : [{ name:'Stop 1', time:'07:30', pickup:true },{ name:'School', time:'08:15', pickup:false }],
+    });
+    closeModal('addRouteModal');
+    renderRoutes(); renderStats();
+    showToast('Route added successfully!', 'success');
+  }
+
+  function editRoute(rid) { showToast('Edit functionality — coming in next update', 'info'); }
+
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>{p.classList.remove('active');p.classList.add('hidden');});
+    btn.classList.add('active');
+    const panel = document.getElementById('tab-'+name);
+    panel.classList.remove('hidden');
+    panel.classList.add('active');
+    if (name==='students') renderTransportStudents();
+    if (name==='drivers') renderDrivers();
+  }
+
+  // Init route filter
+  const rf = document.getElementById('filter-route');
+  routes.forEach(r => rf.innerHTML += `<option value="${r.id}">${r.name}</option>`);
+
+  renderStats(); renderRoutes();
+</script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payroll — Ansha Shine Kids School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-wrapper">
+    <header class="header">
+      <button class="header-toggle btn-icon"><i class="fa-solid fa-bars"></i></button>
+      <div class="breadcrumb"><span class="breadcrumb-item">Home</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-item">Payroll</span></div>
+      <div class="header-right">
+        <div id="header-date" class="header-date"></div>
+        <div class="header-user"><div class="header-avatar" id="header-avatar">SA</div><div class="header-user-info"><div class="name" id="header-user-name">Admin</div><div class="role" id="header-user-role">Role</div></div></div>
+      </div>
+    </header>
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title"><h1>💰 Payroll Management</h1><p>Process salaries and generate payslips · <span id="header-branch"></span></p></div>
+        <div class="page-actions">
+          <select class="form-control btn-sm" id="payroll-month" style="width:auto;" onchange="renderPayroll()">
+            <option value="2026-03">March 2026</option>
+            <option value="2026-02">February 2026</option>
+            <option value="2026-01">January 2026</option>
+          </select>
+          <button class="btn btn-success btn-sm" onclick="processAll()"><i class="fa-solid fa-play"></i> Process All</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV(getPayrollData(),'payroll.csv');showToast('Exported!','success')"><i class="fa-solid fa-download"></i> Export</button>
+        </div>
+      </div>
+
+      <div class="stat-grid mb-24" id="payroll-stats"></div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📋 Monthly Payroll Sheet — <span id="month-label">March 2026</span></span>
+          <div class="flex gap-8">
+            <select class="form-control btn-sm" id="payroll-dept" style="width:auto;" onchange="renderPayroll()">
+              <option value="">All Departments</option><option>Academic</option><option>Daycare</option><option>Transport</option><option>Security</option><option>Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="table" id="payroll-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Staff</th><th>Role</th>
+                <th>Basic</th><th>DA (10%)</th><th>HRA (8%)</th>
+                <th>PF (12%)</th><th>ESI (0.75%)</th>
+                <th>Tax</th><th>Net Pay</th>
+                <th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="payroll-tbody"></tbody>
+          </table>
+        </div>
+        <div class="flex justify-between mt-16" style="padding:8px 0;border-top:2px solid var(--border);">
+          <strong>Total Payroll</strong>
+          <strong id="total-payroll" style="color:var(--accent);font-size:16px;"></strong>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Payslip Modal -->
+<div class="modal-overlay" id="payslipModal">
+  <div class="modal modal-lg">
+    <div class="modal-header"><h3>📄 Pay Slip</h3><button class="modal-close" onclick="closeModal('payslipModal')">✕</button></div>
+    <div class="modal-body" id="payslip-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('payslipModal')">Close</button>
+      <button class="btn btn-primary" onclick="printSection('payslip-body')"><i class="fa-solid fa-print"></i> Print Payslip</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+  const session = requireAuth();
+  buildSidebar('payroll');
+
+  const allStaff = getStaffByBranch(getCurrentBranchId());
+  const paymentStatus = {};
+
+  function calcPayroll(salary) {
+    const basic = salary;
+    const da    = Math.round(basic * 0.10);
+    const hra   = Math.round(basic * 0.08);
+    const gross = basic + da + hra;
+    const pf    = Math.round(basic * 0.12);
+    const esi   = Math.round(gross * 0.0075);
+    const tax   = gross > 25000 ? Math.round((gross - 25000) * 0.10) : 0;
+    const net   = gross - pf - esi - tax;
+    return { basic, da, hra, gross, pf, esi, tax, net };
+  }
+
+  function renderPayroll() {
+    const dept = document.getElementById('payroll-dept').value;
+    const month = document.getElementById('payroll-month').value;
+    const filtered = allStaff.filter(s => !dept || s.dept === dept);
+
+    let totalNet = 0;
+    const rows = filtered.map((s, i) => {
+      const p = calcPayroll(s.salary);
+      totalNet += p.net;
+      const paid = paymentStatus[s.id] === 'paid';
+      return `<tr>
+        <td>${i+1}</td>
+        <td><div class="flex items-center gap-8"><div class="avatar avatar-sm ${s.gender==='F'?'av-orange':'av-blue'}">${s.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div><div style="font-weight:600;font-size:13px;">${s.name}</div></div></td>
+        <td style="font-size:12.5px;">${s.role}</td>
+        <td>${currencyINR(p.basic)}</td>
+        <td style="color:var(--success);">+${currencyINR(p.da)}</td>
+        <td style="color:var(--success);">+${currencyINR(p.hra)}</td>
+        <td style="color:var(--danger);">-${currencyINR(p.pf)}</td>
+        <td style="color:var(--danger);">-${currencyINR(p.esi)}</td>
+        <td style="color:var(--danger);">-${currencyINR(p.tax)}</td>
+        <td><strong style="color:var(--primary);font-size:14px;">${currencyINR(p.net)}</strong></td>
+        <td id="pay-status-${s.id}">${paid ? '<span class="badge badge-green">✅ Paid</span>' : '<span class="badge badge-yellow">⏳ Pending</span>'}</td>
+        <td class="actions">
+          <button class="btn btn-ghost btn-sm" onclick="viewPayslip('${s.id}','${month}')"><i class="fa-solid fa-file-invoice"></i> Slip</button>
+          ${!paid ? `<button class="btn btn-success btn-sm" onclick="markPaid('${s.id}')">Pay</button>` : ''}
+        </td>
+      </tr>`;
+    });
+
+    document.getElementById('payroll-tbody').innerHTML = rows.join('') || '<tr><td colspan="12" class="text-center text-muted" style="padding:24px;">No staff found</td></tr>';
+    document.getElementById('total-payroll').textContent = currencyINR(totalNet);
+
+    // Stats
+    const totalGross = filtered.reduce((a,s) => a+calcPayroll(s.salary).gross, 0);
+    const totalPF = filtered.reduce((a,s) => a+calcPayroll(s.salary).pf, 0);
+    const paidCount = Object.values(paymentStatus).filter(v=>v==='paid').length;
+    document.getElementById('payroll-stats').innerHTML = [
+      { label:'Gross Payroll', value:currencyINR(totalGross), icon:'💼', color:'blue' },
+      { label:'Net Payroll', value:currencyINR(totalNet), icon:'💰', color:'green' },
+      { label:'PF Deduction', value:currencyINR(totalPF), icon:'🏦', color:'orange' },
+      { label:'Paid / Total', value:`${paidCount} / ${filtered.length}`, icon:'✅', color:'purple' },
+    ].map(s=>`<div class="stat-card ${s.color}"><div class="stat-icon">${s.icon}</div><div class="stat-body"><div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div></div></div>`).join('');
+  }
+
+  function markPaid(sid) {
+    paymentStatus[sid] = 'paid';
+    renderPayroll();
+    showToast('Payment processed!', 'success');
+  }
+
+  function processAll() {
+    allStaff.forEach(s => { paymentStatus[s.id] = 'paid'; });
+    renderPayroll();
+    showToast('All salaries processed for ' + document.getElementById('payroll-month').value, 'success');
+  }
+
+  function viewPayslip(sid, month) {
+    const s = allStaff.find(st => st.id === sid);
+    if (!s) return;
+    const p = calcPayroll(s.salary);
+    const branch = getBranchById(s.branchId);
+    const months = { '2026-03':'March 2026','2026-02':'February 2026','2026-01':'January 2026' };
+    document.getElementById('payslip-body').innerHTML = `
+      <div class="payslip">
+        <div class="payslip-header">
+          <div><div class="co-name">🌟 Ansha Shine Kids School</div><div class="slip-title">${branch?.name || 'Branch'} · Chennai, Tamil Nadu</div></div>
+          <div style="text-align:right;"><div style="color:rgba(255,255,255,0.7);font-size:12px;">PAY SLIP</div><div style="color:#fff;font-weight:700;">${months[month]||month}</div></div>
+        </div>
+        <div class="payslip-body">
+          <div class="form-grid mb-16" style="background:var(--body-bg);padding:14px;border-radius:8px;">
+            <div><div class="info-row"><span class="lbl">Employee</span><span class="val font-bold">${s.name}</span></div><div class="info-row"><span class="lbl">Employee ID</span><span class="val">${s.id}</span></div><div class="info-row"><span class="lbl">Department</span><span class="val">${s.dept}</span></div></div>
+            <div><div class="info-row"><span class="lbl">Designation</span><span class="val">${s.role}</span></div><div class="info-row"><span class="lbl">Date of Join</span><span class="val">${fmtDate(s.join)}</span></div><div class="info-row"><span class="lbl">Pay Period</span><span class="val">${months[month]||month}</span></div></div>
+          </div>
+          <div class="grid-2">
+            <div>
+              <div class="section-title">Earnings</div>
+              <div class="payslip-row"><span>Basic Salary</span><span>${currencyINR(p.basic)}</span></div>
+              <div class="payslip-row"><span>Dearness Allowance (10%)</span><span style="color:var(--success);">+${currencyINR(p.da)}</span></div>
+              <div class="payslip-row"><span>House Rent Allowance (8%)</span><span style="color:var(--success);">+${currencyINR(p.hra)}</span></div>
+              <div class="payslip-row font-bold"><span>Gross Salary</span><span>${currencyINR(p.gross)}</span></div>
+            </div>
+            <div>
+              <div class="section-title">Deductions</div>
+              <div class="payslip-row"><span>Provident Fund (12%)</span><span style="color:var(--danger);">-${currencyINR(p.pf)}</span></div>
+              <div class="payslip-row"><span>ESI (0.75%)</span><span style="color:var(--danger);">-${currencyINR(p.esi)}</span></div>
+              <div class="payslip-row"><span>Income Tax</span><span style="color:var(--danger);">-${currencyINR(p.tax)}</span></div>
+              <div class="payslip-row font-bold"><span>Total Deductions</span><span style="color:var(--danger);">${currencyINR(p.pf+p.esi+p.tax)}</span></div>
+            </div>
+          </div>
+          <div class="payslip-total"><span>💰 Net Pay (Take Home)</span><span style="color:var(--primary);font-size:18px;">${currencyINR(p.net)}</span></div>
+          <div style="text-align:center;margin-top:16px;color:var(--text-3);font-size:12px;padding-top:12px;border-top:1px dashed var(--border);">
+            This is a computer-generated payslip. No signature required. · Ansha Shine Kids School · anshashinekidsschool.com
+          </div>
+        </div>
+      </div>`;
+    openModal('payslipModal');
+  }
+
+  function getPayrollData() {
+    return allStaff.map(s => { const p = calcPayroll(s.salary); return { Name:s.name, Role:s.role, Basic:p.basic, DA:p.da, HRA:p.hra, Gross:p.gross, PF:p.pf, ESI:p.esi, Tax:p.tax, Net:p.net }; });
+  }
+
+  renderPayroll();
+</script>
+</body>
+</html>

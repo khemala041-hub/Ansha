@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Income & Expenses — Ansha Shine Kids School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-wrapper">
+    <header class="header">
+      <button class="header-toggle btn-icon"><i class="fa-solid fa-bars"></i></button>
+      <div class="breadcrumb"><span class="breadcrumb-item">Home</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-item">Income & Expenses</span></div>
+      <div class="header-right">
+        <div id="header-date" class="header-date"></div>
+        <div class="header-user"><div class="header-avatar" id="header-avatar">SA</div><div class="header-user-info"><div class="name" id="header-user-name">Admin</div><div class="role" id="header-user-role">Role</div></div></div>
+      </div>
+    </header>
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title"><h1>📈 Income & Expenses</h1><p>Financial ledger and analysis · <span id="header-branch"></span></p></div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV(LEDGER,'ledger.csv');showToast('Exported!','success')"><i class="fa-solid fa-download"></i> Export</button>
+          <button class="btn btn-success btn-sm" onclick="openAddEntry('income')"><i class="fa-solid fa-plus"></i> Add Income</button>
+          <button class="btn btn-danger btn-sm" onclick="openAddEntry('expense')"><i class="fa-solid fa-minus"></i> Add Expense</button>
+        </div>
+      </div>
+
+      <div class="stat-grid mb-24" id="finance-stats"></div>
+
+      <div class="grid-2 mb-24">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📊 Income vs Expense (March 2026)</span></div>
+          <canvas id="financeBar" height="200"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">🍩 Expense Breakdown</span></div>
+          <canvas id="expensePie" height="200"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📒 General Ledger</span>
+          <div class="filter-bar" style="margin:0;">
+            <select class="form-control btn-sm" style="width:auto;" id="ledger-type" onchange="renderLedger()"><option value="">All Transactions</option><option value="income">Income</option><option value="expense">Expense</option></select>
+            <select class="form-control btn-sm" style="width:auto;" id="ledger-cat" onchange="renderLedger()">
+              <option value="">All Categories</option>
+              <option>Fees</option><option>Transport</option><option>Miscellaneous</option>
+              <option>Salaries</option><option>Utilities</option><option>Supplies</option><option>Maintenance</option><option>Food</option><option>Rent</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Income</th><th>Expense</th><th>Balance</th><th>Ref.</th><th>Actions</th></tr></thead>
+            <tbody id="ledger-tbody"></tbody>
+          </table>
+        </div>
+        <div class="flex justify-between mt-12 pt-12" style="border-top:2px solid var(--border);">
+          <div><span class="text-muted">Total Income: </span><strong style="color:var(--success);" id="total-income-display">–</strong></div>
+          <div><span class="text-muted">Total Expense: </span><strong style="color:var(--danger);" id="total-expense-display">–</strong></div>
+          <div><span class="text-muted">Net Profit: </span><strong style="color:var(--primary);font-size:16px;" id="net-profit">–</strong></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Add Entry Modal -->
+<div class="modal-overlay" id="addEntryModal">
+  <div class="modal">
+    <div class="modal-header"><h3 id="entry-modal-title">Add Transaction</h3><button class="modal-close" onclick="closeModal('addEntryModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid form-grid-2">
+        <div class="form-group"><label class="form-label">Date <span style="color:red;">*</span></label><input type="date" class="form-control" id="entry-date"></div>
+        <div class="form-group"><label class="form-label">Amount (₹) <span style="color:red;">*</span></label><input type="number" class="form-control" id="entry-amount" min="1"></div>
+        <div class="form-group"><label class="form-label">Category</label><select class="form-control" id="entry-cat">
+          <option>Fees</option><option>Transport</option><option>Miscellaneous</option><option>Salaries</option><option>Utilities</option><option>Supplies</option><option>Maintenance</option><option>Food</option><option>Rent</option>
+        </select></div>
+        <div class="form-group"><label class="form-label">Reference No.</label><input type="text" class="form-control" id="entry-ref" placeholder="Optional"></div>
+      </div>
+      <div class="form-group mt-12"><label class="form-label">Description <span style="color:red;">*</span></label><input type="text" class="form-control" id="entry-desc" placeholder="Enter description"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addEntryModal')">Cancel</button>
+      <button class="btn btn-primary" id="save-entry-btn" onclick="saveEntry()"><i class="fa-solid fa-save"></i> Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+  const session = requireAuth();
+  buildSidebar('finance');
+
+  const branchId = getCurrentBranchId();
+  let ledger = getLedgerByBranch(branchId);
+  let entryType = 'income';
+
+  document.getElementById('entry-date').value = new Date().toISOString().split('T')[0];
+
+  function renderStats() {
+    const totalIncome = ledger.filter(l=>l.type==='income').reduce((a,l)=>a+l.amount,0);
+    const totalExpense = ledger.filter(l=>l.type==='expense').reduce((a,l)=>a+l.amount,0);
+    const net = totalIncome - totalExpense;
+    document.getElementById('finance-stats').innerHTML = [
+      { label:'Total Income',   value:currencyINR(totalIncome),  icon:'📈', color:'green' },
+      { label:'Total Expense',  value:currencyINR(totalExpense), icon:'📉', color:'red' },
+      { label:'Net Profit',     value:currencyINR(net),          icon:'💰', color: net>=0?'blue':'orange' },
+      { label:'Transactions',   value:ledger.length,             icon:'📋', color:'purple' },
+    ].map(s=>`<div class="stat-card ${s.color}"><div class="stat-icon">${s.icon}</div><div class="stat-body"><div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div></div></div>`).join('');
+  }
+
+  function renderCharts() {
+    const incomes = ledger.filter(l=>l.type==='income');
+    const expenses = ledger.filter(l=>l.type==='expense');
+    const incomeByDate = {};
+    const expByDate = {};
+    ledger.forEach(l => {
+      const d = l.date.slice(8);
+      if (l.type==='income') incomeByDate[d] = (incomeByDate[d]||0)+l.amount;
+      else expByDate[d] = (expByDate[d]||0)+l.amount;
+    });
+    const allDates = [...new Set(ledger.map(l=>l.date.slice(8)))].sort();
+
+    const bc = document.getElementById('financeBar');
+    if (bc._chart) bc._chart.destroy();
+    bc._chart = new Chart(bc.getContext('2d'), {
+      type:'bar',
+      data:{ labels:allDates.map(d=>'Mar '+d), datasets:[
+        { label:'Income', data:allDates.map(d=>incomeByDate[d]||0), backgroundColor:'rgba(26,122,74,0.8)', borderRadius:4 },
+        { label:'Expense', data:allDates.map(d=>expByDate[d]||0), backgroundColor:'rgba(192,57,43,0.7)', borderRadius:4 },
+      ]},
+      options:{responsive:true,plugins:{legend:{position:'bottom'}},scales:{y:{ticks:{callback:v=>'₹'+v.toLocaleString('en-IN')}}}}
+    });
+
+    const expCats = {};
+    expenses.forEach(e => { expCats[e.category] = (expCats[e.category]||0)+e.amount; });
+    const pc = document.getElementById('expensePie');
+    if (pc._chart) pc._chart.destroy();
+    pc._chart = new Chart(pc.getContext('2d'), {
+      type:'doughnut',
+      data:{ labels:Object.keys(expCats), datasets:[{data:Object.values(expCats),backgroundColor:['#1E3A5F','#E8832A','#1A7A4A','#C62828','#7D3C98','#00838F','#D4960B'],borderWidth:2,borderColor:'#fff'}] },
+      options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11}}}}}
+    });
+  }
+
+  function renderLedger() {
+    const type = document.getElementById('ledger-type').value;
+    const cat = document.getElementById('ledger-cat').value;
+    const filtered = ledger.filter(l => (!type||l.type===type) && (!cat||l.category===cat));
+
+    let balance = 0;
+    let totalInc=0, totalExp=0;
+    const rows = filtered.sort((a,b)=>a.date.localeCompare(b.date)).map(l => {
+      balance += l.type==='income' ? l.amount : -l.amount;
+      if (l.type==='income') totalInc+=l.amount; else totalExp+=l.amount;
+      return `<tr>
+        <td>${fmtDate(l.date)}</td>
+        <td style="font-weight:500;">${l.desc}</td>
+        <td><span class="badge ${l.type==='income'?'badge-teal':'badge-yellow'}">${l.category}</span></td>
+        <td style="color:var(--success);font-weight:600;">${l.type==='income'?currencyINR(l.amount):'–'}</td>
+        <td style="color:var(--danger);font-weight:600;">${l.type==='expense'?currencyINR(l.amount):'–'}</td>
+        <td style="font-weight:700;color:${balance>=0?'var(--success)':'var(--danger)'};">${currencyINR(Math.abs(balance))} ${balance>=0?'Cr':'Dr'}</td>
+        <td style="font-size:11.5px;">${l.ref}</td>
+        <td><button class="btn btn-ghost btn-icon btn-sm" style="color:var(--danger);" onclick="deleteRow(this)"><i class="fa-solid fa-trash"></i></button></td>
+      </tr>`;
+    });
+    document.getElementById('ledger-tbody').innerHTML = rows.join('') || '<tr><td colspan="8" class="text-center text-muted" style="padding:24px;">No transactions</td></tr>';
+    document.getElementById('total-income-display').textContent = currencyINR(totalInc);
+    document.getElementById('total-expense-display').textContent = currencyINR(totalExp);
+    const net = totalInc - totalExp;
+    document.getElementById('net-profit').textContent = currencyINR(Math.abs(net)) + (net>=0?' (Profit)':' (Loss)');
+    document.getElementById('net-profit').style.color = net>=0?'var(--success)':'var(--danger)';
+  }
+
+  function openAddEntry(type) {
+    entryType = type;
+    document.getElementById('entry-modal-title').innerHTML = type==='income' ? '📈 Add Income' : '📉 Add Expense';
+    document.getElementById('save-entry-btn').className = `btn ${type==='income'?'btn-success':'btn-danger'}`;
+    openModal('addEntryModal');
+  }
+
+  function saveEntry() {
+    const desc = document.getElementById('entry-desc').value;
+    const amount = parseInt(document.getElementById('entry-amount').value);
+    if (!desc || !amount || amount<=0) { showToast('Please fill all required fields','danger'); return; }
+    const newEntry = {
+      id: 'L'+Date.now(),
+      branchId,
+      date: document.getElementById('entry-date').value,
+      type: entryType,
+      category: document.getElementById('entry-cat').value,
+      desc, amount,
+      ref: document.getElementById('entry-ref').value || `REF-${Date.now().toString().slice(-6)}`,
+    };
+    ledger.push(newEntry);
+    LEDGER.push(newEntry);
+    _saveStored('asks_erp_ledger', LEDGER);
+    closeModal('addEntryModal');
+    renderStats(); renderLedger(); renderCharts();
+    showToast(`${entryType==='income'?'Income':'Expense'} added: ${currencyINR(amount)}`, 'success');
+  }
+
+  renderStats(); renderLedger(); renderCharts();
+</script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Branch Management — Ansha Shine Kids School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-wrapper">
+    <header class="header">
+      <button class="header-toggle btn-icon"><i class="fa-solid fa-bars"></i></button>
+      <div class="breadcrumb"><span class="breadcrumb-item">Home</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-item">Branch Management</span></div>
+      <div class="header-right">
+        <div id="header-date" class="header-date"></div>
+        <div class="header-user"><div class="header-avatar" id="header-avatar">SA</div><div class="header-user-info"><div class="name" id="header-user-name">Admin</div><div class="role" id="header-user-role">Role</div></div></div>
+      </div>
+    </header>
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title"><h1>🏫 Branch Management</h1><p>Manage all branches · Expanding from 10 to 50 locations</p></div>
+        <div class="page-actions">
+          <button class="btn btn-primary btn-sm" onclick="openModal('addBranchModal')"><i class="fa-solid fa-plus"></i> Add Branch</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stat-grid mb-24" id="branch-stats"></div>
+
+      <!-- Expansion Progress -->
+      <div class="card mb-24">
+        <div class="card-header"><span class="card-title">📈 Expansion Progress — Target: 50 Branches</span></div>
+        <div class="flex items-center gap-16 mb-8">
+          <div style="flex:1;">
+            <div class="flex justify-between text-sm text-muted mb-4">
+              <span>Progress: 10 / 50 branches operational</span>
+              <span>20%</span>
+            </div>
+            <div class="progress" style="height:16px;"><div class="progress-bar progress-green" style="width:20%;"></div></div>
+          </div>
+        </div>
+        <div class="flex gap-16" style="flex-wrap:wrap;margin-top:12px;">
+          <div class="flex items-center gap-6"><span class="badge badge-green">● Active</span> <span class="text-sm">7 branches fully operational</span></div>
+          <div class="flex items-center gap-6"><span class="badge badge-yellow">● Setup</span> <span class="text-sm">2 branches in setup phase</span></div>
+          <div class="flex items-center gap-6"><span class="badge badge-blue">● Planned</span> <span class="text-sm">1 branch planned</span></div>
+          <div class="flex items-center gap-6"><span class="badge badge-gray">● Target</span> <span class="text-sm">40 more locations to open</span></div>
+        </div>
+      </div>
+
+      <!-- Branch Cards Grid -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;" id="branch-cards"></div>
+    </main>
+  </div>
+</div>
+
+<!-- Branch Detail Modal -->
+<div class="modal-overlay" id="branchModal">
+  <div class="modal modal-lg">
+    <div class="modal-header"><h3>🏫 Branch Details</h3><button class="modal-close" onclick="closeModal('branchModal')">✕</button></div>
+    <div class="modal-body" id="branch-detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('branchModal')">Close</button>
+      <button class="btn btn-primary"><i class="fa-solid fa-pen"></i> Edit Branch</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Branch Modal -->
+<div class="modal-overlay" id="addBranchModal">
+  <div class="modal modal-lg">
+    <div class="modal-header"><h3><i class="fa-solid fa-plus"></i> Add New Branch</h3><button class="modal-close" onclick="closeModal('addBranchModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid form-grid-2">
+        <div class="form-group"><label class="form-label">Branch Name <span style="color:red;">*</span></label><input type="text" class="form-control" id="new-branch-name" placeholder="e.g. Velachery Branch"></div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-control" id="new-branch-status"><option value="planned">Planned</option><option value="setup">Setup</option><option value="active">Active</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Phone</label><input type="text" class="form-control" id="new-branch-phone"></div>
+        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-control" id="new-branch-email"></div>
+        <div class="form-group"><label class="form-label">Established Year</label><input type="number" class="form-control" id="new-branch-est" value="2026"></div>
+        <div class="form-group"><label class="form-label">Branch Admin</label>
+          <select class="form-control" id="new-branch-admin">
+            <option value="">-- Assign Later --</option>
+            ${USERS.filter(u=>u.role==='admin').map(u=>`<option value="${u.id}">${u.name}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="form-group mt-12"><label class="form-label">Full Address <span style="color:red;">*</span></label><textarea class="form-control" id="new-branch-addr" rows="2" placeholder="Full address with pincode" required></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addBranchModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addBranch()"><i class="fa-solid fa-save"></i> Add Branch</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+  const session = requireAuth(['superadmin']);
+  buildSidebar('branches');
+
+  let branches = [...BRANCHES];
+
+  function renderStats() {
+    const active = branches.filter(b=>b.status==='active').length;
+    const setup = branches.filter(b=>b.status==='setup').length;
+    const totalStudents = branches.reduce((a,b)=>a+(b.students||0),0);
+    const totalStaff = branches.reduce((a,b)=>a+(b.staff||0),0);
+    document.getElementById('branch-stats').innerHTML = [
+      { label:'Total Branches',    value:branches.length+' of 50',  icon:'🏫', color:'blue' },
+      { label:'Active Branches',   value:active,                     icon:'✅', color:'green' },
+      { label:'Setup / Planned',   value:setup + ' / ' + branches.filter(b=>b.status==='planned').length, icon:'🔧', color:'orange' },
+      { label:'Total Students',    value:totalStudents,              icon:'👧', color:'purple' },
+      { label:'Total Staff',       value:totalStaff,                 icon:'👩‍🏫', color:'teal' },
+    ].map(s=>`<div class="stat-card ${s.color}"><div class="stat-icon">${s.icon}</div><div class="stat-body"><div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div></div></div>`).join('');
+  }
+
+  const branchColors = ['blue','green','orange','purple','teal','red','blue','orange','green','gray'];
+
+  function renderBranches() {
+    document.getElementById('branch-cards').innerHTML = branches.map((b, i) => {
+      const admin = USERS.find(u=>u.id===b.adminId);
+      const isActive = b.status === 'active';
+      const color = branchColors[i % branchColors.length];
+      const pct = Math.round(((b.students||0)/80)*100);
+      return `<div class="card" style="border-top:4px solid ${b.status==='active'?'var(--primary)':b.status==='setup'?'var(--warning)':'var(--border)'};">
+        <div class="flex items-center gap-12 mb-14">
+          <div class="avatar avatar-lg av-blue" style="font-size:22px;">🏫</div>
+          <div style="flex:1;">
+            <div class="flex items-center gap-8">
+              <h3 style="font-size:15px;font-weight:700;">${b.name}</h3>
+              ${statusBadge(b.status)}
+            </div>
+            <div style="font-size:11.5px;color:var(--text-3);">${b.id} · Est. ${b.est||'–'}</div>
+          </div>
+        </div>
+
+        <div class="flex gap-16 mb-12" style="padding:10px;background:var(--body-bg);border-radius:var(--radius-sm);">
+          <div style="text-align:center;flex:1;"><div style="font-size:22px;font-weight:800;color:var(--primary);">${b.students||0}</div><div class="text-sm text-muted">Students</div></div>
+          <div style="border-left:1px solid var(--border);"></div>
+          <div style="text-align:center;flex:1;"><div style="font-size:22px;font-weight:800;color:var(--success);">${b.staff||0}</div><div class="text-sm text-muted">Staff</div></div>
+        </div>
+
+        ${isActive ? `<div class="mb-12">
+          <div class="flex justify-between text-sm text-muted mb-3">
+            <span>Capacity</span><span>${b.students||0}/80</span>
+          </div>
+          <div class="progress"><div class="progress-bar ${pct>80?'progress-red':'progress-green'}" style="width:${Math.min(pct,100)}%;"></div></div>
+        </div>` : ''}
+
+        <div class="info-row"><span class="lbl">📍 Address</span><span class="val" style="font-size:12px;">${b.addr}</span></div>
+        ${b.phone ? `<div class="info-row"><span class="lbl">📞 Phone</span><span class="val">${b.phone}</span></div>` : ''}
+        ${b.email ? `<div class="info-row"><span class="lbl">📧 Email</span><span class="val" style="font-size:12px;">${b.email}</span></div>` : ''}
+        ${admin ? `<div class="info-row"><span class="lbl">👤 Admin</span><span class="val">${admin.name}</span></div>` : '<div class="info-row"><span class="lbl">👤 Admin</span><span class="val text-muted">Not Assigned</span></div>'}
+
+        <div class="flex gap-8 mt-14">
+          <button class="btn btn-ghost btn-sm flex-1" onclick="viewBranch('${b.id}')"><i class="fa-solid fa-eye"></i> View</button>
+          <button class="btn btn-primary btn-sm" onclick="setActiveBranch('${b.id}')"><i class="fa-solid fa-right-to-bracket"></i> Switch</button>
+          ${!admin && isActive ? `<button class="btn btn-accent btn-sm" onclick="assignAdmin('${b.id}')">Assign Admin</button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function viewBranch(bid) {
+    const b = branches.find(br=>br.id===bid);
+    if (!b) return;
+    const admin = USERS.find(u=>u.id===b.adminId);
+    const branchStudents = getStudentsByBranch(bid);
+    const branchStaff = getStaffByBranch(bid);
+
+    document.getElementById('branch-detail-body').innerHTML = `
+      <div class="flex items-center gap-14 mb-20">
+        <div class="avatar avatar-xl av-blue" style="font-size:32px;">🏫</div>
+        <div>
+          <h2>${b.name}</h2>
+          <div class="flex gap-8 mt-6">${statusBadge(b.status)}<span class="badge badge-gray">${b.id}</span><span class="badge badge-blue">Est. ${b.est||'–'}</span></div>
+        </div>
+      </div>
+      <div class="form-grid mb-16">
+        <div><div class="section-title">Contact Information</div>
+          <div class="info-row"><span class="lbl">Address</span><span class="val">${b.addr}</span></div>
+          <div class="info-row"><span class="lbl">Phone</span><span class="val">${b.phone||'–'}</span></div>
+          <div class="info-row"><span class="lbl">Email</span><span class="val">${b.email||'–'}</span></div>
+        </div>
+        <div><div class="section-title">Administration</div>
+          <div class="info-row"><span class="lbl">Branch Admin</span><span class="val">${admin ? admin.name : 'Not Assigned'}</span></div>
+          ${admin ? `<div class="info-row"><span class="lbl">Admin Email</span><span class="val">${admin.email}</span></div>` : ''}
+          <div class="info-row"><span class="lbl">Total Students</span><span class="val">${branchStudents.length || b.students}</span></div>
+          <div class="info-row"><span class="lbl">Total Staff</span><span class="val">${branchStaff.length || b.staff}</span></div>
+        </div>
+      </div>
+      <div class="section-title">Programs Offered</div>
+      <div class="flex gap-8 flex-wrap mb-16">
+        ${PROGRAMS.map(p=>`<span class="chip active">${p.icon} ${p.name}</span>`).join('')}
+      </div>`;
+    openModal('branchModal');
+  }
+
+  function addBranch() {
+    const name = document.getElementById('new-branch-name').value;
+    const addr = document.getElementById('new-branch-addr').value;
+    if (!name || !addr) { showToast('Please fill required fields','danger'); return; }
+    const newBranch = {
+      id: 'B'+String(branches.length+1).padStart(3,'0'),
+      name,
+      addr,
+      phone: document.getElementById('new-branch-phone').value,
+      email: document.getElementById('new-branch-email').value,
+      adminId: document.getElementById('new-branch-admin').value || null,
+      status: document.getElementById('new-branch-status').value,
+      est: document.getElementById('new-branch-est').value,
+      students: 0, staff: 0,
+    };
+    branches.push(newBranch);
+    closeModal('addBranchModal');
+    renderStats(); renderBranches();
+    showToast(`${name} added successfully!`, 'success');
+  }
+
+  function assignAdmin(bid) { showToast('Admin assignment — use the edit feature', 'info'); }
+
+  renderStats(); renderBranches();
+</script>
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Programs — Ansha Shine Kids School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-wrapper">
+    <header class="header">
+      <button class="header-toggle btn-icon"><i class="fa-solid fa-bars"></i></button>
+      <div class="breadcrumb"><span class="breadcrumb-item">Home</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-item">Programs</span></div>
+      <div class="header-right">
+        <div id="header-date" class="header-date"></div>
+        <div class="header-user"><div class="header-avatar" id="header-avatar">SA</div><div class="header-user-info"><div class="name" id="header-user-name">Admin</div><div class="role" id="header-user-role">Role</div></div></div>
+      </div>
+    </header>
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title"><h1>📚 Programs & Curriculum</h1><p>All programs offered at Ansha Shine Kids School · <span id="header-branch"></span></p></div>
+        <div class="page-actions">
+          <button class="btn btn-primary btn-sm" onclick="openModal('addProgModal')"><i class="fa-solid fa-plus"></i> Add Program</button>
+        </div>
+      </div>
+
+      <!-- Program Cards -->
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:24px;" id="program-cards"></div>
+
+      <!-- Curriculum Details -->
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchProgTab('curriculum',this)">📋 Curriculum Overview</button>
+        <button class="tab-btn" onclick="switchProgTab('schedule',this)">🕐 Daily Schedule</button>
+        <button class="tab-btn" onclick="switchProgTab('summer',this)">☀️ Summer Camp</button>
+        <button class="tab-btn" onclick="switchProgTab('afterschool',this)">🏃 After School</button>
+      </div>
+
+      <!-- Curriculum Tab -->
+      <div class="tab-panel active" id="tab-curriculum">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><span class="card-title">🍼 Day Care</span></div>
+            <div class="info-row"><span class="lbl">Age</span><span class="val">6 months – 3 years</span></div>
+            <div class="info-row"><span class="lbl">Hours</span><span class="val">8:00 AM – 6:00 PM (Full Day)</span></div>
+            <hr class="divider">
+            <div class="section-title" style="font-size:13px;">Key Activities</div>
+            ${['Feeding & Nap Schedule','Sensory Play','Baby Gym / Crawling Activities','Musical Toys & Lullabies','Story Time & Reading','Outdoor Supervised Play'].map(a=>`<div class="flex items-center gap-8 mb-6"><span style="color:var(--success);">✓</span>${a}</div>`).join('')}
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">🌱 Nursery</span></div>
+            <div class="info-row"><span class="lbl">Age</span><span class="val">2.5 – 3.5 years</span></div>
+            <div class="info-row"><span class="lbl">Hours</span><span class="val">8:00 AM – 1:00 PM</span></div>
+            <hr class="divider">
+            <div class="section-title" style="font-size:13px;">Key Activities</div>
+            ${['Pre-Reading Readiness','Number Recognition (1-10)','Art & Craft','Rhymes & Music','Outdoor Play','Circle Time'].map(a=>`<div class="flex items-center gap-8 mb-6"><span style="color:var(--success);">✓</span>${a}</div>`).join('')}
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">📚 Pre KG</span></div>
+            <div class="info-row"><span class="lbl">Age</span><span class="val">3.5 – 4.5 years</span></div>
+            <div class="info-row"><span class="lbl">Hours</span><span class="val">8:00 AM – 1:00 PM</span></div>
+            <hr class="divider">
+            <div class="section-title" style="font-size:13px;">Key Activities</div>
+            ${['Phonics Introduction','Number Concepts (1-20)','Drawing & Coloring','Montessori Activities','Language Development','Social Skills'].map(a=>`<div class="flex items-center gap-8 mb-6"><span style="color:var(--success);">✓</span>${a}</div>`).join('')}
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">🎨 LKG</span></div>
+            <div class="info-row"><span class="lbl">Age</span><span class="val">4.5 – 5.5 years</span></div>
+            <div class="info-row"><span class="lbl">Hours</span><span class="val">8:00 AM – 1:00 PM</span></div>
+            <hr class="divider">
+            <div class="section-title" style="font-size:13px;">Key Activities</div>
+            ${['Tamil & English Alphabets','Numbers 1-50 & Basic Math','Handwriting Practice','Environmental Studies','Craft & Art Projects','Physical Education'].map(a=>`<div class="flex items-center gap-8 mb-6"><span style="color:var(--success);">✓</span>${a}</div>`).join('')}
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">⭐ UKG</span></div>
+            <div class="info-row"><span class="lbl">Age</span><span class="val">5.5 – 6.5 years</span></div>
+            <div class="info-row"><span class="lbl">Hours</span><span class="val">8:00 AM – 1:00 PM</span></div>
+            <hr class="divider">
+            <div class="section-title" style="font-size:13px;">Key Activities</div>
+            ${['Reading & Writing','Addition & Subtraction','Science Concepts','Computer Basics','Drawing & Fine Arts','Sports & Games'].map(a=>`<div class="flex items-center gap-8 mb-6"><span style="color:var(--success);">✓</span>${a}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Schedule Tab -->
+      <div class="tab-panel hidden" id="tab-schedule">
+        <div class="card">
+          <div class="card-header"><span class="card-title">🕐 Typical School Day Schedule</span></div>
+          <div class="table-wrapper">
+            <table class="table">
+              <thead><tr><th>Time</th><th>Activity</th><th>Day Care</th><th>Nursery</th><th>PreKG</th><th>LKG / UKG</th></tr></thead>
+              <tbody>
+                ${[
+                  ['08:00 – 08:30','Arrival & Welcome','🍼 Settling in','Circle Time','Morning Song','Morning Assembly'],
+                  ['08:30 – 09:00','Morning Activities','Baby Gym','Show & Tell','Phonics','English Reading'],
+                  ['09:00 – 09:30','Academic Session','Sensory Play','Number Time','Math Concepts','Tamil / English'],
+                  ['09:30 – 10:00','Snack Break','Feeding','Snack','Snack','Snack Break'],
+                  ['10:00 – 10:45','Creative Activity','Music & Rhymes','Art & Craft','Drawing','Science / EVS'],
+                  ['10:45 – 11:30','Play Time','Outdoor/Indoor','Play Area','PE / Games','Sports'],
+                  ['11:30 – 12:00','Story / Language','Story Time','Rhymes','Story','Library'],
+                  ['12:00 – 12:30','Lunch / Tiffin','Feeding','Lunch','Lunch','Lunch Break'],
+                  ['12:30 – 01:00','Departure','Day Care continues','Home','Home','Home'],
+                  ['01:00 – 05:00','Day Care Only','Nap / Activities','–','–','–'],
+                ].map(row=>`<tr>${row.map((c,i)=>`<td${i===0?` style="font-weight:600;font-family:monospace;color:var(--primary);"`:i===1?` style="font-weight:500;"`:''}>${c}</td>`).join('')}</tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summer Camp Tab -->
+      <div class="tab-panel hidden" id="tab-summer">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><span class="card-title">☀️ Summer Camp 2026</span><span class="badge badge-orange">Registration Open</span></div>
+            <div class="info-row"><span class="lbl">Duration</span><span class="val">May 1 – June 14, 2026 (6 Weeks)</span></div>
+            <div class="info-row"><span class="lbl">Age Group</span><span class="val">3 – 8 years</span></div>
+            <div class="info-row"><span class="lbl">Timing</span><span class="val">9:00 AM – 12:00 PM</span></div>
+            <div class="info-row"><span class="lbl">Fee</span><span class="val" style="color:var(--accent);font-weight:700;">₹5,000 (6 weeks)</span></div>
+            <hr class="divider">
+            <div class="section-title" style="font-size:13px;">Activities Included</div>
+            ${['🎨 Art & Craft Workshop','💃 Dance & Music','🏊 Swimming (Optional)','⚽ Sports Activities','🎭 Theatre & Drama','🔬 Fun Science Experiments','🍳 Junior Chef Class','🖥️ Computer Basics','📸 Photography for Kids','🧘 Yoga & Meditation'].map(a=>`<div class="flex items-center gap-8 mb-6"><span style="color:var(--accent);">•</span>${a}</div>`).join('')}
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">📊 Summer Camp Registrations</span></div>
+            <div class="stat-grid" style="grid-template-columns:repeat(2,1fr);">
+              <div class="stat-card orange"><div class="stat-icon">👧</div><div class="stat-body"><div class="stat-label">Registered</div><div class="stat-value">47</div></div></div>
+              <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-body"><div class="stat-label">Revenue</div><div class="stat-value">₹2.35L</div></div></div>
+            </div>
+            <hr class="divider">
+            <div class="section-title" style="font-size:13px;">Registration by Branch</div>
+            ${BRANCHES.filter(b=>b.status==='active').map(b => `
+              <div class="flex items-center gap-8 mb-8">
+                <span style="font-size:12.5px;flex:1;">${b.name}</span>
+                <div class="progress" style="width:100px;"><div class="progress-bar progress-orange" style="width:${Math.random()*70+30}%;"></div></div>
+                <span style="font-size:12px;color:var(--text-3);width:30px;">${Math.floor(Math.random()*20+5)}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- After School Tab -->
+      <div class="tab-panel hidden" id="tab-afterschool">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><span class="card-title">🏃 After School Activities</span></div>
+            <div class="info-row"><span class="lbl">Timing</span><span class="val">3:00 PM – 6:00 PM (Mon–Fri)</span></div>
+            <div class="info-row"><span class="lbl">Age Group</span><span class="val">5 – 10 years</span></div>
+            <div class="info-row"><span class="lbl">Monthly Fee</span><span class="val" style="color:var(--accent);font-weight:700;">₹2,000/month</span></div>
+            <hr class="divider">
+            <div class="section-title" style="font-size:13px;">Activity Slots</div>
+            ${[
+              ['3:00 – 3:30','Snack & Rest'],
+              ['3:30 – 4:15','Homework Help'],
+              ['4:15 – 4:45','Reading & Library'],
+              ['4:45 – 5:30','Activity of the Day'],
+              ['5:30 – 6:00','Outdoor Play / Parent Pickup'],
+            ].map(([time,act])=>`<div class="flex gap-12 mb-8 items-center"><span style="font-family:monospace;color:var(--primary);font-size:12px;width:120px;">${time}</span><span>${act}</span></div>`).join('')}
+            <hr class="divider">
+            <div class="section-title" style="font-size:13px;">Weekly Activity Roster</div>
+            ${[
+              ['Monday','Art & Craft'],['Tuesday','Abacus / Math Games'],
+              ['Wednesday','Dance & Music'],['Thursday','Science Fun'],['Friday','Sports & Games']
+            ].map(([day,act])=>`<div class="flex justify-between mb-6 text-sm"><span class="font-semi">${day}</span><span class="badge badge-blue">${act}</span></div>`).join('')}
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">👧 After School Enrolled Students</span></div>
+            <div class="table-wrapper">
+              <table class="table">
+                <thead><tr><th>Student</th><th>Program</th><th>Status</th></tr></thead>
+                <tbody>
+                  ${STUDENTS.filter(s=>s.branchId===getCurrentBranchId()).slice(0,10).map(s=>`
+                    <tr><td><div class="flex items-center gap-8"><div class="avatar avatar-sm ${s.gender==='F'?'av-orange':'av-blue'}">${s.photoInit}</div><span style="font-weight:600;">${s.name}</span></div></td>
+                    <td>${statusBadge(s.program)}</td>
+                    <td><span class="badge badge-green">Enrolled</span></td></tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Add Program Modal -->
+<div class="modal-overlay" id="addProgModal">
+  <div class="modal">
+    <div class="modal-header"><h3>📚 Add New Program</h3><button class="modal-close" onclick="closeModal('addProgModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid form-grid-2">
+        <div class="form-group"><label class="form-label">Program Name <span style="color:red;">*</span></label><input type="text" class="form-control" id="new-prog-name" placeholder="e.g. Toddler Play Group"></div>
+        <div class="form-group"><label class="form-label">Code</label><input type="text" class="form-control" id="new-prog-code" placeholder="e.g. TPG" maxlength="5"></div>
+        <div class="form-group"><label class="form-label">Age Group</label><input type="text" class="form-control" id="new-prog-age" placeholder="e.g. 1.5 – 2.5 years"></div>
+        <div class="form-group"><label class="form-label">Duration / Timing</label><input type="text" class="form-control" id="new-prog-dur" placeholder="e.g. Half Day 9am-12pm"></div>
+        <div class="form-group"><label class="form-label">Monthly Fee (₹)</label><input type="number" class="form-control" id="new-prog-fee" placeholder="3500"></div>
+        <div class="form-group"><label class="form-label">Icon / Emoji</label><input type="text" class="form-control" id="new-prog-icon" placeholder="🌟" maxlength="2"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('addProgModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="addProgram()"><i class="fa-solid fa-save"></i> Add Program</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+  const session = requireAuth();
+  buildSidebar('programs');
+
+  let programs = [...PROGRAMS];
+  const branchId = getCurrentBranchId();
+
+  function renderProgramCards() {
+    document.getElementById('program-cards').innerHTML = programs.map(p => {
+      const count = STUDENTS.filter(s=>s.program===p.code && s.branchId===branchId).length;
+      return `<div class="card" style="border-top:4px solid ${p.color};">
+        <div class="flex items-center gap-12 mb-12">
+          <div style="width:52px;height:52px;background:${p.color}15;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;">${p.icon}</div>
+          <div>
+            <h3 style="font-size:16px;font-weight:700;">${p.name}</h3>
+            <span class="badge badge-gray">${p.code}</span>
+          </div>
+        </div>
+        <div class="info-row"><span class="lbl">Age Group</span><span class="val">${p.ageGroup}</span></div>
+        <div class="info-row"><span class="lbl">Duration</span><span class="val">${p.duration}</span></div>
+        <div class="info-row"><span class="lbl">Monthly Fee</span><span class="val font-bold" style="color:${p.color};">${currencyINR(p.monthlyFee)}</span></div>
+        <div class="info-row"><span class="lbl">Enrolled</span><span class="val">${count} students</span></div>
+        <div class="mt-12">
+          <div class="progress"><div class="progress-bar" style="width:${Math.min((count/20)*100,100)}%;background:${p.color};"></div></div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function addProgram() {
+    const name = document.getElementById('new-prog-name').value;
+    if (!name) { showToast('Please enter program name','danger'); return; }
+    programs.push({
+      id: 'PR'+String(programs.length+1).padStart(2,'0'),
+      code: document.getElementById('new-prog-code').value || name.slice(0,3).toUpperCase(),
+      name,
+      ageGroup: document.getElementById('new-prog-age').value || '–',
+      duration: document.getElementById('new-prog-dur').value || '–',
+      monthlyFee: parseInt(document.getElementById('new-prog-fee').value) || 0,
+      color: '#666',
+      icon: document.getElementById('new-prog-icon').value || '📋',
+    });
+    closeModal('addProgModal');
+    renderProgramCards();
+    showToast(`${name} program added!`, 'success');
+  }
+
+  function switchProgTab(name, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>{p.classList.remove('active');p.classList.add('hidden');});
+    btn.classList.add('active');
+    const panel = document.getElementById('tab-'+name);
+    panel.classList.remove('hidden'); panel.classList.add('active');
+  }
+
+  renderProgramCards();
+</script>
+</body>
+</html>

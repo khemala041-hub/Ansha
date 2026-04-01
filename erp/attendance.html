@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attendance — Ansha Shine Kids School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-wrapper">
+    <header class="header">
+      <button class="header-toggle btn-icon"><i class="fa-solid fa-bars"></i></button>
+      <div class="breadcrumb"><span class="breadcrumb-item">Home</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-item">Attendance</span></div>
+      <div class="header-right">
+        <div id="header-date" class="header-date"></div>
+        <div class="header-user"><div class="header-avatar" id="header-avatar">SA</div><div class="header-user-info"><div class="name" id="header-user-name">Admin</div><div class="role" id="header-user-role">Role</div></div></div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title"><h1>✅ Attendance Management</h1><p>Mark and track daily attendance · <span id="header-branch"></span></p></div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportCSV(getAttData(),'attendance.csv');showToast('Exported!','success')"><i class="fa-solid fa-download"></i> Export</button>
+          <button class="btn btn-primary btn-sm" onclick="saveAllAttendance()"><i class="fa-solid fa-save"></i> Save Attendance</button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('student',this)">👧 Student Attendance</button>
+        <button class="tab-btn" onclick="switchTab('staff',this)">👩‍🏫 Staff Attendance</button>
+        <button class="tab-btn" onclick="switchTab('report',this)">📊 Monthly Report</button>
+      </div>
+
+      <!-- Student Attendance -->
+      <div class="tab-panel active" id="tab-student">
+        <div class="filter-bar mb-16">
+          <input type="date" class="form-control" id="att-date" value="">
+          <select class="form-control" id="att-program" onchange="renderStudentAtt()">
+            <option value="">All Programs</option>
+          </select>
+          <select class="form-control" id="att-section" onchange="renderStudentAtt()">
+            <option value="">All Sections</option><option>A</option><option>B</option><option>C</option>
+          </select>
+          <div class="search-box"><i class="fa-solid fa-search search-icon"></i><input type="text" class="form-control" id="att-search" placeholder="Search student..." oninput="renderStudentAtt()"></div>
+          <button class="btn btn-ghost btn-sm" onclick="markAllPresent()"><i class="fa-solid fa-check-double"></i> All Present</button>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stat-grid mb-16" id="att-stats"></div>
+
+        <!-- Attendance Table -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📋 Student Attendance Sheet</span>
+            <span class="text-sm text-muted" id="att-date-display"></span>
+          </div>
+          <div class="table-wrapper">
+            <table class="table" id="att-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Student Name</th>
+                  <th>Adm. No</th>
+                  <th>Program</th>
+                  <th>Section</th>
+                  <th style="text-align:center;">
+                    <span class="att-cell att-P" style="cursor:default;">P</span>
+                    <span class="att-cell att-A" style="cursor:default;margin:0 4px;">A</span>
+                    <span class="att-cell att-L" style="cursor:default;">L</span>
+                  </th>
+                  <th>Remarks</th>
+                </tr>
+              </thead>
+              <tbody id="att-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Staff Attendance -->
+      <div class="tab-panel hidden" id="tab-staff">
+        <div class="filter-bar mb-16">
+          <input type="date" class="form-control" id="staff-att-date" value="">
+          <select class="form-control" id="staff-dept" onchange="renderStaffAtt()">
+            <option value="">All Departments</option>
+            <option>Academic</option><option>Daycare</option><option>Transport</option><option>Security</option><option>Admin</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="markAllStaffPresent()"><i class="fa-solid fa-check-double"></i> All Present</button>
+          <button class="btn btn-primary btn-sm" onclick="saveStaffAttendance()"><i class="fa-solid fa-save"></i> Save</button>
+        </div>
+
+        <div class="stat-grid mb-16" id="staff-att-stats"></div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">👩‍🏫 Staff Attendance Sheet</span></div>
+          <div class="table-wrapper">
+            <table class="table">
+              <thead>
+                <tr><th>#</th><th>Staff Name</th><th>Role</th><th>Department</th><th style="text-align:center;">Attendance</th><th>In Time</th><th>Out Time</th><th>Remarks</th></tr>
+              </thead>
+              <tbody id="staff-att-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monthly Report -->
+      <div class="tab-panel hidden" id="tab-report">
+        <div class="filter-bar mb-16">
+          <select class="form-control" id="report-month">
+            <option value="2026-03">March 2026</option>
+            <option value="2026-02">February 2026</option>
+            <option value="2026-01">January 2026</option>
+          </select>
+          <select class="form-control" id="report-program" onchange="renderReport()">
+            <option value="">All Programs</option>
+          </select>
+        </div>
+
+        <div class="grid-2 mb-16">
+          <div class="card">
+            <div class="card-header"><span class="card-title">📈 Monthly Trend</span></div>
+            <canvas id="monthlyAttChart" height="200"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-header"><span class="card-title">🍩 Attendance Distribution</span></div>
+            <canvas id="attDistChart" height="200"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">📋 Monthly Summary</span></div>
+          <div class="table-wrapper">
+            <table class="table" id="monthly-table">
+              <thead>
+                <tr><th>Student</th><th>Program</th><th>Working Days</th><th>Present</th><th>Absent</th><th>Leave</th><th>%</th><th>Status</th></tr>
+              </thead>
+              <tbody id="monthly-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+  const session = requireAuth();
+  buildSidebar('attendance');
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  document.getElementById('att-date').value = todayStr;
+  document.getElementById('staff-att-date').value = todayStr;
+  document.getElementById('att-date-display').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+
+  let attRecord = getTodayAttendance();
+  let staffAttRecord = {};
+
+  const branchId = getCurrentBranchId();
+  const students = getStudentsByBranch(branchId);
+  const staff = getStaffByBranch(branchId);
+
+  // Init program selects
+  ['att-program','report-program'].forEach(id => {
+    const el = document.getElementById(id);
+    PROGRAMS.forEach(p => el.innerHTML += `<option value="${p.code}">${p.icon} ${p.name}</option>`);
+  });
+
+  // Init staff attendance
+  staff.forEach(s => { staffAttRecord[s.id] = s.att || 'P'; });
+
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    const panel = document.getElementById('tab-'+name);
+    if (panel) { panel.classList.add('active'); }
+    if (name === 'report') renderReport();
+  }
+
+  function getFilteredStudents() {
+    const prog = document.getElementById('att-program').value;
+    const sect = document.getElementById('att-section').value;
+    const q = document.getElementById('att-search').value.toLowerCase();
+    return students.filter(s =>
+      (!prog || s.program === prog) &&
+      (!sect || s.section === sect) &&
+      (!q || s.name.toLowerCase().includes(q))
+    );
+  }
+
+  function renderStudentAtt() {
+    const filtered = getFilteredStudents();
+    const P = filtered.filter(s => attRecord[s.id] === 'P').length;
+    const A = filtered.filter(s => attRecord[s.id] === 'A').length;
+    const L = filtered.filter(s => attRecord[s.id] === 'L').length;
+    const total = filtered.length;
+
+    document.getElementById('att-stats').innerHTML = [
+      { label:'Total', value:total, icon:'📋', color:'blue' },
+      { label:'Present', value:P, icon:'✅', color:'green' },
+      { label:'Absent', value:A, icon:'❌', color:'red' },
+      { label:'Leave', value:L, icon:'📝', color:'orange' },
+      { label:'Attendance %', value:(total>0?((P/total)*100).toFixed(1):0)+'%', icon:'📊', color:'purple' },
+    ].map(s => `<div class="stat-card ${s.color}"><div class="stat-icon">${s.icon}</div><div class="stat-body"><div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div></div></div>`).join('');
+
+    document.getElementById('att-tbody').innerHTML = filtered.map((s, i) => {
+      const cur = attRecord[s.id] || 'P';
+      return `<tr id="row-${s.id}">
+        <td>${i+1}</td>
+        <td><div class="flex items-center gap-8">
+          <div class="avatar avatar-sm ${s.gender==='F'?'av-orange':'av-blue'}">${s.photoInit}</div>
+          <div><div style="font-weight:600;font-size:13px;">${s.name}</div></div>
+        </div></td>
+        <td style="font-size:12px;">${s.admNo}</td>
+        <td>${statusBadge(s.program)}</td>
+        <td>${s.section}</td>
+        <td style="text-align:center;">
+          <div class="flex gap-6 justify-center">
+            <button type="button" class="att-cell ${cur==='P'?'att-P':'att-blank'}" onclick="setAtt('${s.id}','P',this)" id="p-${s.id}">P</button>
+            <button type="button" class="att-cell ${cur==='A'?'att-A':'att-blank'}" onclick="setAtt('${s.id}','A',this)" id="a-${s.id}">A</button>
+            <button type="button" class="att-cell ${cur==='L'?'att-L':'att-blank'}" onclick="setAtt('${s.id}','L',this)" id="l-${s.id}">L</button>
+          </div>
+        </td>
+        <td><input type="text" class="form-control" style="padding:5px 8px;font-size:12px;" placeholder="Remarks"></td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="7" class="text-center text-muted" style="padding:24px;">No students found</td></tr>';
+  }
+
+  function setAtt(sid, status, btn) {
+    attRecord[sid] = status;
+    ['P','A','L'].forEach(s => {
+      const el = document.getElementById(s.toLowerCase()+'-'+sid);
+      if (el) {
+        el.className = `att-cell ${status===s?'att-'+s:'att-blank'}`;
+      }
+    });
+  }
+
+  function markAllPresent() {
+    getFilteredStudents().forEach(s => { attRecord[s.id] = 'P'; });
+    renderStudentAtt();
+    showToast('All students marked Present', 'success');
+  }
+
+  function saveAllAttendance() {
+    const key = `att_${document.getElementById('att-date').value}`;
+    localStorage.setItem(key, JSON.stringify(attRecord));
+    showToast('Attendance saved successfully!', 'success');
+  }
+
+  function renderStaffAtt() {
+    const dept = document.getElementById('staff-dept').value;
+    const filtered = staff.filter(s => !dept || s.dept === dept);
+    const P = filtered.filter(s => staffAttRecord[s.id]==='P').length;
+    const A = filtered.filter(s => staffAttRecord[s.id]==='A').length;
+
+    document.getElementById('staff-att-stats').innerHTML = [
+      { label:'Total Staff', value:filtered.length, icon:'👩‍🏫', color:'blue' },
+      { label:'Present', value:P, icon:'✅', color:'green' },
+      { label:'Absent', value:A, icon:'❌', color:'red' },
+    ].map(s=>`<div class="stat-card ${s.color}"><div class="stat-icon">${s.icon}</div><div class="stat-body"><div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div></div></div>`).join('');
+
+    document.getElementById('staff-att-tbody').innerHTML = filtered.map((s, i) => {
+      const cur = staffAttRecord[s.id] || 'P';
+      return `<tr>
+        <td>${i+1}</td>
+        <td><div class="flex items-center gap-8"><div class="avatar avatar-sm av-blue">${s.name.split(' ').map(n=>n[0]).join('').slice(0,2)}</div><div style="font-weight:600;">${s.name}</div></div></td>
+        <td style="font-size:12.5px;">${s.role}</td>
+        <td><span class="badge badge-blue">${s.dept}</span></td>
+        <td style="text-align:center;">
+          <div class="flex gap-6 justify-center">
+            <button type="button" class="att-cell ${cur==='P'?'att-P':'att-blank'}" onclick="setStaffAtt('${s.id}','P',this)">P</button>
+            <button type="button" class="att-cell ${cur==='A'?'att-A':'att-blank'}" onclick="setStaffAtt('${s.id}','A',this)">A</button>
+            <button type="button" class="att-cell ${cur==='L'?'att-L':'att-blank'}" onclick="setStaffAtt('${s.id}','L',this)">L</button>
+            <button type="button" class="att-cell ${cur==='H'?'att-H':'att-blank'}" onclick="setStaffAtt('${s.id}','H',this)">H</button>
+          </div>
+        </td>
+        <td><input type="time" class="form-control" style="padding:5px 8px;font-size:12px;width:100px;" value="08:${String((i*3)%59).padStart(2,'0')}"></td>
+        <td><input type="time" class="form-control" style="padding:5px 8px;font-size:12px;width:100px;" value="17:${String((i*5)%59).padStart(2,'0')}"></td>
+        <td><input type="text" class="form-control" style="padding:5px 8px;font-size:12px;" placeholder="Note"></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function setStaffAtt(sid, status, btn) {
+    staffAttRecord[sid] = status;
+    const row = btn.closest('tr');
+    row.querySelectorAll('.att-cell').forEach(cell => {
+      const cellStatus = cell.textContent.trim();
+      cell.className = `att-cell ${status===cellStatus?'att-'+cellStatus:'att-blank'}`;
+    });
+  }
+
+  function markAllStaffPresent() {
+    staff.forEach(s => { staffAttRecord[s.id] = 'P'; });
+    renderStaffAtt();
+    showToast('All staff marked Present', 'success');
+  }
+
+  function saveStaffAttendance() {
+    showToast('Staff attendance saved!', 'success');
+  }
+
+  function renderReport() {
+    const workingDays = 22;
+    const rows = students.slice(0,20).map(s => {
+      const p = Math.floor(Math.random() * 6) + 17;
+      const a = Math.floor(Math.random() * 4);
+      const l = workingDays - p - a;
+      const pct = ((p/workingDays)*100).toFixed(0);
+      const color = pct>=90 ? 'green' : pct>=75 ? 'yellow' : 'red';
+      return `<tr>
+        <td><div class="flex items-center gap-8"><div class="avatar avatar-sm ${s.gender==='F'?'av-orange':'av-blue'}">${s.photoInit}</div><span style="font-weight:600;">${s.name}</span></div></td>
+        <td>${statusBadge(s.program)}</td>
+        <td>${workingDays}</td>
+        <td style="color:var(--success);font-weight:700;">${p}</td>
+        <td style="color:var(--danger);font-weight:700;">${a}</td>
+        <td style="color:var(--warning);">${l}</td>
+        <td><span class="badge badge-${color}">${pct}%</span></td>
+        <td>${parseInt(pct)>=75?'<span class="badge badge-green">Eligible</span>':'<span class="badge badge-red">At Risk</span>'}</td>
+      </tr>`;
+    });
+    document.getElementById('monthly-tbody').innerHTML = rows.join('');
+
+    // Charts
+    const mCtx = document.getElementById('monthlyAttChart').getContext('2d');
+    new Chart(mCtx, {
+      type:'line',
+      data:{
+        labels:Array.from({length:22},(_, i)=>`${i+1}`),
+        datasets:[
+          {label:'Present',data:Array.from({length:22},()=>Math.floor(Math.random()*10)+65),borderColor:'var(--success)',tension:0.3,fill:false},
+          {label:'Absent',data:Array.from({length:22},()=>Math.floor(Math.random()*8)+5),borderColor:'var(--danger)',tension:0.3,fill:false},
+        ]
+      },
+      options:{responsive:true,plugins:{legend:{position:'bottom'}},scales:{x:{title:{display:true,text:'Day of Month'}}}}
+    });
+
+    const dCtx = document.getElementById('attDistChart').getContext('2d');
+    new Chart(dCtx, {
+      type:'doughnut',
+      data:{labels:['Present','Absent','Leave'],datasets:[{data:[78,14,8],backgroundColor:['#1A7A4A','#C62828','#D4960B'],borderWidth:2,borderColor:'#fff'}]},
+      options:{responsive:true,plugins:{legend:{position:'bottom'}}}
+    });
+  }
+
+  function getAttData() {
+    return students.map(s => ({ StudentName:s.name, Program:s.program, Status:attRecord[s.id]||'P' }));
+  }
+
+  // Initial render
+  renderStudentAtt();
+  renderStaffAtt();
+</script>
+</body>
+</html>

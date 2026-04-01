@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Students — Ansha Shine Kids School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-wrapper">
+    <header class="header">
+      <button class="header-toggle btn-icon"><i class="fa-solid fa-bars"></i></button>
+      <div class="breadcrumb"><span class="breadcrumb-item">Home</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-item">Student Management</span></div>
+      <div class="header-right">
+        <div id="header-date" class="header-date"></div>
+        <div class="header-user"><div class="header-avatar" id="header-avatar">SA</div><div class="header-user-info"><div class="name" id="header-user-name">Admin</div><div class="role" id="header-user-role">Role</div></div></div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title"><h1>👧 Student Management</h1><p>Manage all student records · <span id="header-branch"></span></p></div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportStudents()"><i class="fa-solid fa-download"></i> Export</button>
+          <a href="admission.html" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus"></i> New Admission</a>
+        </div>
+      </div>
+
+      <!-- Program Filter Chips -->
+      <div class="flex gap-8 mb-16" style="flex-wrap:wrap;" id="program-chips">
+        <button class="chip active" onclick="filterProgram('all',this)">All Programs</button>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stat-grid mb-24" id="student-stats"></div>
+
+      <!-- Filter Bar -->
+      <div class="card mb-16" style="padding:14px 16px;">
+        <div class="filter-bar">
+          <div class="search-box" style="flex:1;min-width:200px;">
+            <i class="fa-solid fa-search search-icon"></i>
+            <input type="text" class="form-control" id="search-students" placeholder="Search by name, admission no, parent...">
+          </div>
+          <select class="form-control" id="filter-program" onchange="applyFilters()">
+            <option value="">All Programs</option>
+          </select>
+          <select class="form-control" id="filter-section" onchange="applyFilters()">
+            <option value="">All Sections</option>
+            <option>A</option><option>B</option><option>C</option>
+          </select>
+          <select class="form-control" id="filter-status" onchange="applyFilters()">
+            <option value="">All Status</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" onclick="resetFilters()"><i class="fa-solid fa-rotate"></i> Reset</button>
+        </div>
+      </div>
+
+      <!-- Student Table -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><i class="fa-solid fa-list"></i> Student List (<span id="student-count">0</span>)</span>
+          <div class="btn-group">
+            <button class="btn btn-ghost btn-sm" onclick="setView('table')" id="view-table"><i class="fa-solid fa-table-list"></i></button>
+            <button class="btn btn-ghost btn-sm" onclick="setView('card')" id="view-card"><i class="fa-solid fa-th-large"></i></button>
+          </div>
+        </div>
+
+        <div id="table-view">
+          <div class="table-wrapper">
+            <table class="table" id="students-table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Adm. No</th>
+                  <th>Program</th>
+                  <th>Section</th>
+                  <th>Gender</th>
+                  <th>Age</th>
+                  <th>Parent</th>
+                  <th>Phone</th>
+                  <th>Fee Status</th>
+                  <th>Transport</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="students-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="card-view" class="hidden">
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;" id="students-cards"></div>
+        </div>
+
+        <div class="flex items-center mt-16">
+          <div class="text-sm text-muted" id="table-info"></div>
+          <div class="pagination" id="pagination"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Student Detail Modal -->
+<div class="modal-overlay" id="studentModal">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h3>👧 Student Profile</h3>
+      <button class="modal-close" onclick="closeModal('studentModal')">✕</button>
+    </div>
+    <div class="modal-body" id="student-detail-body"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+  const session = requireAuth();
+  if (!session) { /* redirected */ }
+
+  let allStudents = [], filteredStudents = [], currentPage = 1, pageSize = 15, currentView = 'table';
+
+  buildSidebar('students');
+
+  function init() {
+    const branchId = getCurrentBranchId();
+    allStudents = getStudentsByBranch(branchId);
+    filteredStudents = [...allStudents];
+
+    // Program chips
+    const chipsEl = document.getElementById('program-chips');
+    PROGRAMS.forEach(p => {
+      const cnt = allStudents.filter(s => s.program === p.code).length;
+      if (cnt > 0) chipsEl.innerHTML += `<button class="chip" onclick="filterProgram('${p.code}',this)">${p.icon} ${p.name} <span class="badge badge-blue" style="margin-left:4px;">${cnt}</span></button>`;
+    });
+
+    // Program filter select
+    const pfEl = document.getElementById('filter-program');
+    PROGRAMS.forEach(p => pfEl.innerHTML += `<option value="${p.code}">${p.name}</option>`);
+
+    // Stats
+    renderStats();
+    renderTable();
+
+    document.getElementById('search-students').addEventListener('input', applyFilters);
+  }
+
+  function renderStats() {
+    const stats = [
+      { label:'Total Students', value: allStudents.length, icon:'👧', color:'blue' },
+      { label:'Boys', value: allStudents.filter(s=>s.gender==='M').length, icon:'👦', color:'orange' },
+      { label:'Girls', value: allStudents.filter(s=>s.gender==='F').length, icon:'👧', color:'purple' },
+      { label:'Transport Users', value: allStudents.filter(s=>s.transport).length, icon:'🚌', color:'teal' },
+    ];
+    document.getElementById('student-stats').innerHTML = stats.map(s =>
+      `<div class="stat-card ${s.color}"><div class="stat-icon">${s.icon}</div><div class="stat-body"><div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div></div></div>`
+    ).join('');
+  }
+
+  function applyFilters() {
+    const q = document.getElementById('search-students').value.toLowerCase();
+    const prog = document.getElementById('filter-program').value;
+    const sect = document.getElementById('filter-section').value;
+    const stat = document.getElementById('filter-status').value;
+    filteredStudents = allStudents.filter(s =>
+      (!q || s.name.toLowerCase().includes(q) || s.admNo.toLowerCase().includes(q) || s.parentName.toLowerCase().includes(q) || s.parentPhone.includes(q)) &&
+      (!prog || s.program === prog) &&
+      (!sect || s.section === sect) &&
+      (!stat || s.status === stat)
+    );
+    currentPage = 1;
+    renderTable();
+  }
+
+  function filterProgram(code, btn) {
+    document.querySelectorAll('#program-chips .chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    if (code === 'all') { document.getElementById('filter-program').value = ''; }
+    else { document.getElementById('filter-program').value = code; }
+    applyFilters();
+  }
+
+  function resetFilters() {
+    document.getElementById('search-students').value = '';
+    document.getElementById('filter-program').value = '';
+    document.getElementById('filter-section').value = '';
+    document.getElementById('filter-status').value = '';
+    filteredStudents = [...allStudents];
+    currentPage = 1;
+    renderTable();
+  }
+
+  function setView(v) {
+    currentView = v;
+    document.getElementById('table-view').classList.toggle('hidden', v !== 'table');
+    document.getElementById('card-view').classList.toggle('hidden', v !== 'card');
+    renderTable();
+  }
+
+  function renderTable() {
+    const start = (currentPage-1)*pageSize;
+    const page = filteredStudents.slice(start, start+pageSize);
+    const total = filteredStudents.length;
+    document.getElementById('student-count').textContent = total;
+    document.getElementById('table-info').textContent = `Showing ${start+1}–${Math.min(start+pageSize, total)} of ${total} students`;
+
+    if (currentView === 'table') {
+      document.getElementById('students-tbody').innerHTML = page.map(s => `
+        <tr>
+          <td><div class="flex items-center gap-8">
+            <div class="avatar avatar-sm ${s.gender==='F'?'av-orange':'av-blue'}">${s.photoInit}</div>
+            <div><div style="font-weight:600;font-size:13px;">${s.name}</div><div class="text-sm text-muted">${s.dob ? fmtAge(s.dob) : ''}</div></div>
+          </div></td>
+          <td><span style="font-size:12px;">${s.admNo}</span></td>
+          <td>${statusBadge(s.program)}</td>
+          <td>${s.section}</td>
+          <td>${s.gender === 'M' ? '👦 Boy' : '👧 Girl'}</td>
+          <td>${fmtAge(s.dob)}</td>
+          <td>${s.parentName}</td>
+          <td><a href="tel:${s.parentPhone}" style="font-size:12.5px;">${s.parentPhone}</a></td>
+          <td>${statusBadge(s.feeStatus)}</td>
+          <td>${s.transport ? '<span class="badge badge-teal">🚌 Yes</span>' : '<span class="badge badge-gray">No</span>'}</td>
+          <td class="actions">
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="viewStudent('${s.id}')" title="View"><i class="fa-solid fa-eye"></i></button>
+            <a href="admission.html?edit=${s.id}" class="btn btn-ghost btn-icon btn-sm" title="Edit"><i class="fa-solid fa-pen"></i></a>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="deleteRow(this)" title="Delete" style="color:var(--danger);"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        </tr>`).join('') || '<tr><td colspan="11" class="text-center text-muted" style="padding:32px;">No students found</td></tr>';
+    } else {
+      document.getElementById('students-cards').innerHTML = page.map(s => `
+        <div class="card" style="padding:16px;cursor:pointer;" onclick="viewStudent('${s.id}')">
+          <div class="flex items-center gap-10 mb-10">
+            <div class="avatar avatar-md ${s.gender==='F'?'av-orange':'av-blue'}">${s.photoInit}</div>
+            <div><div style="font-weight:700;">${s.name}</div><div class="text-sm text-muted">${s.admNo}</div></div>
+          </div>
+          <div class="flex gap-8 mb-8">${statusBadge(s.program)}<span class="badge badge-gray">Sec ${s.section}</span></div>
+          <div class="info-row"><span class="lbl">Parent</span><span class="val">${s.parentName}</span></div>
+          <div class="info-row"><span class="lbl">Phone</span><span class="val">${s.parentPhone}</span></div>
+          <div class="info-row"><span class="lbl">Fee Status</span><span class="val">${statusBadge(s.feeStatus)}</span></div>
+        </div>`).join('');
+    }
+
+    // Pagination
+    const pages = Math.ceil(total/pageSize);
+    let pHTML = '';
+    for (let i=1;i<=Math.min(pages,8);i++) {
+      pHTML += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    }
+    document.getElementById('pagination').innerHTML = pHTML;
+  }
+
+  function goPage(p) { currentPage = p; renderTable(); }
+
+  function viewStudent(id) {
+    const s = STUDENTS.find(st=>st.id===id);
+    if (!s) return;
+    const prog = getProgramByCode(s.program);
+    const fee = FEE_RECORDS.find(f=>f.studentId===id);
+    document.getElementById('student-detail-body').innerHTML = `
+      <div class="flex gap-16 mb-20" style="flex-wrap:wrap;">
+        <div class="avatar avatar-xl ${s.gender==='F'?'av-orange':'av-blue'}">${s.photoInit}</div>
+        <div style="flex:1;">
+          <h2 style="font-size:20px;">${s.name}</h2>
+          <div class="flex gap-8 mt-6 flex-wrap">${statusBadge(s.program)} ${statusBadge(s.status)} ${s.transport?'<span class="badge badge-teal">🚌 Transport</span>':''}</div>
+          <div class="text-sm text-muted mt-6">Admission No: <strong>${s.admNo}</strong> · Section ${s.section} · ${s.bloodGroup}</div>
+        </div>
+      </div>
+      <div class="form-grid mb-16">
+        <div><div class="section-title">Personal Information</div>
+          <div class="info-row"><span class="lbl">Date of Birth</span><span class="val">${fmtDate(s.dob)} (${fmtAge(s.dob)})</span></div>
+          <div class="info-row"><span class="lbl">Gender</span><span class="val">${s.gender==='M'?'Male':'Female'}</span></div>
+          <div class="info-row"><span class="lbl">Blood Group</span><span class="val">${s.bloodGroup}</span></div>
+          <div class="info-row"><span class="lbl">Address</span><span class="val">${s.address}</span></div>
+        </div>
+        <div><div class="section-title">Parent / Guardian</div>
+          <div class="info-row"><span class="lbl">Parent Name</span><span class="val">${s.parentName}</span></div>
+          <div class="info-row"><span class="lbl">Phone</span><span class="val">${s.parentPhone}</span></div>
+          <div class="info-row"><span class="lbl">Email</span><span class="val">${s.parentEmail}</span></div>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div><div class="section-title">Academic Details</div>
+          <div class="info-row"><span class="lbl">Program</span><span class="val">${prog?.name||s.program}</span></div>
+          <div class="info-row"><span class="lbl">Section</span><span class="val">${s.section}</span></div>
+          <div class="info-row"><span class="lbl">Admission Date</span><span class="val">${fmtDate(s.admDate)}</span></div>
+          <div class="info-row"><span class="lbl">Monthly Fee</span><span class="val">${currencyINR(s.monthlyFee)}</span></div>
+        </div>
+        <div><div class="section-title">Fee & Transport</div>
+          ${fee ? `
+          <div class="info-row"><span class="lbl">Month</span><span class="val">${fee.month}</span></div>
+          <div class="info-row"><span class="lbl">Total Fee</span><span class="val">${currencyINR(fee.totalFee)}</span></div>
+          <div class="info-row"><span class="lbl">Paid</span><span class="val" style="color:var(--success);">${currencyINR(fee.paidAmount)}</span></div>
+          <div class="info-row"><span class="lbl">Balance</span><span class="val" style="color:${fee.balance>0?'var(--danger)':'var(--success)'};">${currencyINR(fee.balance)}</span></div>
+          <div class="info-row"><span class="lbl">Status</span><span class="val">${statusBadge(fee.status)}</span></div>
+          ` : '<div class="text-muted">No fee record this month</div>'}
+          <div class="info-row" style="margin-top:8px;"><span class="lbl">Transport</span><span class="val">${s.transport ? '🚌 Route '+s.transport : 'Not enrolled'}</span></div>
+        </div>
+      </div>`;
+    openModal('studentModal');
+  }
+
+  function exportStudents() {
+    const data = filteredStudents.map(s => ({ Name:s.name, AdmNo:s.admNo, Program:s.program, Section:s.section, Gender:s.gender, DOB:s.dob, Parent:s.parentName, Phone:s.parentPhone, FeeStatus:s.feeStatus }));
+    exportCSV(data, 'students.csv');
+    showToast('Students exported successfully!', 'success');
+  }
+
+  init();
+</script>
+</body>
+</html>

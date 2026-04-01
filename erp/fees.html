@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fees Collection — Ansha Shine Kids School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="toast-container"></div>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-wrapper">
+    <header class="header">
+      <button class="header-toggle btn-icon"><i class="fa-solid fa-bars"></i></button>
+      <div class="breadcrumb"><span class="breadcrumb-item">Home</span><span class="breadcrumb-sep">›</span><span class="breadcrumb-item">Fees Collection</span></div>
+      <div class="header-right">
+        <div id="header-date" class="header-date"></div>
+        <div class="header-user"><div class="header-avatar" id="header-avatar">SA</div><div class="header-user-info"><div class="name" id="header-user-name">Admin</div><div class="role" id="header-user-role">Role</div></div></div>
+      </div>
+    </header>
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title"><h1>🧾 Fees Collection</h1><p>Manage student fee collection · <span id="header-branch"></span></p></div>
+        <div class="page-actions">
+          <button class="btn btn-ghost btn-sm" onclick="exportFees()"><i class="fa-solid fa-download"></i> Export</button>
+          <button class="btn btn-primary btn-sm" onclick="openModal('collectModal')"><i class="fa-solid fa-plus"></i> Collect Fee</button>
+        </div>
+      </div>
+
+      <!-- Fee Stats -->
+      <div class="stat-grid mb-24" id="fee-stats"></div>
+
+      <!-- Fee Collection Chart -->
+      <div class="grid-2 mb-24">
+        <div class="card">
+          <div class="card-header"><span class="card-title">📊 Collection Summary</span>
+            <select class="form-control btn-sm" style="width:auto;" id="fee-month" onchange="renderFees()"><option value="2026-03">March 2026</option><option value="2026-02">February 2026</option></select>
+          </div>
+          <canvas id="feeBarChart" height="200"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">🍩 Fee Status Breakdown</span></div>
+          <canvas id="feePieChart" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Fees Table -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Fee Records</span>
+          <div class="filter-bar" style="margin:0;">
+            <div class="search-box"><i class="fa-solid fa-search search-icon"></i><input type="text" class="form-control" id="search-fees" placeholder="Search student..." oninput="renderFees()"></div>
+            <select class="form-control" id="filter-fee-status" onchange="renderFees()">
+              <option value="">All Status</option><option value="paid">Paid</option><option value="partial">Partial</option><option value="pending">Pending</option>
+            </select>
+            <select class="form-control" id="filter-fee-prog" onchange="renderFees()">
+              <option value="">All Programs</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>Student</th><th>Program</th><th>Tuition</th><th>Transport</th><th>Total</th><th>Paid</th><th>Balance</th><th>Pay Mode</th><th>Date</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="fees-tbody"></tbody>
+          </table>
+        </div>
+        <div class="mt-16 flex justify-between">
+          <div class="text-sm text-muted" id="fee-summary"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Collect Fee Modal -->
+<div class="modal-overlay" id="collectModal">
+  <div class="modal">
+    <div class="modal-header"><h3>💳 Collect Fee</h3><button class="modal-close" onclick="closeModal('collectModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group mb-12">
+        <label class="form-label">Select Student</label>
+        <select class="form-control" id="pay-student" onchange="loadStudentFee()">
+          <option value="">-- Select Student --</option>
+        </select>
+      </div>
+      <div id="fee-detail-block" class="hidden">
+        <div style="background:var(--primary-soft);border-radius:8px;padding:14px;margin-bottom:14px;" id="fee-detail-info"></div>
+        <div class="form-grid form-grid-2">
+          <div class="form-group"><label class="form-label">Amount Collecting (₹)</label><input type="number" class="form-control" id="pay-amount" min="1"></div>
+          <div class="form-group"><label class="form-label">Payment Mode</label><select class="form-control" id="pay-mode-sel"><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Cheque</option><option>DD</option></select></div>
+          <div class="form-group"><label class="form-label">Payment Date</label><input type="date" class="form-control" id="pay-date"></div>
+          <div class="form-group"><label class="form-label">Reference / UTR No.</label><input type="text" class="form-control" id="pay-ref" placeholder="Optional"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Remarks</label><input type="text" class="form-control" id="pay-remarks" placeholder="Optional"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('collectModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="processPayment()"><i class="fa-solid fa-check"></i> Collect & Generate Receipt</button>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal-overlay" id="receiptModal">
+  <div class="modal modal-sm">
+    <div class="modal-header"><h3>🧾 Fee Receipt</h3><button class="modal-close" onclick="closeModal('receiptModal')">✕</button></div>
+    <div class="modal-body" id="receipt-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('receiptModal')">Close</button>
+      <button class="btn btn-primary" onclick="printSection('receipt-body')"><i class="fa-solid fa-print"></i> Print Receipt</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+  const session = requireAuth();
+  buildSidebar('fees');
+
+  const branchId = getCurrentBranchId();
+  let feeRecords = [...FEE_RECORDS];
+  const students = getStudentsByBranch(branchId);
+
+  // Init selects
+  const progSel = document.getElementById('filter-fee-prog');
+  PROGRAMS.forEach(p => progSel.innerHTML += `<option value="${p.code}">${p.name}</option>`);
+
+  const payStuSel = document.getElementById('pay-student');
+  students.forEach(s => payStuSel.innerHTML += `<option value="${s.id}">${s.name} (${s.admNo})</option>`);
+
+  document.getElementById('pay-date').value = new Date().toISOString().split('T')[0];
+
+  function renderStats() {
+    const total = feeRecords.reduce((a,f)=>a+f.totalFee,0);
+    const collected = feeRecords.reduce((a,f)=>a+f.paidAmount,0);
+    const pending = total - collected;
+    const paidCount = feeRecords.filter(f=>f.status==='paid').length;
+    const pendingCount = feeRecords.filter(f=>f.status==='pending').length;
+    document.getElementById('fee-stats').innerHTML = [
+      { label:'Total Fees',   value:currencyINR(total),     icon:'📊', color:'blue' },
+      { label:'Collected',    value:currencyINR(collected),  icon:'✅', color:'green' },
+      { label:'Pending',      value:currencyINR(pending),    icon:'⚠️', color:'red' },
+      { label:'Paid Students',value:paidCount+' students',  icon:'👧', color:'teal' },
+      { label:'Defaulters',   value:pendingCount+' students',icon:'🔔', color:'orange' },
+      { label:'Collection %', value:((collected/total)*100).toFixed(1)+'%', icon:'📈', color:'purple' },
+    ].map(s=>`<div class="stat-card ${s.color}"><div class="stat-icon">${s.icon}</div><div class="stat-body"><div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div></div></div>`).join('');
+  }
+
+  function renderFees() {
+    const q = document.getElementById('search-fees').value.toLowerCase();
+    const status = document.getElementById('filter-fee-status').value;
+    const prog = document.getElementById('filter-fee-prog').value;
+    const filtered = feeRecords.filter(f =>
+      (!q || f.studentName.toLowerCase().includes(q)) &&
+      (!status || f.status === status) &&
+      (!prog || f.program === prog)
+    );
+
+    const totalPaid = filtered.reduce((a,f)=>a+f.paidAmount,0);
+    const totalBal = filtered.reduce((a,f)=>a+f.balance,0);
+    document.getElementById('fee-summary').innerHTML = `Showing ${filtered.length} records · Collected: <strong style="color:var(--success);">${currencyINR(totalPaid)}</strong> · Pending: <strong style="color:var(--danger);">${currencyINR(totalBal)}</strong>`;
+
+    document.getElementById('fees-tbody').innerHTML = filtered.map(f => `
+      <tr>
+        <td><div style="font-weight:600;font-size:13px;">${f.studentName}</div></td>
+        <td>${statusBadge(f.program)}</td>
+        <td>${currencyINR(f.tuitionFee)}</td>
+        <td>${f.transportFee > 0 ? currencyINR(f.transportFee) : '–'}</td>
+        <td><strong>${currencyINR(f.totalFee)}</strong></td>
+        <td style="color:var(--success);font-weight:700;">${currencyINR(f.paidAmount)}</td>
+        <td style="color:${f.balance>0?'var(--danger)':'var(--success)'};font-weight:700;">${currencyINR(f.balance)}</td>
+        <td><span class="badge badge-gray">${f.payMode||'–'}</span></td>
+        <td style="font-size:12px;">${f.paidDate ? fmtDate(f.paidDate) : '–'}</td>
+        <td>${statusBadge(f.status)}</td>
+        <td class="actions">
+          ${f.status !== 'paid' ? `<button class="btn btn-accent btn-sm" onclick="quickCollect('${f.id}')"><i class="fa-solid fa-rupee-sign"></i> Collect</button>` : ''}
+          ${f.receiptNo ? `<button class="btn btn-ghost btn-sm" onclick="showReceipt('${f.id}')"><i class="fa-solid fa-receipt"></i></button>` : ''}
+        </td>
+      </tr>`).join('') || '<tr><td colspan="11" class="text-center text-muted" style="padding:24px;">No fee records found</td></tr>';
+
+    renderCharts(filtered);
+  }
+
+  function renderCharts(filtered) {
+    const paid = filtered.filter(f=>f.status==='paid').length;
+    const partial = filtered.filter(f=>f.status==='partial').length;
+    const pending = filtered.filter(f=>f.status==='pending').length;
+
+    const pc = document.getElementById('feePieChart');
+    if (pc._chart) pc._chart.destroy();
+    pc._chart = new Chart(pc.getContext('2d'), {
+      type:'doughnut',
+      data:{ labels:['Paid','Partial','Pending'], datasets:[{data:[paid,partial,pending],backgroundColor:['#1A7A4A','#D4960B','#C62828'],borderWidth:2,borderColor:'#fff'}] },
+      options:{responsive:true,plugins:{legend:{position:'bottom'}}}
+    });
+
+    const bc = document.getElementById('feeBarChart');
+    if (bc._chart) bc._chart.destroy();
+    const progGroups = {};
+    PROGRAMS.forEach(p => { progGroups[p.name] = feeRecords.filter(f=>f.program===p.code).reduce((a,f)=>a+f.paidAmount,0); });
+    bc._chart = new Chart(bc.getContext('2d'), {
+      type:'bar',
+      data:{ labels:Object.keys(progGroups), datasets:[{label:'Collected (₹)',data:Object.values(progGroups),backgroundColor:['#7D3C98','#E65100','#1565C0','#1A7A4A','#B7950B','#C62828','#00838F'],borderRadius:4}] },
+      options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'₹'+v.toLocaleString('en-IN')}}}}
+    });
+  }
+
+  function loadStudentFee() {
+    const sid = document.getElementById('pay-student').value;
+    const fee = feeRecords.find(f => f.studentId === sid);
+    const block = document.getElementById('fee-detail-block');
+    if (!fee) { block.classList.add('hidden'); return; }
+    block.classList.remove('hidden');
+    document.getElementById('fee-detail-info').innerHTML = `
+      <div class="flex gap-16" style="flex-wrap:wrap;">
+        <div><div class="text-sm text-muted">Total Fee</div><div class="font-bold">${currencyINR(fee.totalFee)}</div></div>
+        <div><div class="text-sm text-muted">Paid</div><div class="font-bold" style="color:var(--success);">${currencyINR(fee.paidAmount)}</div></div>
+        <div><div class="text-sm text-muted">Balance</div><div class="font-bold" style="color:var(--danger);">${currencyINR(fee.balance)}</div></div>
+        <div><div class="text-sm text-muted">Status</div><div>${statusBadge(fee.status)}</div></div>
+      </div>`;
+    document.getElementById('pay-amount').value = fee.balance;
+  }
+
+  function processPayment() {
+    const sid = document.getElementById('pay-student').value;
+    const amount = parseInt(document.getElementById('pay-amount').value);
+    if (!sid || !amount || amount <= 0) { showToast('Please select student and enter valid amount', 'danger'); return; }
+
+    const fIdx = feeRecords.findIndex(f => f.studentId === sid);
+    if (fIdx < 0) { showToast('No fee record found', 'danger'); return; }
+
+    const f = feeRecords[fIdx];
+    const newPaid = f.paidAmount + amount;
+    const newBal = f.totalFee - newPaid;
+    f.paidAmount = newPaid; f.balance = Math.max(0, newBal);
+    f.status = f.balance === 0 ? 'paid' : 'partial';
+    f.paidDate = document.getElementById('pay-date').value;
+    f.payMode = document.getElementById('pay-mode-sel').value;
+    f.receiptNo = generateReceiptNo();
+
+    // Sync back to global FEE_RECORDS and persist
+    FEE_RECORDS.length = 0;
+    feeRecords.forEach(r => FEE_RECORDS.push(r));
+    _saveStored('asks_erp_fees', FEE_RECORDS);
+    closeModal('collectModal');
+    showReceipt(f.id);
+    renderStats(); renderFees();
+    showToast(`Fee collected: ${currencyINR(amount)}`, 'success');
+  }
+
+  function quickCollect(fid) {
+    const f = feeRecords.find(r => r.id === fid);
+    if (!f) return;
+    document.getElementById('pay-student').value = f.studentId;
+    loadStudentFee();
+    openModal('collectModal');
+  }
+
+  function showReceipt(fid) {
+    const f = feeRecords.find(r => r.id === fid);
+    const s = students.find(st => st.id === f?.studentId);
+    if (!f || !s) return;
+    const branch = getBranchById(branchId);
+    document.getElementById('receipt-body').innerHTML = `
+      <div style="border:2px solid var(--primary);border-radius:12px;overflow:hidden;">
+        <div style="background:var(--primary);padding:16px 20px;color:#fff;">
+          <div style="font-size:18px;font-weight:800;">🌟 Ansha Shine Kids School</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.7);">${branch?.name} · Chennai, Tamil Nadu</div>
+          <div style="margin-top:8px;font-size:20px;font-weight:800;">FEE RECEIPT</div>
+        </div>
+        <div style="padding:20px;">
+          <div class="flex justify-between mb-12">
+            <div><div class="text-sm text-muted">Receipt No</div><div class="font-bold" style="color:var(--primary);">${f.receiptNo}</div></div>
+            <div><div class="text-sm text-muted">Date</div><div class="font-bold">${fmtDate(f.paidDate)}</div></div>
+          </div>
+          <div style="background:var(--body-bg);padding:12px;border-radius:8px;margin-bottom:14px;">
+            <div class="info-row"><span class="lbl">Student Name</span><span class="val font-bold">${s.name}</span></div>
+            <div class="info-row"><span class="lbl">Admission No</span><span class="val">${s.admNo}</span></div>
+            <div class="info-row"><span class="lbl">Program</span><span class="val">${getProgramByCode(s.program)?.name||s.program}</span></div>
+            <div class="info-row"><span class="lbl">Parent</span><span class="val">${s.parentName}</span></div>
+          </div>
+          <div class="info-row"><span class="lbl">Tuition Fee</span><span class="val">${currencyINR(f.tuitionFee)}</span></div>
+          ${f.transportFee>0?`<div class="info-row"><span class="lbl">Transport Fee</span><span class="val">${currencyINR(f.transportFee)}</span></div>`:''}
+          <div class="info-row"><span class="lbl">Amount Paid</span><span class="val font-bold" style="color:var(--success);font-size:16px;">${currencyINR(f.paidAmount)}</span></div>
+          <div class="info-row"><span class="lbl">Balance</span><span class="val" style="color:${f.balance>0?'var(--danger)':'var(--success)'};">${currencyINR(f.balance)}</span></div>
+          <div class="info-row"><span class="lbl">Payment Mode</span><span class="val">${f.payMode}</span></div>
+          <div class="info-row"><span class="lbl">Status</span><span class="val">${statusBadge(f.status)}</span></div>
+          <div style="text-align:center;margin-top:16px;padding-top:12px;border-top:1px dashed var(--border);font-size:11px;color:var(--text-3);">
+            Authorised Signature ___________________<br>
+            Thank you for your payment! · anshashinekidsschool.com
+          </div>
+        </div>
+      </div>`;
+    openModal('receiptModal');
+  }
+
+  function exportFees() {
+    exportCSV(feeRecords.map(f=>({Student:f.studentName,Program:f.program,Total:f.totalFee,Paid:f.paidAmount,Balance:f.balance,Status:f.status,Mode:f.payMode||'',Date:f.paidDate||''})),'fees.csv');
+    showToast('Fee records exported!', 'success');
+  }
+
+  renderStats(); renderFees();
+</script>
+</body>
+</html>
