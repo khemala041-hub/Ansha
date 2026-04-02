@@ -4,6 +4,19 @@
    Backup/Restore reads and writes via localStorage keys.
    ================================================================ */
 
+/* ---- Data version — bump this to wipe old localStorage on next load ---- */
+const _DATA_VERSION = '2.0';
+(function _resetIfVersionChanged() {
+  if (localStorage.getItem('asks_erp_version') !== _DATA_VERSION) {
+    const keep = ['asks_erp_session', 'asks_erp_backup_history', 'asks_active_branch'];
+    const saved = {};
+    keep.forEach(k => { const v = localStorage.getItem(k); if (v) saved[k] = v; });
+    localStorage.clear();
+    Object.entries(saved).forEach(([k, v]) => localStorage.setItem(k, v));
+    localStorage.setItem('asks_erp_version', _DATA_VERSION);
+  }
+})();
+
 /* ---- localStorage persistence helper ---- */
 function _loadStored(key, defaults) {
   try {
@@ -59,8 +72,29 @@ const USERS = [
 /* ---------- STAFF ---------- */
 const STAFF = _loadStored('asks_erp_staff', []);
 
-/* ---------- STUDENTS ---------- */
-const STUDENTS = _loadStored('asks_erp_students', []);
+/* ---------- STUDENTS (1 sample record) ---------- */
+const STUDENTS = _loadStored('asks_erp_students', [
+  {
+    id:'ST0001', branchId:'B001',
+    admNo:'ASKS/B001/2026-01',
+    name:'Sample Student',
+    gender:'M',
+    dob:'2021-04-01',
+    program:'NUR', programName:'Nursery',
+    section:'A',
+    bloodGroup:'O+',
+    parentName:'Parent Name',
+    parentPhone:'9600000000',
+    parentEmail:'parent@example.com',
+    address:'Chennai, Tamil Nadu',
+    admDate:'2026-04-01',
+    status:'active',
+    monthlyFee:3000,
+    transport:'',
+    feeStatus:'pending',
+    photoInit:'SS',
+  },
+]);
 
 /* ---------- TRANSPORT ROUTES ---------- */
 const TRANSPORT_ROUTES = _loadStored('asks_erp_routes', []);
