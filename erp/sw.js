@@ -3,7 +3,7 @@
    Caches app shell for offline use
    ================================================================ */
 
-const CACHE_NAME   = 'ansha-erp-v3';
+const CACHE_NAME   = 'ansha-erp-v4';
 const OFFLINE_URL  = '/erp/offline.html';
 
 const APP_SHELL = [
