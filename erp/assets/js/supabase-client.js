@@ -14,14 +14,14 @@ function _getSB() {
   return _sb;
 }
 
-/* Map localStorage keys → Supabase erp_data keys */
+/* Map localStorage keys → Supabase erp_data keys
+   NOTE: branches excluded — config is in code, not Supabase */
 const LS_TO_SB = {
   'asks_erp_students': 'students',
   'asks_erp_staff':    'staff',
   'asks_erp_fees':     'fee_records',
   'asks_erp_ledger':   'ledger',
   'asks_erp_routes':   'transport_routes',
-  'asks_erp_branches': 'branches',
 };
 const SB_TO_LS = Object.fromEntries(Object.entries(LS_TO_SB).map(([k,v]) => [v,k]));
 

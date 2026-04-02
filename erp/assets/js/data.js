@@ -5,7 +5,7 @@
    ================================================================ */
 
 /* ---- Data version — bump this to wipe old localStorage on next load ---- */
-const _DATA_VERSION = '4.0';
+const _DATA_VERSION = '5.0';
 (function _resetIfVersionChanged() {
   if (localStorage.getItem('asks_erp_version') !== _DATA_VERSION) {
     const keep = ['asks_erp_session', 'asks_erp_backup_history', 'asks_active_branch'];
@@ -172,8 +172,8 @@ function getBranchSummary(branchId) {
 function getAllBranchesSummary() {
   return {
     totalBranches:   BRANCHES.filter(b => b.status === 'active').length,
-    totalStudents:   BRANCHES.reduce((a, b) => a + (b.students || 0), 0),
-    totalStaff:      BRANCHES.reduce((a, b) => a + (b.staff || 0), 0),
+    totalStudents:   STUDENTS.length,
+    totalStaff:      STAFF.length,
     activeBranches:  BRANCHES.filter(b => b.status === 'active').length,
     setupBranches:   BRANCHES.filter(b => b.status === 'setup').length,
     plannedBranches: BRANCHES.filter(b => b.status === 'planned').length,
