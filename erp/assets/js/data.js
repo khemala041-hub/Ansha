@@ -20,16 +20,16 @@ function _saveStored(key, arr) {
 
 /* ---------- BRANCHES ---------- */
 const _DEFAULT_BRANCHES = [
-  { id:'B001', name:'Tambaram West',  addr:'No# 1A, Sundaram Colony 3rd St, Near Anchaneyar Kovil, Tambaram West, Chennai 600 045', phone:'860 861 2233', email:'tambaram@anshashinekidsschool.com',  adminId:'U002', status:'active',  est:'2015', students:82, staff:12 },
-  { id:'B002', name:'Mudichur',       addr:'Dhanalaxmi St, South Laxmi Nager, Opp Nayara Petrol Bunk, Chennai 600 048',             phone:'984 172 6893', email:'mudichur@anshashinekidsschool.com',   adminId:'U003', status:'active',  est:'2017', students:64, staff:9  },
-  { id:'B003', name:'Padapai',        addr:'Ozur Amman Kovil St, Athencherry, Opp. Annai Sagaya Mary Church, Padapai 601 301',       phone:'936 771 2344', email:'padappai@anshashinekidsschool.com',   adminId:'U004', status:'active',  est:'2018', students:55, staff:8  },
-  { id:'B004', name:'Pallavakkam',    addr:'Periyar Nager Junction, Pallavakam, Chennai 600 041',                                    phone:'944 492 1124', email:'pallavakam@anshashinekidsschool.com',  adminId:'U005', status:'active',  est:'2019', students:70, staff:10 },
-  { id:'B005', name:'Mannivakkam',    addr:'Shanmuga Nagar, Mannivakkam, Chennai 600 048',                                           phone:'843 811 1248', email:'mannivakkam@anshashinekidsschool.com', adminId:'U006', status:'active',  est:'2019', students:58, staff:8  },
-  { id:'B006', name:'Kanathur',       addr:'ECR Main Road, Kanathur, Chennai 603 112',                                               phone:'98842 81223',  email:'kanathur@anshashinekidsschool.com',    adminId:'U007', status:'active',  est:'2020', students:47, staff:7  },
-  { id:'B007', name:'Mappedu',        addr:'Near Mappedu Bus Stop, Mappedu, Thiruvallur 602 105',                                    phone:'90031 44556',  email:'mappedu@anshashinekidsschool.com',     adminId:'U008', status:'active',  est:'2021', students:43, staff:6  },
-  { id:'B008', name:'Porur',          addr:'Arcot Road, Porur, Chennai 600 116',                                                     phone:'99401 22334',  email:'porur@anshashinekidsschool.com',       adminId:null,   status:'setup',  est:'2024', students:28, staff:5  },
-  { id:'B009', name:'Tambaram East',  addr:'GST Road, Tambaram East, Chennai 600 059',                                               phone:'',             email:'',                                     adminId:null,   status:'setup',  est:'2024', students:32, staff:5  },
-  { id:'B010', name:'Chromepet',      addr:'Chromepet Main Road, Chennai 600 044',                                                   phone:'',             email:'',                                     adminId:null,   status:'planned',est:'2025', students:0,  staff:0  },
+  { id:'B001', name:'Tambaram West',  addr:'No# 1A, Sundaram Colony 3rd St, Near Anchaneyar Kovil, Tambaram West, Chennai 600 045', phone:'860 861 2233', email:'tambaram@anshashinekidsschool.com',  adminId:'U002', status:'active',  est:'2015', students:0, staff:0 },
+  { id:'B002', name:'Mudichur',       addr:'Dhanalaxmi St, South Laxmi Nager, Opp Nayara Petrol Bunk, Chennai 600 048',             phone:'984 172 6893', email:'mudichur@anshashinekidsschool.com',   adminId:'U003', status:'active',  est:'2017', students:0, staff:0 },
+  { id:'B003', name:'Padapai',        addr:'Ozur Amman Kovil St, Athencherry, Opp. Annai Sagaya Mary Church, Padapai 601 301',       phone:'936 771 2344', email:'padappai@anshashinekidsschool.com',   adminId:'U004', status:'active',  est:'2018', students:0, staff:0 },
+  { id:'B004', name:'Pallavakkam',    addr:'Periyar Nager Junction, Pallavakam, Chennai 600 041',                                    phone:'944 492 1124', email:'pallavakam@anshashinekidsschool.com',  adminId:'U005', status:'active',  est:'2019', students:0, staff:0 },
+  { id:'B005', name:'Mannivakkam',    addr:'Shanmuga Nagar, Mannivakkam, Chennai 600 048',                                           phone:'843 811 1248', email:'mannivakkam@anshashinekidsschool.com', adminId:'U006', status:'active',  est:'2019', students:0, staff:0 },
+  { id:'B006', name:'Kanathur',       addr:'ECR Main Road, Kanathur, Chennai 603 112',                                               phone:'98842 81223',  email:'kanathur@anshashinekidsschool.com',    adminId:'U007', status:'active',  est:'2020', students:0, staff:0 },
+  { id:'B007', name:'Mappedu',        addr:'Near Mappedu Bus Stop, Mappedu, Thiruvallur 602 105',                                    phone:'90031 44556',  email:'mappedu@anshashinekidsschool.com',     adminId:'U008', status:'active',  est:'2021', students:0, staff:0 },
+  { id:'B008', name:'Porur',          addr:'Arcot Road, Porur, Chennai 600 116',                                                     phone:'99401 22334',  email:'porur@anshashinekidsschool.com',       adminId:null,   status:'setup',  est:'2024', students:0, staff:0 },
+  { id:'B009', name:'Tambaram East',  addr:'GST Road, Tambaram East, Chennai 600 059',                                               phone:'',             email:'',                                     adminId:null,   status:'setup',  est:'2024', students:0, staff:0 },
+  { id:'B010', name:'Chromepet',      addr:'Chromepet Main Road, Chennai 600 044',                                                   phone:'',             email:'',                                     adminId:null,   status:'planned',est:'2025', students:0, staff:0 },
 ];
 const BRANCHES = _loadStored('asks_erp_branches', _DEFAULT_BRANCHES);
 
@@ -56,92 +56,21 @@ const USERS = [
   { id:'U008', name:'Anitha Bose',    email:'mappedu@anshashinekidsschool.com',   pass:'Branch@123', role:'admin',      branchId:'B007', phone:'90031 44556',  avatar:'AB' },
 ];
 
-/* ---------- STAFF (1 sample record) ---------- */
-const _DEFAULT_STAFF = [
-  {
-    id:'S001', branchId:'B001', name:'Fatima Begum', role:'Head Teacher',
-    dept:'Academic', prog:'PKG,LKG,UKG', phone:'98401 11001',
-    email:'fatima@asksb001.com', join:'2015-06-01', salary:22000,
-    status:'active', gender:'F', att:'P'
-  },
-];
-const STAFF = _loadStored('asks_erp_staff', _DEFAULT_STAFF);
+/* ---------- STAFF ---------- */
+const STAFF = _loadStored('asks_erp_staff', []);
 
-/* ---------- STUDENTS (1 sample record) ---------- */
-const _DEFAULT_STUDENTS = [
-  {
-    id:'ST0001', branchId:'B001',
-    admNo:'ASKS/B001/2024-01',
-    name:'Aadhi Kumar',
-    gender:'M',
-    dob:'2021-06-15',
-    program:'NUR', programName:'Nursery',
-    section:'A',
-    bloodGroup:'O+',
-    parentName:'Kumar Raj',
-    parentPhone:'9600000001',
-    parentEmail:'parent1@example.com',
-    address:'No.3, Rose Street, Chennai',
-    admDate:'2024-06-01',
-    status:'active',
-    monthlyFee:3000,
-    transport:'R001',
-    feeStatus:'paid',
-    photoInit:'AK',
-  },
-];
-const STUDENTS = _loadStored('asks_erp_students', _DEFAULT_STUDENTS);
+/* ---------- STUDENTS ---------- */
+const STUDENTS = _loadStored('asks_erp_students', []);
 
-/* ---------- TRANSPORT ROUTES (1 sample route) ---------- */
-const _DEFAULT_TRANSPORT_ROUTES = [
-  {
-    id:'R001', branchId:'B001', name:'Tambaram – Perungalathur Route',
-    vehicle:'TN 01 AB 1234', driver:'S001', driverName:'Murugesan T',
-    capacity:20, students:1,
-    stops:[
-      { name:'Tambaram Bus Stand', time:'07:30', pickup:true },
-      { name:'Perungalathur X',    time:'07:45', pickup:true },
-      { name:'GST Road Junction',  time:'07:55', pickup:true },
-      { name:'Ansha Shine School', time:'08:15', pickup:false },
-    ]
-  },
-];
-const TRANSPORT_ROUTES = _loadStored('asks_erp_routes', _DEFAULT_TRANSPORT_ROUTES);
+/* ---------- TRANSPORT ROUTES ---------- */
+const TRANSPORT_ROUTES = _loadStored('asks_erp_routes', []);
 
-/* ---------- FEES (1 sample fee record) ---------- */
-const CURRENT_MONTH = new Date().toISOString().slice(0, 7); // e.g. '2026-03'
-const _DEFAULT_FEE_RECORDS = [
-  {
-    id:'F0001',
-    studentId:'ST0001',
-    studentName:'Aadhi Kumar',
-    branchId:'B001',
-    month: CURRENT_MONTH,
-    program:'NUR',
-    tuitionFee:3000,
-    transportFee:800,
-    totalFee:3800,
-    paidAmount:3800,
-    balance:0,
-    status:'paid',
-    paidDate: new Date().toISOString().slice(0, 10),
-    payMode:'UPI',
-    receiptNo:'RCP-2026-1001',
-  },
-];
-const FEE_RECORDS = _loadStored('asks_erp_fees', _DEFAULT_FEE_RECORDS);
+/* ---------- FEES ---------- */
+const CURRENT_MONTH = new Date().toISOString().slice(0, 7);
+const FEE_RECORDS = _loadStored('asks_erp_fees', []);
 
-/* ---------- FINANCE / LEDGER (1 sample entry) ---------- */
-const _DEFAULT_LEDGER = [
-  {
-    id:'L001', branchId:'B001',
-    date: new Date().toISOString().slice(0, 10),
-    type:'income', category:'Fees',
-    desc:'Sample Fees Collection',
-    amount:3800, ref:'BATCH-SAMPLE-001'
-  },
-];
-const LEDGER = _loadStored('asks_erp_ledger', _DEFAULT_LEDGER);
+/* ---------- FINANCE / LEDGER ---------- */
+const LEDGER = _loadStored('asks_erp_ledger', []);
 
 /* ---------- CCTV CAMERAS (static config) ---------- */
 const CCTV_CAMERAS = [
@@ -161,7 +90,7 @@ const CCTV_CAMERAS = [
 
 /* ---------- ATTENDANCE ---------- */
 const TODAY = new Date().toISOString().split('T')[0];
-const ATTENDANCE_DATA = { 'ST0001': 'P' };
+const ATTENDANCE_DATA = {};
 
 /* ---------- HELPER FUNCTIONS ---------- */
 function getBranchById(id)       { return BRANCHES.find(b => b.id === id); }
