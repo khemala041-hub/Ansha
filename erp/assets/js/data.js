@@ -5,7 +5,7 @@
    ================================================================ */
 
 /* ---- Data version — bump this to wipe old localStorage on next load ---- */
-const _DATA_VERSION = '2.0';
+const _DATA_VERSION = '3.0';
 (function _resetIfVersionChanged() {
   if (localStorage.getItem('asks_erp_version') !== _DATA_VERSION) {
     const keep = ['asks_erp_session', 'asks_erp_backup_history', 'asks_active_branch'];
@@ -72,28 +72,18 @@ const USERS = [
 /* ---------- STAFF ---------- */
 const STAFF = _loadStored('asks_erp_staff', []);
 
-/* ---------- STUDENTS (1 sample record) ---------- */
+/* ---------- STUDENTS (1 sample record per branch) ---------- */
 const STUDENTS = _loadStored('asks_erp_students', [
-  {
-    id:'ST0001', branchId:'B001',
-    admNo:'ASKS/B001/2026-01',
-    name:'Sample Student',
-    gender:'M',
-    dob:'2021-04-01',
-    program:'NUR', programName:'Nursery',
-    section:'A',
-    bloodGroup:'O+',
-    parentName:'Parent Name',
-    parentPhone:'9600000000',
-    parentEmail:'parent@example.com',
-    address:'Chennai, Tamil Nadu',
-    admDate:'2026-04-01',
-    status:'active',
-    monthlyFee:3000,
-    transport:'',
-    feeStatus:'pending',
-    photoInit:'SS',
-  },
+  { id:'ST0001', branchId:'B001', admNo:'ASKS/B001/2026-01', name:'Sample Student', gender:'M', dob:'2021-04-01', program:'NUR', programName:'Nursery', section:'A', bloodGroup:'O+', parentName:'Parent Name', parentPhone:'9600000001', parentEmail:'parent@example.com', address:'Tambaram West, Chennai', admDate:'2026-04-01', status:'active', monthlyFee:3000, transport:'', feeStatus:'pending', photoInit:'SS' },
+  { id:'ST0002', branchId:'B002', admNo:'ASKS/B002/2026-01', name:'Sample Student', gender:'F', dob:'2021-04-01', program:'NUR', programName:'Nursery', section:'A', bloodGroup:'A+', parentName:'Parent Name', parentPhone:'9600000002', parentEmail:'parent2@example.com', address:'Mudichur, Chennai', admDate:'2026-04-01', status:'active', monthlyFee:3000, transport:'', feeStatus:'pending', photoInit:'SS' },
+  { id:'ST0003', branchId:'B003', admNo:'ASKS/B003/2026-01', name:'Sample Student', gender:'M', dob:'2021-04-01', program:'PKG', programName:'Pre KG', section:'A', bloodGroup:'B+', parentName:'Parent Name', parentPhone:'9600000003', parentEmail:'parent3@example.com', address:'Padapai, Chennai', admDate:'2026-04-01', status:'active', monthlyFee:3500, transport:'', feeStatus:'pending', photoInit:'SS' },
+  { id:'ST0004', branchId:'B004', admNo:'ASKS/B004/2026-01', name:'Sample Student', gender:'F', dob:'2020-04-01', program:'LKG', programName:'LKG', section:'A', bloodGroup:'O+', parentName:'Parent Name', parentPhone:'9600000004', parentEmail:'parent4@example.com', address:'Pallavakkam, Chennai', admDate:'2026-04-01', status:'active', monthlyFee:4000, transport:'', feeStatus:'pending', photoInit:'SS' },
+  { id:'ST0005', branchId:'B005', admNo:'ASKS/B005/2026-01', name:'Sample Student', gender:'M', dob:'2020-04-01', program:'LKG', programName:'LKG', section:'A', bloodGroup:'A+', parentName:'Parent Name', parentPhone:'9600000005', parentEmail:'parent5@example.com', address:'Mannivakkam, Chennai', admDate:'2026-04-01', status:'active', monthlyFee:4000, transport:'', feeStatus:'pending', photoInit:'SS' },
+  { id:'ST0006', branchId:'B006', admNo:'ASKS/B006/2026-01', name:'Sample Student', gender:'F', dob:'2021-04-01', program:'NUR', programName:'Nursery', section:'A', bloodGroup:'B+', parentName:'Parent Name', parentPhone:'9600000006', parentEmail:'parent6@example.com', address:'Kanathur, Chennai', admDate:'2026-04-01', status:'active', monthlyFee:3000, transport:'', feeStatus:'pending', photoInit:'SS' },
+  { id:'ST0007', branchId:'B007', admNo:'ASKS/B007/2026-01', name:'Sample Student', gender:'M', dob:'2021-04-01', program:'NUR', programName:'Nursery', section:'A', bloodGroup:'O+', parentName:'Parent Name', parentPhone:'9600000007', parentEmail:'parent7@example.com', address:'Mappedu, Thiruvallur', admDate:'2026-04-01', status:'active', monthlyFee:3000, transport:'', feeStatus:'pending', photoInit:'SS' },
+  { id:'ST0008', branchId:'B008', admNo:'ASKS/B008/2026-01', name:'Sample Student', gender:'F', dob:'2021-04-01', program:'DC',  programName:'Day Care', section:'A', bloodGroup:'A+', parentName:'Parent Name', parentPhone:'9600000008', parentEmail:'parent8@example.com', address:'Porur, Chennai', admDate:'2026-04-01', status:'active', monthlyFee:2500, transport:'', feeStatus:'pending', photoInit:'SS' },
+  { id:'ST0009', branchId:'B009', admNo:'ASKS/B009/2026-01', name:'Sample Student', gender:'M', dob:'2021-04-01', program:'NUR', programName:'Nursery', section:'A', bloodGroup:'O+', parentName:'Parent Name', parentPhone:'9600000009', parentEmail:'parent9@example.com', address:'Tambaram East, Chennai', admDate:'2026-04-01', status:'active', monthlyFee:3000, transport:'', feeStatus:'pending', photoInit:'SS' },
+  { id:'ST0010', branchId:'B010', admNo:'ASKS/B010/2026-01', name:'Sample Student', gender:'F', dob:'2021-04-01', program:'NUR', programName:'Nursery', section:'A', bloodGroup:'B+', parentName:'Parent Name', parentPhone:'9600000010', parentEmail:'parent10@example.com', address:'Chromepet, Chennai', admDate:'2026-04-01', status:'active', monthlyFee:3000, transport:'', feeStatus:'pending', photoInit:'SS' },
 ]);
 
 /* ---------- TRANSPORT ROUTES ---------- */
