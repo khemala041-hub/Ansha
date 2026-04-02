@@ -42,6 +42,13 @@
     .flex-end { display:flex; justify-content:flex-end; }
     @media(max-width:768px) { .backup-grid { grid-template-columns:1fr; } }
   </style>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1E3A5F">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ansha ERP">
+  <link rel="apple-touch-icon" href="assets/img/icon-192.png">
 </head>
 <body>
 <div id="toast-container"></div>
@@ -714,6 +721,11 @@ function formatBytes(bytes) {
   if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / 1048576).toFixed(1) + ' MB';
 }
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/erp/sw.js').catch(() => {});
+  }
 </script>
 </body>
 </html>

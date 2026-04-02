@@ -6,6 +6,13 @@
   <title>Staff Management — Ansha Shine Kids School ERP</title>
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1E3A5F">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ansha ERP">
+  <link rel="apple-touch-icon" href="assets/img/icon-192.png">
 </head>
 <body>
 <div id="toast-container"></div>
@@ -197,6 +204,11 @@
   }
 
   renderStats(); renderStaff();
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/erp/sw.js').catch(() => {});
+  }
 </script>
 </body>
 </html>

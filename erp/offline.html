@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline — Ansha ERP</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family:'Segoe UI',sans-serif;
+      background:#0f172a; color:#fff;
+      display:flex; align-items:center; justify-content:center;
+      min-height:100vh; text-align:center; padding:24px;
+    }
+    .icon { font-size:72px; margin-bottom:20px; }
+    h1 { font-size:1.6rem; font-weight:700; margin-bottom:10px; }
+    p  { color:#94a3b8; font-size:1rem; line-height:1.6; margin-bottom:24px; }
+    button {
+      background:#1E3A5F; color:#fff; border:none;
+      padding:14px 32px; border-radius:10px;
+      font-size:16px; font-weight:600; cursor:pointer;
+    }
+    button:hover { background:#F59E0B; }
+    .badge {
+      margin-top:32px; font-size:12px; color:#475569;
+    }
+  </style>
+</head>
+<body>
+  <div>
+    <div class="icon">📡</div>
+    <h1>You're Offline</h1>
+    <p>No internet connection detected.<br>Please check your network and try again.</p>
+    <button onclick="window.location.reload()">🔄 Try Again</button>
+    <p class="badge">🌟 Ansha Shine Kids School ERP</p>
+  </div>
+</body>
+</html>
