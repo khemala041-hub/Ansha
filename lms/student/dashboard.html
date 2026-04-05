@@ -21,8 +21,6 @@
       </div>
     </header>
     <main class="page-content">
-      <!-- Fee Alert Banner (hidden) -->
-      <div id="fee-alert-banner" style="display:none;"></div>
       <!-- Welcome Banner -->
       <div style="background:linear-gradient(135deg,var(--primary-dark),var(--primary));border-radius:var(--radius-xl);padding:var(--space-8);color:var(--white);margin-bottom:var(--space-6);display:flex;align-items:center;justify-content:space-between;">
         <div>
@@ -469,34 +467,6 @@ function renderNotices() {
   document.getElementById('notices-panel').innerHTML = html || '<p class="text-sm text-muted">No announcements.</p>';
 }
 
-function renderFeeAlert() {
-  const enrollments = getStudentEnrollments(user.id);
-  let totalBalance = 0, pendingList = [];
-  enrollments.forEach(e => {
-    const sched = computeFeeSchedule(user.id, e.courseId);
-    if (sched && sched.balance > 0) {
-      totalBalance += sched.balance;
-      const c = dbGetOne(DB.COURSES, e.courseId);
-      pendingList.push(c ? c.title : 'Course');
-    }
-  });
-  const el = document.getElementById('fee-alert-banner');
-  if (totalBalance > 0) {
-    el.innerHTML = `
-      <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:12px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <span style="font-size:1.6rem;">⚠️</span>
-          <div>
-            <div style="font-weight:700;color:#9a3412;font-size:0.95rem;">Fee Payment Reminder</div>
-            <div style="font-size:0.82rem;color:#c2410c;">₹${totalBalance.toLocaleString('en-IN')} pending for: ${pendingList.join(', ')}</div>
-          </div>
-        </div>
-        <a href="fees.html" class="btn btn-sm" style="background:#ea580c;color:#fff;border:none;white-space:nowrap;">View Fee Details →</a>
-      </div>`;
-  } else {
-    el.innerHTML = '';
-  }
-}
 
 function renderFeeQuick() {
   const enrollments = getStudentEnrollments(user.id);
