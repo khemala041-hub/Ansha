@@ -63,15 +63,20 @@ function renderFees() {
     const pct = totalFee > 0 ? Math.round((paidAmt / totalFee) * 100) : 0;
     const feeStatusColor = balance === 0 ? '#16a34a' : paidAmt > 0 ? '#d97706' : '#dc2626';
     const feeStatusText  = balance === 0 ? '✅ Fully Paid' : paidAmt > 0 ? '⏳ Partially Paid' : '🔴 Pending';
+    const paymentMethod  = feePlan.paymentMethod || '';
+    const nextDueDate    = feePlan.nextDueDate
+      ? new Date(feePlan.nextDueDate).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})
+      : '';
 
     const installRows = schedule.map(inst => {
       if (inst.status === 'paid') {
+        const paidLabel = inst.paidAt ? `Paid on ${formatDate(inst.paidAt)}` : 'Amount Paid';
         return `
         <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #f1f5f9;">
           <div style="width:32px;height:32px;background:#dcfce7;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;">✅</div>
           <div style="flex:1;">
-            <div style="font-weight:600;font-size:0.9rem;">Installment ${inst.no}${numInstall > 1 ? ' of ' + numInstall : ''}</div>
-            <div style="font-size:0.78rem;color:#64748b;">Paid on ${formatDate(inst.paidAt)} · Receipt: ${inst.receiptNo || '—'}</div>
+            <div style="font-weight:600;font-size:0.9rem;">${inst.no === 1 && numInstall === 1 ? 'Amount Paid' : 'Installment ' + inst.no + (numInstall > 1 ? ' of ' + numInstall : '')}</div>
+            <div style="font-size:0.78rem;color:#64748b;">${paidLabel}${inst.receiptNo ? ' · Receipt: '+inst.receiptNo : ''}</div>
           </div>
           <div style="font-weight:700;color:#16a34a;font-size:0.95rem;">₹${(inst.amount||0).toLocaleString('en-IN')}</div>
         </div>`;
@@ -80,8 +85,8 @@ function renderFees() {
         <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid #f1f5f9;">
           <div style="width:32px;height:32px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0;">⏳</div>
           <div style="flex:1;">
-            <div style="font-weight:600;font-size:0.9rem;">Installment ${inst.no}${numInstall > 1 ? ' of ' + numInstall : ''}</div>
-            <div style="font-size:0.78rem;color:#dc2626;font-weight:600;">PENDING — Please pay to admin</div>
+            <div style="font-weight:600;font-size:0.9rem;">${inst.no === 1 && numInstall === 1 ? 'Balance Due' : 'Installment ' + inst.no + (numInstall > 1 ? ' of ' + numInstall : '')} — PENDING</div>
+            <div style="font-size:0.78rem;color:#dc2626;font-weight:500;">Please pay to admin</div>
           </div>
           <div style="font-weight:700;color:#dc2626;font-size:0.95rem;">₹${(inst.amount||0).toLocaleString('en-IN')}</div>
         </div>`;
@@ -96,7 +101,7 @@ function renderFees() {
             <div style="width:52px;height:52px;background:${course.color||'#1a7a7a'};border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;">${course.icon||'📚'}</div>
             <div>
               <div style="font-weight:700;font-size:1rem;">${course.title}</div>
-              <div style="font-size:0.8rem;color:#64748b;margin-top:2px;">${planLabel} &nbsp;·&nbsp; <span style="color:${feeStatusColor};font-weight:700;">${feeStatusText}</span></div>
+              <div style="font-size:0.8rem;color:#64748b;margin-top:2px;"><span style="color:${feeStatusColor};font-weight:700;">${feeStatusText}</span></div>
             </div>
           </div>
           <div style="text-align:right;">
@@ -114,16 +119,21 @@ function renderFees() {
             <div style="height:100%;width:${pct}%;background:${balance===0?'#16a34a':'#f59e0b'};border-radius:99px;transition:width .4s;"></div>
           </div>
         </div>
+        ${(paymentMethod || nextDueDate) ? `
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;">
+          ${paymentMethod ? `<div style="background:rgba(255,255,255,0.7);border-radius:8px;padding:6px 12px;font-size:0.78rem;"><span style="color:#64748b;">💳 Payment Method:</span> <strong>${paymentMethod}</strong></div>` : ''}
+          ${nextDueDate && balance > 0 ? `<div style="background:rgba(255,255,255,0.7);border-radius:8px;padding:6px 12px;font-size:0.78rem;"><span style="color:#64748b;">📅 Next Due:</span> <strong style="color:#d97706;">${nextDueDate}</strong></div>` : ''}
+        </div>` : ''}
       </div>
       <div style="padding:8px 24px 16px;">
-        <div style="font-size:0.82rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:12px 0 4px;">Payment Schedule</div>
+        <div style="font-size:0.82rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin:12px 0 4px;">Payment Summary</div>
         ${installRows}
       </div>
       ${balance > 0 ? `
       <div style="padding:12px 24px 16px;">
         <div style="background:#fff7ed;border:1.5px solid #fed7aa;border-radius:10px;padding:12px 16px;font-size:.85rem;color:#9a3412;">
           ⚠️ <strong>₹${balance.toLocaleString('en-IN')} is due.</strong> Please contact admin or pay at the institute.
-          <div style="margin-top:4px;font-size:0.78rem;">WhatsApp: <strong>+91-98765-43210</strong></div>
+          ${nextDueDate ? `<div style="margin-top:4px;font-size:0.78rem;">Next payment due: <strong>${nextDueDate}</strong></div>` : ''}
         </div>
       </div>` : ''}
     </div>`;

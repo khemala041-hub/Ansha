@@ -112,20 +112,29 @@ function computeFeeSchedule(studentId, courseId) {
   const enrollment = getEnrollment(studentId, courseId);
   const course = dbGetOne(DB.COURSES, courseId);
   if (!enrollment || !course) return null;
+  const feePlan = enrollment.feePlan || { type: 'full', totalFee: course.fee || 0 };
+  const totalFee = feePlan.totalFee || course.fee || 0;
+
+  // Excel-imported fee data: use stored values directly
+  if (feePlan.excelImport) {
+    const paidAmt = feePlan.paidAmount || 0;
+    const balance = feePlan.balance != null ? feePlan.balance : Math.max(0, totalFee - paidAmt);
+    const schedule = [];
+    if (paidAmt > 0) schedule.push({ no: 1, amount: paidAmt, status: 'paid', paidAt: null, receiptNo: null });
+    if (balance > 0) schedule.push({ no: paidAmt > 0 ? 2 : 1, amount: balance, status: 'pending' });
+    if (!schedule.length) schedule.push({ no: 1, amount: totalFee, status: 'paid', paidAt: null, receiptNo: null });
+    return { feePlan, totalFee, paidAmt, balance, numInstall: schedule.length, schedule };
+  }
+
   const payments = dbGet(DB.PAYMENTS)
     .filter(p => p.studentId === studentId && p.courseId === courseId)
     .sort((a, b) => new Date(a.paidAt) - new Date(b.paidAt));
-  const feePlan = enrollment.feePlan || { type: 'full', totalFee: course.fee || 0 };
-  const totalFee = feePlan.totalFee || course.fee || 0;
   const numInstall = feePlan.type === '2x' ? 2 : feePlan.type === '4x' ? 4 : 1;
   const installAmt = numInstall > 1 ? Math.round(totalFee / numInstall) : totalFee;
   const paidAmt = payments.reduce((s, p) => s + (p.amount || 0), 0);
   const balance = Math.max(0, totalFee - paidAmt);
   const schedule = [];
   for (let i = 1; i <= numInstall; i++) {
-    const pmt = payments.find(p => (p.installmentNo || 1) === i) || (payments[i - 1] || null);
-    const assigned = pmt && !payments.slice(0, i - 1).includes(pmt);
-    // Simple sequential assignment
     const pmtSeq = payments[i - 1] || null;
     if (pmtSeq) {
       schedule.push({ no: i, amount: pmtSeq.amount, status: 'paid', paidAt: pmtSeq.paidAt, receiptNo: pmtSeq.receiptNo, paymentId: pmtSeq.id });
@@ -896,4 +905,162 @@ function getAssessmentResults(assessmentId) {
   const existingIds = dbGet(DB.ASSESSMENTS).map(a => a.id);
   seed.filter(a => !existingIds.includes(a.id)).forEach(a => dbSave(DB.ASSESSMENTS, { ...a, createdAt: new Date().toISOString() }));
   localStorage.setItem('lms_assessments_seeded_v5', 'true');
+})();
+
+/* ---- Migration: import 2026 batch fee data from Excel summary ---- */
+(function migrateExcelFees() {
+  // M=Montessori(c1) E=Spoken English(c2) P=Phonics(c3) C=Child Psychology(c4)
+  // Format: [phone, courseKey, totalFee, paid, paymentMethod]
+  const COURSE_MAP = { M:'c1', E:'c2', P:'c3', C:'c4' };
+  const DATA = [
+    ['8098374095','M',15000,5000,'Shakila Gpay'],
+    ['9884254499','M',15000,5000,'Shakila Gpay'],
+    ['9092383093','M',17000,2000,'Shakila Gpay'],
+    ['7667974557','M',17000,2000,'Shakila Gpay'],
+    ['9789149605','M',15000,10000,'Shakila Gpay'],
+    ['7550267136','M',16000,5000,'Shakila Gpay'],
+    ['9952730497','M',16000,3500,'Shakila Gpay'],
+    ['9363380358','M',16000,4000,'Shakila Gpay'],
+    ['7695859500','M',20000,12000,'Shakila Gpay'],
+    ['8148132927','M',15000,3000,'Shakila Gpay'],
+    ['6374013597','M',20000,12000,'Shakila Gpay'],
+    ['9361534098','M',18000,3000,'Shakila Gpay'],
+    ['7448782834','M',18000,15000,'Shakila Gpay'],
+    ['9384657151','M',20000,5000,'Shakila Gpay'],
+    ['9952927518','M',20000,2000,'Shakila Gpay'],
+    ['9080042424','M',20000,4000,'Shakila Gpay'],
+    ['7200645996','M',25000,2000,'Shakila Gpay'],
+    ['9940287620','M',20000,4000,'Shakila Gpay'],
+    ['6383409883','M',20000,2000,'Shakila Gpay'],
+    ['7395897003','M',18000,2000,'Shakila Gpay'],
+    ['7358448105','M',20000,20000,'Shakila Gpay'],
+    ['7358837672','M',24000,2000,'Shakila Gpay'],
+    ['9626882152','M',25000,10000,'Shakila Gpay'],
+    ['6383949793','M',20000,1000,'Shakila Gpay'],
+    ['8111031208','M',18000,1000,'Shakila Gpay'],
+    ['8904346857','M',25000,2000,'Shakila Gpay'],
+    ['6383348268','M',25000,5000,'Shakila Gpay'],
+    ['9962417217','M',24000,2000,'Shakila Gpay'],
+    ['8754343732','M',21000,2000,'Shakila Gpay'],
+    ['9962886078','M',20000,7000,'Shakila Gpay'],
+    ['9952793350','M',21000,3000,'Shakila Gpay'],
+    ['7200622419','M',25000,2000,'Shakila Gpay'],
+    ['8778906801','M',20000,3000,'Shakila Gpay'],
+    ['9600061263','M',20000,3000,'Shakila Gpay'],
+    ['9940380533','M',20000,3000,'Shakila Gpay'],
+    ['9884760943','M',15000,5000,'Shakila Gpay'],
+    ['7010146665','M',10000,5000,'Shakila Gpay'],
+    ['8220413819','M',15000,2000,'Shakila Gpay'],
+    ['7358597986','M',15000,5000,'Shakila Gpay'],
+    ['9344992798','M',15000,2000,'Shakila Gpay'],
+    ['6385523969','M',15000,15000,'Shakila Gpay'],
+    ['9941539386','M',15000,5000,'Shakila Gpay'],
+    ['9500099910','M',23000,11000,'Shakila Gpay'],
+    ['9360720510','M',15000,5000,'Shakila Gpay'],
+    ['7448378330','M',15000,8000,'Shakila Gpay'],
+    ['8072301913','M',15000,5000,'Shakila Gpay'],
+    ['9994213892','M',15000,5000,'Shakila Gpay'],
+    ['9884868081','M',22000,3000,'Shakila Gpay'],
+    ['8248284166','M',15000,5000,'Shakila Gpay'],
+    ['8925142711','M',22000,7000,'Shakila Gpay'],
+    ['8870420555','M',25000,15000,'Shakila Gpay'],
+    ['9042473898','M',18000,3000,'Shakila Gpay'],
+    ['6385858172','M',20000,5000,'Shakila Gpay'],
+    ['9790581527','M',20000,3000,'Shakila Gpay'],
+    ['9514043003','M',18000,2000,'Shakila Gpay'],
+    ['9345401934','M',25000,14500,'Shakila Gpay'],
+    ['6385791416','M',25000,2000,'Shakila Gpay'],
+    ['8667287987','M',20000,2000,'Shakila Gpay'],
+    ['7092514925','M',20000,3000,'Shakila Gpay'],
+    ['9566733051','M',25000,5000,'Shakila Gpay'],
+    ['9003749511','M',20000,4000,'Shakila Gpay'],
+    ['9884935391','M',20000,3000,'Shakila Gpay'],
+    ['9244400789','M',25000,3000,'Shakila Gpay'],
+    ['9884684230','M',18000,9000,'Shakila Gpay'],
+    ['9840738140','M',18000,6000,'Shakila Gpay'],
+    ['9500862729','M',25000,10000,'Shakila Gpay'],
+    ['7094160068','M',18000,7000,'Shakila Gpay'],
+    ['9994454410','M',25000,5000,'Shakila Gpay'],
+    ['8870088260','M',20000,3000,'Shakila Gpay'],
+    ['8220880446','M',20000,3000,'Shakila Gpay'],
+    ['6383595636','M',20000,3000,'Shakila Gpay'],
+    ['9003368005','M',20000,3000,'Shakila Gpay'],
+    ['9962462683','M',20000,4000,'Shakila Gpay'],
+    ['9843672552','M',25000,5000,'Shakila Gpay'],
+    ['7338791096','M',25000,5000,'Shakila Gpay'],
+    ['7305065957','M',20000,2000,'Shakila Gpay'],
+    ['9176034348','M',21000,21000,'Shakila Gpay'],
+    ['8838650737','M',30000,7000,'Shakila Gpay'],
+    ['9597596317','M',20000,5000,'Shakila Gpay'],
+    ['8807987384','M',20000,4000,'Shakila Gpay'],
+    ['8778603440','M',15000,4000,'Shakila Gpay'],
+    ['9840118372','M',15000,5000,'Shakila Gpay'],
+    ['6374018808','M',20000,5000,'Shakila Gpay'],
+    ['9790432034','M',15000,3000,'Shakila Gpay'],
+    ['9789053210','M',20000,5000,'Shakila Gpay'],
+    ['8668049394','M',20000,3000,'Shakila Gpay'],
+    ['7339454461','M',20000,5000,'Shakila Gpay'],
+    ['8248708162','M',20000,2000,'Shakila Gpay'],
+    ['7010964116','M',20000,4000,'Shakila Gpay'],
+    ['9500099910','E',4000,2000,'Shakila Gpay'],
+    ['6379377738','E',4000,1000,'Shakila Gpay'],
+    ['7349460625','E',4000,1000,'Shakila Gpay'],
+    ['8189802440','P',4000,1000,'Shakila Gpay'],
+    ['9486386923','P',4000,2000,'Shakila Gpay'],
+    ['9952051542','P',4000,2000,'Shakila Gpay'],
+    ['6383595636','P',4000,2000,'Shakila Gpay'],
+    ['9962383951','P',4000,2000,'Shakila Gpay'],
+    ['8463902563','P',4000,2000,'Shakila Gpay'],
+    ['9962531886','P',4000,2000,'Shakila Gpay'],
+    ['9080791811','P',4000,2000,'Shakila Gpay'],
+    ['7502246329','P',4500,2000,'Shakila Gpay'],
+    ['7871930221','C',9000,2000,'Shakila Gpay'],
+    ['9123510557','C',9000,3000,'Shakila Gpay'],
+    ['9345144966','C',9000,3000,'Shakila Gpay'],
+    ['7812883158','C',9000,2000,'Shakila Gpay'],
+    ['7418082019','C',9000,2000,'Shakila Gpay'],
+    ['9787008121','C',9000,2000,'Shakila Gpay'],
+    ['9042930788','C',9000,2000,'Shakila Gpay'],
+    ['9487081050','C',9000,3000,'Shakila Gpay'],
+    ['8754884872','C',9000,3000,'Shakila Gpay'],
+    ['9444263675','C',9000,3000,'Shakila Gpay'],
+  ];
+
+  // Build lookup: normalize phone to last 10 digits, map to {courseId, totalFee, paid, balance, paymentMethod}
+  const lookup = {};
+  DATA.forEach(([rawPhone, courseKey, totalFee, paid, paymentMethod]) => {
+    const phone = rawPhone.replace(/\D/g,'').slice(-10);
+    if (phone.length !== 10) return;
+    const courseId = COURSE_MAP[courseKey];
+    if (!lookup[phone]) lookup[phone] = [];
+    lookup[phone].push({ courseId, totalFee, paid, balance: totalFee - paid, paymentMethod });
+  });
+
+  const users = dbGet(DB.USERS);
+  const enrollments = dbGet(DB.ENROLLMENTS);
+  let changed = 0;
+  users.forEach(u => {
+    if (u.role !== 'student') return;
+    const phone = (u.phone || '').replace(/\D/g,'').slice(-10);
+    if (!phone || !lookup[phone]) return;
+    enrollments.filter(e => e.studentId === u.id).forEach(e => {
+      if (e.feePlan && e.feePlan.excelImport) return; // already applied
+      const rec = lookup[phone].find(r => r.courseId === e.courseId) || lookup[phone][0];
+      if (!rec) return;
+      e.feePlan = {
+        type: 'full',
+        totalFee: rec.totalFee,
+        paidAmount: rec.paid,
+        balance: rec.balance,
+        paymentMethod: rec.paymentMethod,
+        nextDueDate: '2026-06-05',
+        excelImport: true
+      };
+      changed++;
+    });
+  });
+  if (changed) {
+    dbSet(DB.ENROLLMENTS, enrollments);
+    console.log(`✅ Excel fee data applied to ${changed} enrollments`);
+  }
 })();

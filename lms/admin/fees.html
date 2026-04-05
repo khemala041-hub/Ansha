@@ -20,26 +20,27 @@
     <main class="page-content">
       <div class="page-header">
         <div>
-          <h1>Fee Management</h1>
-          <p>Track and manage student fee payments</p>
+          <h1>💰 Fee Management</h1>
+          <p>View and update student fee details</p>
         </div>
       </div>
 
       <!-- Fee Stats -->
-      <div class="stats-grid" id="fee-stats" style="grid-template-columns:repeat(3,1fr);"></div>
+      <div class="stats-grid" id="fee-stats" style="grid-template-columns:repeat(4,1fr);margin-bottom:var(--space-5);"></div>
 
       <!-- Filter Bar -->
       <div class="filter-bar mt-4">
         <div class="search-input">
           <span>🔍</span>
-          <input type="text" id="search-input" placeholder="Search student name…">
+          <input type="text" id="search-input" placeholder="Search student name or phone…">
         </div>
         <select class="form-control" id="filter-course" style="width:auto;min-width:200px;">
           <option value="">All Courses</option>
         </select>
-        <select class="form-control" id="filter-status" style="width:auto;min-width:150px;">
+        <select class="form-control" id="filter-status" style="width:auto;min-width:160px;">
           <option value="">All Status</option>
-          <option value="paid">Paid</option>
+          <option value="paid">Fully Paid</option>
+          <option value="partial">Partially Paid</option>
           <option value="pending">Pending</option>
         </select>
       </div>
@@ -52,9 +53,12 @@
               <tr>
                 <th>Student</th>
                 <th>Course</th>
-                <th>Course Fee</th>
+                <th>Total Fee (₹)</th>
+                <th>Paid (₹)</th>
+                <th>Balance (₹)</th>
+                <th>Payment Method</th>
+                <th>Next Due</th>
                 <th>Status</th>
-                <th>Enrolled Date</th>
                 <th>Action</th>
               </tr>
             </thead>
@@ -63,6 +67,55 @@
         </div>
       </div>
     </main>
+  </div>
+</div>
+
+<!-- Edit Fee Modal -->
+<div class="modal-backdrop" id="edit-fee-modal">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <h3 id="modal-title">Edit Fee Details</h3>
+      <button class="modal-close" onclick="closeModal('edit-fee-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-enrollment-id">
+      <div style="display:grid;gap:16px;">
+        <div>
+          <label class="form-label">Student</label>
+          <div id="edit-student-info" style="font-weight:600;font-size:0.95rem;padding:8px 12px;background:#f8fafc;border-radius:8px;"></div>
+        </div>
+        <div>
+          <label class="form-label">Course</label>
+          <div id="edit-course-info" style="font-size:0.9rem;padding:8px 12px;background:#f8fafc;border-radius:8px;"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="form-label">Total Fee (₹) <span style="color:#dc2626;">*</span></label>
+            <input type="number" id="edit-total-fee" class="form-control" min="0" step="500" placeholder="e.g. 22000" oninput="recalcBalance()">
+          </div>
+          <div>
+            <label class="form-label">Paid Amount (₹) <span style="color:#dc2626;">*</span></label>
+            <input type="number" id="edit-paid-amt" class="form-control" min="0" step="500" placeholder="e.g. 5000" oninput="recalcBalance()">
+          </div>
+        </div>
+        <div>
+          <label class="form-label">Balance (₹)</label>
+          <input type="number" id="edit-balance" class="form-control" style="background:#f8fafc;font-weight:700;" readonly>
+        </div>
+        <div>
+          <label class="form-label">Payment Method</label>
+          <input type="text" id="edit-payment-method" class="form-control" placeholder="e.g. Shakila Gpay, Cash, NEFT…">
+        </div>
+        <div>
+          <label class="form-label">Next Payment Due Date</label>
+          <input type="date" id="edit-next-due" class="form-control">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;gap:10px;justify-content:flex-end;padding:16px 20px;border-top:1px solid #e2e8f0;">
+      <button class="btn btn-ghost" onclick="closeModal('edit-fee-modal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveFeeEdit()">💾 Save Changes</button>
+    </div>
   </div>
 </div>
 
@@ -86,81 +139,152 @@ function renderPage() {
 
 function populateCourseFilter() {
   const courses = dbGet(DB.COURSES);
-  document.getElementById('filter-course').innerHTML += courses.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+  document.getElementById('filter-course').innerHTML =
+    '<option value="">All Courses</option>' +
+    courses.map(c => `<option value="${c.id}">${c.icon||'📚'} ${c.title}</option>`).join('');
+}
+
+function getFeeData(enrollment) {
+  const fp = enrollment.feePlan;
+  if (!fp) {
+    const course = dbGetOne(DB.COURSES, enrollment.courseId);
+    return { totalFee: course ? course.fee || 0 : 0, paidAmt: 0, balance: course ? course.fee || 0 : 0, paymentMethod: '', nextDueDate: '' };
+  }
+  if (fp.excelImport) {
+    return { totalFee: fp.totalFee || 0, paidAmt: fp.paidAmount || 0, balance: fp.balance != null ? fp.balance : Math.max(0, (fp.totalFee||0) - (fp.paidAmount||0)), paymentMethod: fp.paymentMethod || '', nextDueDate: fp.nextDueDate || '' };
+  }
+  const sched = computeFeeSchedule(enrollment.studentId, enrollment.courseId);
+  return sched
+    ? { totalFee: sched.totalFee, paidAmt: sched.paidAmt, balance: sched.balance, paymentMethod: fp.paymentMethod || '', nextDueDate: fp.nextDueDate || '' }
+    : { totalFee: fp.totalFee || 0, paidAmt: 0, balance: fp.totalFee || 0, paymentMethod: '', nextDueDate: '' };
 }
 
 function renderFeeStats() {
   const enrollments = dbGet(DB.ENROLLMENTS);
-  const courses = dbGet(DB.COURSES);
-  const totalFees = enrollments.reduce((s, e) => {
-    const c = dbGetOne(DB.COURSES, e.courseId);
-    return s + (c ? c.fee : 0);
-  }, 0);
-  const collectedFees = enrollments.filter(e => e.feeStatus === 'paid').reduce((s, e) => {
-    const c = dbGetOne(DB.COURSES, e.courseId);
-    return s + (c ? c.fee : 0);
-  }, 0);
-  const pendingCount = enrollments.filter(e => e.feeStatus === 'pending').length;
-
+  let totalFeeAll = 0, paidAll = 0, balanceAll = 0, pendingCount = 0;
+  enrollments.forEach(e => {
+    const fd = getFeeData(e);
+    totalFeeAll += fd.totalFee;
+    paidAll     += fd.paidAmt;
+    balanceAll  += fd.balance;
+    if (fd.balance > 0) pendingCount++;
+  });
   document.getElementById('fee-stats').innerHTML = `
-    <div class="stat-card"><div class="stat-icon green">💰</div><div class="stat-info"><div class="stat-value">${formatCurrency(collectedFees)}</div><div class="stat-label">Total Collected</div></div></div>
-    <div class="stat-card"><div class="stat-icon gold">⏳</div><div class="stat-info"><div class="stat-value">${formatCurrency(totalFees - collectedFees)}</div><div class="stat-label">Pending Amount</div></div></div>
-    <div class="stat-card"><div class="stat-icon teal">📋</div><div class="stat-info"><div class="stat-value">${pendingCount}</div><div class="stat-label">Pending Payments</div></div></div>`;
+    <div class="stat-card"><div class="stat-icon green">💰</div><div class="stat-info"><div class="stat-value">₹${paidAll.toLocaleString('en-IN')}</div><div class="stat-label">Total Collected</div></div></div>
+    <div class="stat-card"><div class="stat-icon red">⏳</div><div class="stat-info"><div class="stat-value">₹${balanceAll.toLocaleString('en-IN')}</div><div class="stat-label">Total Pending</div></div></div>
+    <div class="stat-card"><div class="stat-icon teal">📋</div><div class="stat-info"><div class="stat-value">${pendingCount}</div><div class="stat-label">Students with Balance</div></div></div>
+    <div class="stat-card"><div class="stat-icon gold">🎓</div><div class="stat-info"><div class="stat-value">${enrollments.length}</div><div class="stat-label">Total Enrollments</div></div></div>`;
 }
 
 function renderFeeTable() {
   const enrollments = dbGet(DB.ENROLLMENTS);
-  const searchQ = document.getElementById('search-input').value.toLowerCase();
+  const searchQ     = document.getElementById('search-input').value.toLowerCase();
   const courseFilter = document.getElementById('filter-course').value;
   const statusFilter = document.getElementById('filter-status').value;
 
-  let filtered = enrollments;
-  if (courseFilter) filtered = filtered.filter(e => e.courseId === courseFilter);
-  if (statusFilter) filtered = filtered.filter(e => e.feeStatus === statusFilter);
-
-  const rows = filtered.map(e => {
+  let rows = '';
+  enrollments.forEach(e => {
     const student = dbGetOne(DB.USERS, e.studentId);
     const course  = dbGetOne(DB.COURSES, e.courseId);
-    if (!student || !course) return '';
-    if (searchQ && !student.name.toLowerCase().includes(searchQ)) return '';
-    return `<tr>
-      <td><div class="flex items-center gap-2">
-        <div class="avatar avatar-sm">${student.avatar || getInitials(student.name)}</div>
-        <div><div class="font-medium text-sm">${student.name}</div><div class="text-xs text-muted">${student.email}</div></div>
-      </div></td>
-      <td class="text-sm">${course.icon} ${course.title}</td>
-      <td class="font-semibold">${formatCurrency(course.fee || 0)}</td>
-      <td>${statusBadge(e.feeStatus)}</td>
-      <td class="text-sm text-muted">${formatDate(e.enrolledAt)}</td>
+    if (!student || !course) return;
+    if (courseFilter && e.courseId !== courseFilter) return;
+    if (searchQ && !student.name.toLowerCase().includes(searchQ) && !(student.phone||'').includes(searchQ)) return;
+
+    const fd = getFeeData(e);
+    const { totalFee, paidAmt, balance, paymentMethod, nextDueDate } = fd;
+
+    let feeStatus = balance === 0 ? 'paid' : paidAmt > 0 ? 'partial' : 'pending';
+    if (statusFilter && feeStatus !== statusFilter) return;
+
+    const statusHtml = feeStatus === 'paid'
+      ? `<span class="badge badge-success">✅ Fully Paid</span>`
+      : feeStatus === 'partial'
+      ? `<span class="badge badge-warning">⏳ Partial</span>`
+      : `<span class="badge badge-danger">🔴 Pending</span>`;
+
+    const dueDateHtml = nextDueDate && balance > 0
+      ? `<span style="color:#d97706;font-size:0.78rem;font-weight:600;">${new Date(nextDueDate).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span>`
+      : `<span class="text-muted text-xs">—</span>`;
+
+    rows += `<tr>
       <td>
-        ${e.feeStatus === 'pending'
-          ? `<button class="btn btn-success btn-sm" onclick="markPaid('${e.id}')">✓ Mark Paid</button>`
-          : `<button class="btn btn-ghost btn-sm" onclick="markPending('${e.id}')">↩ Revert</button>`}
+        <div class="flex items-center gap-2">
+          <div class="avatar avatar-sm">${student.avatar || getInitials(student.name)}</div>
+          <div>
+            <div class="font-medium text-sm">${student.name}</div>
+            <div class="text-xs text-muted">${student.phone || student.email || ''}</div>
+          </div>
+        </div>
+      </td>
+      <td class="text-sm">${course.icon||'📚'} ${course.title}</td>
+      <td class="font-semibold">₹${totalFee.toLocaleString('en-IN')}</td>
+      <td style="color:#16a34a;font-weight:700;">₹${paidAmt.toLocaleString('en-IN')}</td>
+      <td style="color:${balance===0?'#16a34a':'#dc2626'};font-weight:700;">₹${balance.toLocaleString('en-IN')}</td>
+      <td class="text-sm">${paymentMethod || '<span class="text-muted">—</span>'}</td>
+      <td>${dueDateHtml}</td>
+      <td>${statusHtml}</td>
+      <td>
+        <button class="btn btn-primary btn-sm" onclick="openEditModal('${e.id}')">✏️ Edit</button>
       </td>
     </tr>`;
-  }).join('');
+  });
 
-  document.getElementById('fee-table').innerHTML = rows || '<tr><td colspan="6" class="text-center text-muted" style="padding:2rem;">No records found</td></tr>';
+  document.getElementById('fee-table').innerHTML = rows || '<tr><td colspan="9" class="text-center text-muted" style="padding:2rem;">No records found</td></tr>';
 }
 
-function markPaid(enrollmentId) {
+function openEditModal(enrollmentId) {
   const e = dbGetOne(DB.ENROLLMENTS, enrollmentId);
   if (!e) return;
-  e.feeStatus = 'paid';
-  dbSave(DB.ENROLLMENTS, e);
-  renderFeeStats();
-  renderFeeTable();
-  showToast('Fee marked as paid ✓', 'success');
+  const student = dbGetOne(DB.USERS, e.studentId);
+  const course  = dbGetOne(DB.COURSES, e.courseId);
+  const fd = getFeeData(e);
+
+  document.getElementById('edit-enrollment-id').value = enrollmentId;
+  document.getElementById('edit-student-info').textContent = student ? `${student.avatar||'👩‍🎓'} ${student.name} · ${student.phone || student.email || ''}` : '—';
+  document.getElementById('edit-course-info').textContent  = course ? `${course.icon||'📚'} ${course.title}` : '—';
+  document.getElementById('edit-total-fee').value    = fd.totalFee || '';
+  document.getElementById('edit-paid-amt').value     = fd.paidAmt || '';
+  document.getElementById('edit-balance').value      = fd.balance || '';
+  document.getElementById('edit-payment-method').value = fd.paymentMethod || '';
+  document.getElementById('edit-next-due').value     = fd.nextDueDate ? fd.nextDueDate.split('T')[0] : '';
+  document.getElementById('modal-title').textContent = `Edit Fee — ${student ? student.name : ''}`;
+  openModal('edit-fee-modal');
 }
 
-function markPending(enrollmentId) {
+function recalcBalance() {
+  const total  = parseFloat(document.getElementById('edit-total-fee').value) || 0;
+  const paid   = parseFloat(document.getElementById('edit-paid-amt').value)  || 0;
+  document.getElementById('edit-balance').value = Math.max(0, total - paid);
+}
+
+function saveFeeEdit() {
+  const enrollmentId = document.getElementById('edit-enrollment-id').value;
   const e = dbGetOne(DB.ENROLLMENTS, enrollmentId);
   if (!e) return;
-  e.feeStatus = 'pending';
+
+  const totalFee = parseFloat(document.getElementById('edit-total-fee').value) || 0;
+  const paid     = parseFloat(document.getElementById('edit-paid-amt').value)  || 0;
+  const balance  = Math.max(0, totalFee - paid);
+  const method   = document.getElementById('edit-payment-method').value.trim();
+  const nextDue  = document.getElementById('edit-next-due').value;
+
+  e.feePlan = {
+    type: 'full',
+    totalFee,
+    paidAmount: paid,
+    balance,
+    paymentMethod: method,
+    nextDueDate: nextDue || '',
+    excelImport: true,
+    updatedAt: new Date().toISOString()
+  };
+  e.feeStatus = balance === 0 ? 'paid' : paid > 0 ? 'partial' : 'pending';
+
   dbSave(DB.ENROLLMENTS, e);
+  closeModal('edit-fee-modal');
   renderFeeStats();
   renderFeeTable();
-  showToast('Fee reverted to pending', 'warning');
+  showToast(`Fee updated for student ✓`, 'success');
 }
 </script>
 </body>

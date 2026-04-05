@@ -305,7 +305,8 @@ function buildSidebar(user) {
     <a href="results.html"       class="nav-item"><span class="nav-icon"><i class="fa-solid fa-trophy"></i></span> My Results</a>
     <a href="gradebook.html"     class="nav-item"><span class="nav-icon"><i class="fa-solid fa-book-bookmark"></i></span> Grade Report</a>
     <a href="leaderboard.html"   class="nav-item"><span class="nav-icon"><i class="fa-solid fa-ranking-star"></i></span> Leaderboard</a>
-    <a href="fees.html"          class="nav-item"><span class="nav-icon"><i class="fa-solid fa-receipt"></i></span> My Fees</a>
+    <!-- My Fees hidden per admin preference -->
+    <!-- <a href="fees.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-receipt"></i></span> My Fees</a> -->
     <a href="profile.html"       class="nav-item"><span class="nav-icon"><i class="fa-solid fa-user-circle"></i></span> Profile & Certs</a>`;
 
   const navMap = { admin: adminNav, teacher: teacherNav, student: studentNav };

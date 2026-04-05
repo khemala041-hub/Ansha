@@ -21,8 +21,8 @@
       </div>
     </header>
     <main class="page-content">
-      <!-- Fee Alert Banner -->
-      <div id="fee-alert-banner"></div>
+      <!-- Fee Alert Banner (hidden) -->
+      <div id="fee-alert-banner" style="display:none;"></div>
       <!-- Welcome Banner -->
       <div style="background:linear-gradient(135deg,var(--primary-dark),var(--primary));border-radius:var(--radius-xl);padding:var(--space-8);color:var(--white);margin-bottom:var(--space-6);display:flex;align-items:center;justify-content:space-between;">
         <div>
@@ -90,8 +90,8 @@
             <div class="card-header"><h2>📋 Assignments Due</h2></div>
             <div class="card-body" id="upcoming-assignments"></div>
           </div>
-          <!-- Fee Status Quick View -->
-          <div class="card" id="fee-quick-card">
+          <!-- Fee Status Quick View (hidden) -->
+          <div class="card" id="fee-quick-card" style="display:none;">
             <div class="card-header">
               <h2>💰 My Fees</h2>
               <a href="fees.html" class="btn btn-ghost btn-sm">View All →</a>
@@ -139,8 +139,9 @@ function renderPage() {
   try { renderEnrolledCourses(); } catch(e) { console.warn('renderEnrolledCourses', e); }
   try { renderAssignments(); } catch(e) { console.warn('renderAssignments', e); }
   try { renderNotices(); } catch(e) { console.warn('renderNotices', e); }
-  try { renderFeeAlert(); } catch(e) { console.warn('renderFeeAlert', e); }
-  try { renderFeeQuick(); } catch(e) { console.warn('renderFeeQuick', e); }
+  // Fee sections hidden per admin preference
+  // try { renderFeeAlert(); } catch(e) {}
+  // try { renderFeeQuick(); } catch(e) {}
   try { renderCertificate(); } catch(e) { console.warn('renderCertificate', e); }
 }
 
