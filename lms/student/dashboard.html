@@ -88,14 +88,6 @@
             <div class="card-header"><h2>📋 Assignments Due</h2></div>
             <div class="card-body" id="upcoming-assignments"></div>
           </div>
-          <!-- Fee Status Quick View (hidden) -->
-          <div class="card" id="fee-quick-card" style="display:none;">
-            <div class="card-header">
-              <h2>💰 My Fees</h2>
-              <a href="fees.html" class="btn btn-ghost btn-sm">View All →</a>
-            </div>
-            <div class="card-body" id="fee-quick-body"></div>
-          </div>
           <!-- Announcements -->
           <div class="card">
             <div class="card-header"><h2>📢 Announcements</h2></div>
@@ -137,9 +129,6 @@ function renderPage() {
   try { renderEnrolledCourses(); } catch(e) { console.warn('renderEnrolledCourses', e); }
   try { renderAssignments(); } catch(e) { console.warn('renderAssignments', e); }
   try { renderNotices(); } catch(e) { console.warn('renderNotices', e); }
-  // Fee sections hidden per admin preference
-  // try { renderFeeAlert(); } catch(e) {}
-  // try { renderFeeQuick(); } catch(e) {}
   try { renderCertificate(); } catch(e) { console.warn('renderCertificate', e); }
 }
 
@@ -468,31 +457,6 @@ function renderNotices() {
 }
 
 
-function renderFeeQuick() {
-  const enrollments = getStudentEnrollments(user.id);
-  if (!enrollments.length) {
-    document.getElementById('fee-quick-body').innerHTML = '<p class="text-sm text-muted text-center py-2">No courses enrolled.</p>';
-    return;
-  }
-  const rows = enrollments.map(e => {
-    const course = dbGetOne(DB.COURSES, e.courseId);
-    const sched = computeFeeSchedule(user.id, e.courseId);
-    if (!course || !sched) return '';
-    const pct = sched.totalFee > 0 ? Math.round((sched.paidAmt / sched.totalFee) * 100) : 0;
-    const statusColor = sched.balance === 0 ? '#16a34a' : sched.paidAmt > 0 ? '#d97706' : '#dc2626';
-    const statusText  = sched.balance === 0 ? '✅ Paid' : sched.paidAmt > 0 ? '⏳ Partial' : '🔴 Pending';
-    return `
-    <div style="padding:10px 0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;">
-      <span style="font-size:1.3rem;">${course.icon||'📚'}</span>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:0.82rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${course.title.split(' ').slice(0,3).join(' ')}…</div>
-        <div style="height:5px;background:#e2e8f0;border-radius:99px;margin-top:4px;"><div style="height:100%;width:${pct}%;background:${statusColor};border-radius:99px;"></div></div>
-      </div>
-      <span style="font-size:0.72rem;font-weight:700;color:${statusColor};white-space:nowrap;">${statusText}</span>
-    </div>`;
-  }).join('');
-  document.getElementById('fee-quick-body').innerHTML = rows || '<p class="text-sm text-muted">No data.</p>';
-}
 </script>
 </body>
 </html>
