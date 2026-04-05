@@ -84,7 +84,7 @@ function renderCourses() {
         </div>
       </div>
       <div class="course-footer">
-        <span class="font-bold text-primary">${formatCurrency(c.fee || 0)}</span>
+        <span></span>
         ${enrolled
           ? `<a href="lesson.html?course=${c.id}" class="btn btn-primary btn-sm">Continue →</a>`
           : `<button class="btn btn-accent btn-sm" onclick="enroll('${c.id}','${c.title.replace(/'/g,"\\'")}')">Enroll Now</button>`}
