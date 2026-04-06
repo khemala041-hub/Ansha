@@ -272,6 +272,7 @@ function buildSidebar(user) {
     <a href="leaderboard.html"  class="nav-item"><span class="nav-icon"><i class="fa-solid fa-ranking-star"></i></span> Leaderboard</a>
     <a href="gradebook.html"    class="nav-item"><span class="nav-icon"><i class="fa-solid fa-book-bookmark"></i></span> Grade Book</a>
     <div class="nav-section-title">Finance</div>
+    <a href="fees.html"         class="nav-item"><span class="nav-icon"><i class="fa-solid fa-money-bill-wave"></i></span> Fee Management</a>
     <a href="payment.html"      class="nav-item"><span class="nav-icon"><i class="fa-solid fa-receipt"></i></span> Payment</a>
     <a href="expenses.html"     class="nav-item"><span class="nav-icon"><i class="fa-solid fa-arrow-trend-down"></i></span> Expenses</a>
     <a href="profit-loss.html"  class="nav-item"><span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span> Profit & Loss</a>
