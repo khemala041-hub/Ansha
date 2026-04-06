@@ -131,6 +131,46 @@
   </div>
 </div>
 
+<!-- Record Payment Modal -->
+<div class="modal-backdrop" id="pay-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 id="pay-modal-title">Record Payment</h3>
+      <button class="modal-close" onclick="closeModal('pay-modal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pay-enrollment-id">
+      <div style="display:grid;gap:14px;">
+        <div>
+          <div id="pay-student-info" style="font-weight:600;font-size:0.9rem;padding:8px 12px;background:#f8fafc;border-radius:8px;margin-bottom:4px;"></div>
+          <div id="pay-balance-info" style="font-size:0.82rem;padding:6px 12px;background:#fff7ed;border-radius:8px;color:#9a3412;font-weight:600;"></div>
+        </div>
+        <div>
+          <label class="form-label">Payment Plan</label>
+          <select id="pay-plan" class="form-control" onchange="renderPaymentSlots()">
+            <option value="full">💳 Full Payment (1 time)</option>
+            <option value="2x">📅 2 Installments</option>
+            <option value="4x">📆 4 Installments</option>
+          </select>
+        </div>
+        <div id="pay-slots"></div>
+        <div>
+          <label class="form-label">Payment Method</label>
+          <input type="text" id="pay-method" class="form-control" placeholder="e.g. Shakila Gpay, Cash, NEFT…">
+        </div>
+        <div>
+          <label class="form-label">Payment Date</label>
+          <input type="date" id="pay-date" class="form-control">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="display:flex;gap:10px;justify-content:flex-end;padding:16px 20px;border-top:1px solid #e2e8f0;">
+      <button class="btn btn-ghost" onclick="closeModal('pay-modal')">Cancel</button>
+      <button class="btn btn-success" onclick="savePayment()">✅ Record Payment</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../assets/js/data.js"></script>
 <script src="../assets/js/supabase.js"></script>
@@ -237,8 +277,9 @@ function renderFeeTable() {
       <td class="text-sm">${paymentMethod || '<span class="text-muted">—</span>'}</td>
       <td>${dueDateHtml}</td>
       <td>${statusHtml}</td>
-      <td>
+      <td style="white-space:nowrap;">
         <button class="btn btn-primary btn-sm" onclick="openEditModal('${e.id}')">✏️ Edit</button>
+        <button class="btn btn-success btn-sm" style="margin-left:6px;" onclick="openPayModal('${e.id}')">💰 Pay</button>
       </td>
     </tr>`;
   });
@@ -309,6 +350,115 @@ function saveFeeEdit() {
   renderFeeStats();
   renderFeeTable();
   showToast(`Fee updated for student ✓`, 'success');
+}
+
+function openPayModal(enrollmentId) {
+  const e = dbGetOne(DB.ENROLLMENTS, enrollmentId);
+  if (!e) return;
+  const student = dbGetOne(DB.USERS, e.studentId);
+  const course  = dbGetOne(DB.COURSES, e.courseId);
+  const fd = getFeeData(e);
+
+  document.getElementById('pay-enrollment-id').value = enrollmentId;
+  document.getElementById('pay-modal-title').textContent = `Record Payment — ${student ? student.name : ''}`;
+  document.getElementById('pay-student-info').textContent = `${student?.avatar||'👩‍🎓'} ${student?.name} · ${course?.title||''}`;
+  document.getElementById('pay-balance-info').textContent = `Balance Due: ₹${fd.balance.toLocaleString('en-IN')}  |  Paid so far: ₹${fd.paidAmt.toLocaleString('en-IN')}`;
+  document.getElementById('pay-method').value = fd.paymentMethod || '';
+  document.getElementById('pay-date').value = new Date().toISOString().split('T')[0];
+
+  // Pre-select plan from feePlan if set
+  const fp = e.feePlan || {};
+  document.getElementById('pay-plan').value = fp.paymentPlan || 'full';
+  renderPaymentSlots();
+  openModal('pay-modal');
+}
+
+function renderPaymentSlots() {
+  const enrollmentId = document.getElementById('pay-enrollment-id').value;
+  const e = dbGetOne(DB.ENROLLMENTS, enrollmentId);
+  const fd = getFeeData(e);
+  const plan = document.getElementById('pay-plan').value;
+  const numSlots = plan === '4x' ? 4 : plan === '2x' ? 2 : 1;
+  const netFee = fd.totalFee;
+  const suggested = numSlots > 1 ? Math.round(netFee / numSlots) : netFee;
+
+  // Get existing payments for this enrollment
+  const existing = dbGet(DB.PAYMENTS).filter(p => p.studentId === e.studentId && p.courseId === e.courseId)
+    .sort((a,b) => a.installmentNo - b.installmentNo);
+
+  let html = `<div style="font-size:0.82rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Installments</div>`;
+  for (let i = 1; i <= numSlots; i++) {
+    const paid = existing.find(p => p.installmentNo === i);
+    const bgColor = paid ? '#f0fdf4' : '#fff';
+    const borderColor = paid ? '#86efac' : '#e2e8f0';
+    html += `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:${bgColor};border:1.5px solid ${borderColor};border-radius:8px;margin-bottom:8px;">
+      <div style="font-weight:700;font-size:0.85rem;min-width:80px;">Instalment ${i}</div>
+      <input type="number" id="pay-amt-${i}" class="form-control" style="max-width:130px;" value="${paid ? paid.amount : suggested}" placeholder="₹ amount" ${paid ? 'disabled style="opacity:0.6;"' : ''}>
+      ${paid
+        ? `<span style="color:#16a34a;font-size:0.8rem;font-weight:700;">✅ Paid on ${new Date(paid.paidAt).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span>`
+        : `<span style="font-size:0.78rem;color:#94a3b8;">Pending</span>`}
+    </div>`;
+  }
+  document.getElementById('pay-slots').innerHTML = html;
+}
+
+function savePayment() {
+  const enrollmentId = document.getElementById('pay-enrollment-id').value;
+  const e = dbGetOne(DB.ENROLLMENTS, enrollmentId);
+  if (!e) return;
+
+  const plan   = document.getElementById('pay-plan').value;
+  const method = document.getElementById('pay-method').value.trim();
+  const date   = document.getElementById('pay-date').value || new Date().toISOString();
+  const numSlots = plan === '4x' ? 4 : plan === '2x' ? 2 : 1;
+
+  // Get existing payments
+  const existing = dbGet(DB.PAYMENTS).filter(p => p.studentId === e.studentId && p.courseId === e.courseId);
+  let totalPaid = 0, newCount = 0;
+
+  for (let i = 1; i <= numSlots; i++) {
+    const input = document.getElementById(`pay-amt-${i}`);
+    if (!input || input.disabled) {
+      // Already paid — count it
+      const p = existing.find(x => x.installmentNo === i);
+      if (p) totalPaid += p.amount || 0;
+      continue;
+    }
+    const amt = parseFloat(input.value) || 0;
+    if (amt <= 0) continue;
+    const payment = {
+      id: genId(),
+      studentId: e.studentId,
+      courseId: e.courseId,
+      enrollmentId,
+      amount: amt,
+      installmentNo: i,
+      paymentMethod: method,
+      paidAt: new Date(date).toISOString(),
+      receiptNo: `RCP-${Date.now().toString(36).toUpperCase()}`,
+      recordedBy: user.id
+    };
+    dbSave(DB.PAYMENTS, payment);
+    totalPaid += amt;
+    newCount++;
+  }
+
+  // Also count any pre-existing payments not in slots
+  existing.forEach(p => { if (p.installmentNo > numSlots) totalPaid += p.amount || 0; });
+
+  // Update feePlan with payment plan and new paid total
+  const fp = e.feePlan || {};
+  const netFee = fp.totalFee || 0;
+  const balance = Math.max(0, netFee - totalPaid);
+  e.feePlan = { ...fp, paymentPlan: plan, paidAmount: totalPaid, balance, paymentMethod: method, updatedAt: new Date().toISOString() };
+  e.feeStatus = balance === 0 ? 'paid' : totalPaid > 0 ? 'partial' : 'pending';
+  dbSave(DB.ENROLLMENTS, e);
+
+  closeModal('pay-modal');
+  renderFeeStats();
+  renderFeeTable();
+  showToast(`${newCount} payment(s) recorded ✓`, 'success');
 }
 </script>
 </body>
