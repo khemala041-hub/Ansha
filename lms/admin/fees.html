@@ -53,7 +53,9 @@
               <tr>
                 <th>Student</th>
                 <th>Course</th>
-                <th>Total Fee (₹)</th>
+                <th>Original Fee (₹)</th>
+                <th>Discount (₹)</th>
+                <th>Net Fee (₹)</th>
                 <th>Paid (₹)</th>
                 <th>Balance (₹)</th>
                 <th>Payment Method</th>
@@ -90,8 +92,18 @@
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
           <div>
-            <label class="form-label">Total Fee (₹) <span style="color:#dc2626;">*</span></label>
+            <label class="form-label">Original Fee (₹) <span style="color:#dc2626;">*</span></label>
             <input type="number" id="edit-total-fee" class="form-control" min="0" step="500" placeholder="e.g. 22000" oninput="recalcBalance()">
+          </div>
+          <div>
+            <label class="form-label">Discount (₹)</label>
+            <input type="number" id="edit-discount" class="form-control" min="0" step="100" placeholder="e.g. 2000" oninput="recalcBalance()">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <label class="form-label">Net Fee After Discount (₹)</label>
+            <input type="number" id="edit-net-fee" class="form-control" style="background:#f0fdf4;font-weight:700;color:#16a34a;" readonly>
           </div>
           <div>
             <label class="form-label">Paid Amount (₹) <span style="color:#dc2626;">*</span></label>
@@ -151,7 +163,7 @@ function getFeeData(enrollment) {
     return { totalFee: course ? course.fee || 0 : 0, paidAmt: 0, balance: course ? course.fee || 0 : 0, paymentMethod: '', nextDueDate: '' };
   }
   if (fp.excelImport) {
-    return { totalFee: fp.totalFee || 0, paidAmt: fp.paidAmount || 0, balance: fp.balance != null ? fp.balance : Math.max(0, (fp.totalFee||0) - (fp.paidAmount||0)), paymentMethod: fp.paymentMethod || '', nextDueDate: fp.nextDueDate || '' };
+    return { originalFee: fp.originalFee || fp.totalFee || 0, discount: fp.discount || 0, totalFee: fp.totalFee || 0, paidAmt: fp.paidAmount || 0, balance: fp.balance != null ? fp.balance : Math.max(0, (fp.totalFee||0) - (fp.paidAmount||0)), paymentMethod: fp.paymentMethod || '', nextDueDate: fp.nextDueDate || '' };
   }
   const sched = computeFeeSchedule(enrollment.studentId, enrollment.courseId);
   return sched
@@ -217,7 +229,9 @@ function renderFeeTable() {
         </div>
       </td>
       <td class="text-sm">${course.icon||'📚'} ${course.title}</td>
-      <td class="font-semibold">₹${totalFee.toLocaleString('en-IN')}</td>
+      <td class="font-semibold">₹${(fd.originalFee||totalFee).toLocaleString('en-IN')}</td>
+      <td style="color:${(fd.discount||0)>0?'#7c3aed':'#94a3b8'};font-weight:700;">${(fd.discount||0)>0?'₹'+(fd.discount).toLocaleString('en-IN'):'—'}</td>
+      <td class="font-semibold" style="color:#0d9488;">₹${totalFee.toLocaleString('en-IN')}</td>
       <td style="color:#16a34a;font-weight:700;">₹${paidAmt.toLocaleString('en-IN')}</td>
       <td style="color:${balance===0?'#16a34a':'#dc2626'};font-weight:700;">₹${balance.toLocaleString('en-IN')}</td>
       <td class="text-sm">${paymentMethod || '<span class="text-muted">—</span>'}</td>
@@ -229,7 +243,7 @@ function renderFeeTable() {
     </tr>`;
   });
 
-  document.getElementById('fee-table').innerHTML = rows || '<tr><td colspan="9" class="text-center text-muted" style="padding:2rem;">No records found</td></tr>';
+  document.getElementById('fee-table').innerHTML = rows || '<tr><td colspan="11" class="text-center text-muted" style="padding:2rem;">No records found</td></tr>';
 }
 
 function openEditModal(enrollmentId) {
@@ -242,7 +256,10 @@ function openEditModal(enrollmentId) {
   document.getElementById('edit-enrollment-id').value = enrollmentId;
   document.getElementById('edit-student-info').textContent = student ? `${student.avatar||'👩‍🎓'} ${student.name} · ${student.phone || student.email || ''}` : '—';
   document.getElementById('edit-course-info').textContent  = course ? `${course.icon||'📚'} ${course.title}` : '—';
-  document.getElementById('edit-total-fee').value    = fd.totalFee || '';
+  const fp = e.feePlan || {};
+  document.getElementById('edit-total-fee').value    = fp.originalFee || fd.totalFee || '';
+  document.getElementById('edit-discount').value     = fp.discount || 0;
+  document.getElementById('edit-net-fee').value      = fd.totalFee || '';
   document.getElementById('edit-paid-amt').value     = fd.paidAmt || '';
   document.getElementById('edit-balance').value      = fd.balance || '';
   document.getElementById('edit-payment-method').value = fd.paymentMethod || '';
@@ -252,9 +269,12 @@ function openEditModal(enrollmentId) {
 }
 
 function recalcBalance() {
-  const total  = parseFloat(document.getElementById('edit-total-fee').value) || 0;
-  const paid   = parseFloat(document.getElementById('edit-paid-amt').value)  || 0;
-  document.getElementById('edit-balance').value = Math.max(0, total - paid);
+  const original = parseFloat(document.getElementById('edit-total-fee').value) || 0;
+  const discount = parseFloat(document.getElementById('edit-discount').value)  || 0;
+  const netFee   = Math.max(0, original - discount);
+  const paid     = parseFloat(document.getElementById('edit-paid-amt').value)  || 0;
+  document.getElementById('edit-net-fee').value  = netFee;
+  document.getElementById('edit-balance').value  = Math.max(0, netFee - paid);
 }
 
 function saveFeeEdit() {
@@ -262,15 +282,19 @@ function saveFeeEdit() {
   const e = dbGetOne(DB.ENROLLMENTS, enrollmentId);
   if (!e) return;
 
-  const totalFee = parseFloat(document.getElementById('edit-total-fee').value) || 0;
-  const paid     = parseFloat(document.getElementById('edit-paid-amt').value)  || 0;
-  const balance  = Math.max(0, totalFee - paid);
-  const method   = document.getElementById('edit-payment-method').value.trim();
-  const nextDue  = document.getElementById('edit-next-due').value;
+  const originalFee = parseFloat(document.getElementById('edit-total-fee').value) || 0;
+  const discount    = parseFloat(document.getElementById('edit-discount').value)  || 0;
+  const netFee      = Math.max(0, originalFee - discount);
+  const paid        = parseFloat(document.getElementById('edit-paid-amt').value)  || 0;
+  const balance     = Math.max(0, netFee - paid);
+  const method      = document.getElementById('edit-payment-method').value.trim();
+  const nextDue     = document.getElementById('edit-next-due').value;
 
   e.feePlan = {
     type: 'full',
-    totalFee,
+    originalFee,
+    discount,
+    totalFee: netFee,
     paidAmount: paid,
     balance,
     paymentMethod: method,
