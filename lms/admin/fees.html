@@ -200,6 +200,19 @@ function renderPage() {
   document.getElementById('search-input').addEventListener('input', renderFeeTable);
   document.getElementById('filter-course').addEventListener('change', renderFeeTable);
   document.getElementById('filter-status').addEventListener('change', renderFeeTable);
+
+  // Auto-open modal if navigated from Student Information page
+  const target = sessionStorage.getItem('fees_target');
+  if (target) {
+    sessionStorage.removeItem('fees_target');
+    try {
+      const { enrollmentId, action } = JSON.parse(target);
+      setTimeout(() => {
+        if (action === 'pay') openPayModal(enrollmentId);
+        else openEditModal(enrollmentId);
+      }, 300);
+    } catch(e) {}
+  }
 }
 
 function populateCourseFilter() {

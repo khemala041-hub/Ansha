@@ -256,6 +256,35 @@ function renderGrid() {
         <div class="text-xs text-muted mb-2">Enrolled Courses:</div>
         <div>${courseList}</div>
       </div>` : '<div class="text-xs text-muted mt-3">Not enrolled in any course</div>'}
+      ${enrollments.length ? `<div class="mt-3 pt-3" style="border-top:1px solid var(--gray-100);">
+        <div class="text-xs font-bold mb-2" style="color:#6366f1;">💰 Fee Details</div>
+        ${enrollments.map(e => {
+          const c = dbGetOne(DB.COURSES, e.courseId);
+          const fp = e.feePlan || {};
+          const totalFee = fp.totalFee || 0;
+          const paid = fp.paidAmount || 0;
+          const balance = fp.balance != null ? fp.balance : Math.max(0, totalFee - paid);
+          const method = fp.paymentMethod || '—';
+          const due = fp.nextDueDate ? new Date(fp.nextDueDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+          const statusColor = balance === 0 ? '#16a34a' : paid > 0 ? '#d97706' : '#dc2626';
+          const statusText  = balance === 0 ? '✅ Fully Paid' : paid > 0 ? '⏳ Partial' : '🔴 Pending';
+          return `<div style="background:#f8fafc;border-radius:8px;padding:8px 10px;margin-bottom:6px;font-size:0.78rem;">
+            <div style="font-weight:600;margin-bottom:4px;">${c ? c.icon+' '+c.title : 'Course'}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+              <div><span style="color:#64748b;">Total Fee:</span> <strong>₹${totalFee.toLocaleString('en-IN')}</strong></div>
+              <div><span style="color:#64748b;">Paid:</span> <strong style="color:#16a34a;">₹${paid.toLocaleString('en-IN')}</strong></div>
+              <div><span style="color:#64748b;">Balance:</span> <strong style="color:#dc2626;">₹${balance.toLocaleString('en-IN')}</strong></div>
+              <div><span style="color:#64748b;">Method:</span> <strong>${method}</strong></div>
+              <div><span style="color:#64748b;">Next Due:</span> <strong>${due}</strong></div>
+              <div><span style="color:#64748b;">Status:</span> <strong style="color:${statusColor};">${statusText}</strong></div>
+            </div>
+            <div style="margin-top:6px;display:flex;gap:6px;">
+              <button class="btn btn-primary btn-sm" style="font-size:0.72rem;padding:3px 8px;" onclick="event.stopPropagation();goToFees('${e.id}','edit')">✏️ Edit Fee</button>
+              <button class="btn btn-success btn-sm" style="font-size:0.72rem;padding:3px 8px;" onclick="event.stopPropagation();goToFees('${e.id}','pay')">💰 Record Pay</button>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>` : ''}
       <div class="text-xs text-muted mt-3">Registered: ${formatDate(s.createdAt)}</div>
     </div>`;
   }).join('');
@@ -323,6 +352,12 @@ function saveEdit() {
   closeModal('edit-student-modal');
   renderGrid();
   showToast('Profile updated!', 'success');
+}
+
+function goToFees(enrollmentId, action) {
+  // Store target so fees.html can auto-open the right modal
+  sessionStorage.setItem('fees_target', JSON.stringify({ enrollmentId, action }));
+  window.location.href = '/lms/admin/fees.html';
 }
 
 function removeStudent(id, name) {
