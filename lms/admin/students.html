@@ -551,7 +551,10 @@ function bulkRemove() {
       dbDelete(DB.USERS, id);
       dbSet(DB.ENROLLMENTS, dbGet(DB.ENROLLMENTS).filter(e => e.studentId !== id));
       dbSet(DB.PROGRESS,    dbGet(DB.PROGRESS).filter(p => p.studentId !== id));
-      // Soft-delete in Supabase so sync doesn't restore them
+      // Add to local blocklist so sync never restores these students
+      const deleted = JSON.parse(localStorage.getItem('lms_deleted_users') || '[]');
+      if (!deleted.includes(id)) deleted.push(id);
+      localStorage.setItem('lms_deleted_users', JSON.stringify(deleted));
       _sb.from('users').update({ is_active: false }).eq('id', id).then(null, console.warn);
       _sb.from('enrollments').delete().eq('student_id', id).then(null, console.warn);
       _sb.from('progress').delete().eq('student_id', id).then(null, console.warn);
@@ -745,7 +748,9 @@ function removeStudent(id, name) {
     dbDelete(DB.USERS, id);
     dbSet(DB.ENROLLMENTS, dbGet(DB.ENROLLMENTS).filter(e => e.studentId !== id));
     dbSet(DB.PROGRESS, dbGet(DB.PROGRESS).filter(p => p.studentId !== id));
-    // Soft-delete in Supabase (is_active=false) so sync doesn't restore them
+    // Add to local blocklist so sync never restores this student
+    const deleted = JSON.parse(localStorage.getItem('lms_deleted_users') || '[]');
+    if (!deleted.includes(id)) { deleted.push(id); localStorage.setItem('lms_deleted_users', JSON.stringify(deleted)); }
     _sb.from('users').update({ is_active: false }).eq('id', id).then(null, console.warn);
     _sb.from('enrollments').delete().eq('student_id', id).then(null, console.warn);
     _sb.from('progress').delete().eq('student_id', id).then(null, console.warn);

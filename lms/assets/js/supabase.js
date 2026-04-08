@@ -69,10 +69,12 @@ async function sbSyncToLocal(userId, role) {
     ]);
     const admins  = dbGet(DB.USERS).filter(u => u.role === 'admin');
     const localById = Object.fromEntries(dbGet(DB.USERS).map(u => [u.id, u]));
+    // Never restore locally-deleted students even if Supabase still has them
+    const deletedIds = new Set(JSON.parse(localStorage.getItem('lms_deleted_users') || '[]'));
     const allUsers = [
       ...admins,
-      ...(students || []).map(u => _userToLocal(u, localById[u.id])),
-      ...(teachers || []).map(u => _userToLocal(u, localById[u.id]))
+      ...(students || []).filter(u => !deletedIds.has(u.id)).map(u => _userToLocal(u, localById[u.id])),
+      ...(teachers || []).filter(u => !deletedIds.has(u.id)).map(u => _userToLocal(u, localById[u.id]))
     ];
     dbSet(DB.USERS, allUsers);
     // Safe merge helper — local data always wins; remote only adds missing items
