@@ -61,8 +61,8 @@ async function sbSyncToLocal(userId, role) {
 
   if (role === 'admin') {
     const [{ data: students }, { data: teachers }, { data: enr }, { data: fees }, { data: exp }] = await Promise.all([
-      _sb.from('users').select('*').eq('role', 'student'),
-      _sb.from('users').select('*').eq('role', 'teacher'),
+      _sb.from('users').select('*').eq('role', 'student').eq('is_active', true),
+      _sb.from('users').select('*').eq('role', 'teacher').eq('is_active', true),
       _sb.from('enrollments').select('*'),
       _sb.from('fees').select('*'),
       _sb.from('expenses').select('*')

@@ -365,6 +365,8 @@ function removeStudent(id, name) {
     dbDelete(DB.USERS, id);
     dbSet(DB.ENROLLMENTS, dbGet(DB.ENROLLMENTS).filter(e => e.studentId !== id));
     dbSet(DB.PROGRESS,    dbGet(DB.PROGRESS).filter(p => p.studentId !== id));
+    _sb.from('users').update({ is_active: false }).eq('id', id).then(null, console.warn);
+    _sb.from('enrollments').delete().eq('student_id', id).then(null, console.warn);
     renderGrid();
     showToast(`${name} removed`, 'warning');
   }, 'Remove Student');

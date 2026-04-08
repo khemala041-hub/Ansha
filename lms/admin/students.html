@@ -551,8 +551,8 @@ function bulkRemove() {
       dbDelete(DB.USERS, id);
       dbSet(DB.ENROLLMENTS, dbGet(DB.ENROLLMENTS).filter(e => e.studentId !== id));
       dbSet(DB.PROGRESS,    dbGet(DB.PROGRESS).filter(p => p.studentId !== id));
-      // Delete from Supabase so they don't come back on sync
-      _sb.from('users').delete().eq('id', id).then(null, console.warn);
+      // Soft-delete in Supabase so sync doesn't restore them
+      _sb.from('users').update({ is_active: false }).eq('id', id).then(null, console.warn);
       _sb.from('enrollments').delete().eq('student_id', id).then(null, console.warn);
       _sb.from('progress').delete().eq('student_id', id).then(null, console.warn);
     });
@@ -745,12 +745,12 @@ function removeStudent(id, name) {
     dbDelete(DB.USERS, id);
     dbSet(DB.ENROLLMENTS, dbGet(DB.ENROLLMENTS).filter(e => e.studentId !== id));
     dbSet(DB.PROGRESS, dbGet(DB.PROGRESS).filter(p => p.studentId !== id));
-    // Delete from Supabase so they don't come back on sync
-    _sb.from('users').delete().eq('id', id).then(null, console.warn);
+    // Soft-delete in Supabase (is_active=false) so sync doesn't restore them
+    _sb.from('users').update({ is_active: false }).eq('id', id).then(null, console.warn);
     _sb.from('enrollments').delete().eq('student_id', id).then(null, console.warn);
     _sb.from('progress').delete().eq('student_id', id).then(null, console.warn);
     renderStudents();
-    showToast(`${name} has been removed permanently`, 'warning');
+    showToast(`${name} has been removed`, 'warning');
   }, 'Remove Student');
 }
 </script>
