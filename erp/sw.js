@@ -4,30 +4,30 @@
    ================================================================ */
 
 const CACHE_NAME   = 'ansha-erp-v5';
-const OFFLINE_URL  = '/erp/offline.html';
+const OFFLINE_URL  = '/offline.html';
 
 const APP_SHELL = [
-  '/erp/',
-  '/erp/index.html',
-  '/erp/dashboard.html',
-  '/erp/students.html',
-  '/erp/staff.html',
-  '/erp/attendance.html',
-  '/erp/fees.html',
-  '/erp/finance.html',
-  '/erp/admission.html',
-  '/erp/transport.html',
-  '/erp/branches.html',
-  '/erp/payroll.html',
-  '/erp/programs.html',
-  '/erp/cctv.html',
-  '/erp/backup.html',
-  '/erp/assets/css/style.css',
-  '/erp/assets/js/data.js',
-  '/erp/assets/js/auth.js',
-  '/erp/assets/js/utils.js',
-  '/erp/assets/js/supabase-client.js',
-  '/erp/offline.html',
+  '/',
+  '/index.html',
+  '/dashboard.html',
+  '/students.html',
+  '/staff.html',
+  '/attendance.html',
+  '/fees.html',
+  '/finance.html',
+  '/admission.html',
+  '/transport.html',
+  '/branches.html',
+  '/payroll.html',
+  '/programs.html',
+  '/cctv.html',
+  '/backup.html',
+  '/assets/css/style.css',
+  '/assets/js/data.js',
+  '/assets/js/auth.js',
+  '/assets/js/utils.js',
+  '/assets/js/supabase-client.js',
+  '/offline.html',
 ];
 
 /* ---- Install: cache app shell ---- */

@@ -1,9 +1,10 @@
 {
+  "id": "com.ansha.erp",
   "name": "Ansha Shine Kids School ERP",
   "short_name": "Ansha ERP",
   "description": "School Management ERP for Ansha Shine Kids School, Chennai",
-  "start_url": "/erp/index.html",
-  "scope": "/erp/",
+  "start_url": "https://erp.anshashinekidsschool.com/index.html",
+  "scope": "https://erp.anshashinekidsschool.com/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f172a",
@@ -26,6 +27,20 @@
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/img/screenshot-login.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Login Page"
+    },
+    {
+      "src": "assets/img/screenshot-dashboard.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "label": "Dashboard"
     }
   ],
   "categories": ["education", "productivity", "business"],
