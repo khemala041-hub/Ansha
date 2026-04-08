@@ -12,6 +12,32 @@ function login(email, password) {
   return { success: true, user, session };
 }
 
+function parentLogin(phone, admNo) {
+  const student = STUDENTS.find(s =>
+    s.parentPhone === phone.trim() && s.admNo === admNo.trim() && s.status === 'active'
+  );
+  if (!student) return { success: false, message: 'Invalid phone number or admission number.' };
+  const session = {
+    userId: 'P_' + student.id,
+    name: student.parentName,
+    email: student.parentEmail || '',
+    role: 'parent',
+    branchId: student.branchId,
+    studentId: student.id,
+    studentName: student.name,
+    admNo: student.admNo,
+    avatar: 'P',
+    loginAt: Date.now()
+  };
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  return { success: true, session };
+}
+
+function isParent() {
+  const s = getSession();
+  return s && s.role === 'parent';
+}
+
 function logout() {
   localStorage.removeItem(SESSION_KEY);
   window.location.href = 'index.html';

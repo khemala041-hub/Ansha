@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Parent Portal — Ansha Shine Kids School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1E3A5F">
+  <style>
+    .parent-hero { background:linear-gradient(135deg,#1E3A5F,#2d5a8e); border-radius:16px; padding:24px; color:#fff; margin-bottom:24px; display:flex; align-items:center; gap:20px; }
+    .parent-avatar { width:72px; height:72px; border-radius:50%; background:#F59E0B; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; color:#fff; flex-shrink:0; }
+    .student-card { background:#fff; border-radius:14px; border:2px solid #e2e8f0; padding:20px; margin-bottom:16px; }
+    .student-card:hover { border-color:#1E3A5F; box-shadow:0 4px 20px rgba(30,58,95,0.1); }
+    .info-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-top:16px; }
+    .info-item { background:#f8fafc; border-radius:10px; padding:12px 14px; }
+    .info-item .label { font-size:11px; color:#64748b; font-weight:600; text-transform:uppercase; margin-bottom:4px; }
+    .info-item .value { font-size:14px; font-weight:600; color:#1E3A5F; }
+    .att-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; margin-top:12px; }
+    .att-card { border-radius:10px; padding:14px; text-align:center; }
+    .att-card.present { background:#f0fdf4; border:1px solid #86efac; }
+    .att-card.absent  { background:#fef2f2; border:1px solid #fca5a5; }
+    .att-card.total   { background:#eff6ff; border:1px solid #bfdbfe; }
+    .att-card .att-num { font-size:28px; font-weight:700; }
+    .att-card .att-label { font-size:12px; color:#64748b; margin-top:4px; }
+    .fee-row { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-radius:10px; margin-bottom:8px; background:#f8fafc; border:1px solid #e2e8f0; }
+    .fee-row:last-child { margin-bottom:0; }
+    .logout-btn { background:none; border:1.5px solid rgba(255,255,255,0.4); color:#fff; padding:8px 18px; border-radius:8px; cursor:pointer; font-size:13px; }
+    .logout-btn:hover { background:rgba(255,255,255,0.15); }
+  </style>
+</head>
+<body>
+<div id="toast-container"></div>
+
+<div style="max-width:860px;margin:0 auto;padding:20px 16px;">
+
+  <!-- Hero -->
+  <div class="parent-hero" id="parent-hero">
+    <div class="parent-avatar" id="parent-avatar">P</div>
+    <div style="flex:1;">
+      <div style="font-size:13px;opacity:0.8;margin-bottom:4px;">Welcome back,</div>
+      <div style="font-size:22px;font-weight:700;" id="parent-name">Parent</div>
+      <div style="font-size:13px;opacity:0.8;margin-top:2px;"><i class="fa-solid fa-building"></i> <span id="parent-branch">—</span></div>
+    </div>
+    <button class="logout-btn" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+  </div>
+
+  <!-- Student Profile -->
+  <div class="card student-card" id="student-section">
+    <div class="card-header">
+      <h2><i class="fa-solid fa-child" style="color:#1E3A5F"></i> Your Child's Profile</h2>
+      <span class="badge badge-green" id="student-status">Active</span>
+    </div>
+    <div class="card-body">
+      <div class="info-grid" id="student-info-grid"></div>
+    </div>
+  </div>
+
+  <!-- Attendance -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+      <h2><i class="fa-solid fa-calendar-check" style="color:#16a34a"></i> Attendance Summary</h2>
+    </div>
+    <div class="card-body">
+      <div class="att-grid" id="att-grid"></div>
+      <div style="margin-top:16px;" id="recent-att"></div>
+    </div>
+  </div>
+
+  <!-- Fees -->
+  <div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+      <h2><i class="fa-solid fa-receipt" style="color:#d97706"></i> Fee Status</h2>
+    </div>
+    <div class="card-body" id="fee-section"></div>
+  </div>
+
+  <!-- Footer -->
+  <div style="text-align:center;padding:16px;color:#94a3b8;font-size:12px;">
+    🌟 Ansha Shine Kids School · Parent Portal · <a href="index.html" style="color:#1E3A5F;">Back to Login</a>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
+<script>
+  // Require parent login
+  const session = getSession();
+  if (!session || session.role !== 'parent') {
+    window.location.href = 'index.html';
+  }
+
+  const student = STUDENTS.find(s => s.id === session.studentId);
+  if (!student) {
+    showToast('Student record not found.', 'danger');
+    setTimeout(() => window.location.href = 'index.html', 2000);
+  } else {
+    initPage();
+  }
+
+  function initPage() {
+    const branch = getBranchById(student.branchId);
+
+    // Hero
+    document.getElementById('parent-name').textContent   = session.name || 'Parent';
+    document.getElementById('parent-avatar').textContent = (session.name || 'P')[0].toUpperCase();
+    document.getElementById('parent-branch').textContent = branch ? branch.name : '—';
+
+    // Student Info
+    const prog = getProgramByCode(student.program);
+    document.getElementById('student-info-grid').innerHTML = [
+      { label:'Student Name',    value: student.name },
+      { label:'Admission No',    value: student.admNo },
+      { label:'Program',         value: student.programName || prog?.name || student.program },
+      { label:'Section',         value: student.section || '—' },
+      { label:'Date of Birth',   value: fmtDate(student.dob) },
+      { label:'Age',             value: fmtAge(student.dob) },
+      { label:'Blood Group',     value: student.bloodGroup || '—' },
+      { label:'Branch',          value: branch?.name || '—' },
+      { label:'Admission Date',  value: fmtDate(student.admDate) },
+      { label:'Monthly Fee',     value: currencyINR(student.monthlyFee) },
+    ].map(i => `
+      <div class="info-item">
+        <div class="label">${i.label}</div>
+        <div class="value">${i.value}</div>
+      </div>`).join('');
+
+    // Attendance
+    let present = 0, absent = 0, total = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('asks_att_')) {
+        try {
+          const att = JSON.parse(localStorage.getItem(key));
+          if (att[student.id]) {
+            total++;
+            if (att[student.id] === 'P') present++;
+            else absent++;
+          }
+        } catch {}
+      }
+    }
+    const pct = total > 0 ? Math.round((present/total)*100) : 0;
+    document.getElementById('att-grid').innerHTML = `
+      <div class="att-card present">
+        <div class="att-num" style="color:#16a34a;">${present}</div>
+        <div class="att-label">Present Days</div>
+      </div>
+      <div class="att-card absent">
+        <div class="att-num" style="color:#ef4444;">${absent}</div>
+        <div class="att-label">Absent Days</div>
+      </div>
+      <div class="att-card total">
+        <div class="att-num" style="color:#2563eb;">${total}</div>
+        <div class="att-label">Total Days</div>
+      </div>
+      <div class="att-card total">
+        <div class="att-num" style="color:#7c3aed;">${pct}%</div>
+        <div class="att-label">Attendance %</div>
+      </div>`;
+
+    // Fees
+    const fees = FEE_RECORDS.filter(f => f.studentId === student.id);
+    if (fees.length === 0) {
+      document.getElementById('fee-section').innerHTML = '<p style="color:#94a3b8;font-size:14px;">No fee records found.</p>';
+    } else {
+      document.getElementById('fee-section').innerHTML = fees.map(f => `
+        <div class="fee-row">
+          <div>
+            <div style="font-weight:600;font-size:14px;">${f.month} — ${f.program}</div>
+            <div style="font-size:12px;color:#64748b;">Receipt: ${f.receiptNo || '—'} · ${f.payMode || '—'}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700;font-size:15px;">${currencyINR(f.totalFee)}</div>
+            <span class="badge ${f.status==='paid'?'badge-green':'badge-yellow'}">${f.status}</span>
+          </div>
+        </div>`).join('');
+    }
+  }
+</script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  }
+</script>
+</body>
+</html>

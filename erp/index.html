@@ -81,8 +81,12 @@
         <button class="role-tab" id="tab-admin" onclick="selectRole('admin',this)">
           <i class="fa-solid fa-building-user"></i> Branch Admin
         </button>
+        <button class="role-tab" id="tab-parent" onclick="selectRole('parent',this)">
+          <i class="fa-solid fa-people-roof"></i> Parent
+        </button>
       </div>
 
+      <!-- Admin Login Form -->
       <form id="login-form" onsubmit="handleLogin(event)">
         <div class="form-group mb-16">
           <label class="form-label"><i class="fa-solid fa-envelope"></i> Email Address</label>
@@ -99,6 +103,23 @@
         <button type="submit" class="btn btn-primary w-full btn-lg" id="login-btn">
           <span id="btn-text"><i class="fa-solid fa-right-to-bracket"></i> Sign In</span>
           <span id="btn-spin" class="hidden"><i class="fa-solid fa-spinner fa-spin"></i> Authenticating…</span>
+        </button>
+      </form>
+
+      <!-- Parent Login Form -->
+      <form id="parent-form" onsubmit="handleParentLogin(event)" style="display:none;">
+        <div class="form-group mb-16">
+          <label class="form-label"><i class="fa-solid fa-phone"></i> Parent Phone Number</label>
+          <input type="tel" id="parent-phone" class="form-control" placeholder="Enter registered phone number" required>
+        </div>
+        <div class="form-group mb-16">
+          <label class="form-label"><i class="fa-solid fa-id-card"></i> Student Admission Number</label>
+          <input type="text" id="parent-admno" class="form-control" placeholder="e.g. ASKS/B001/2026-01" required>
+        </div>
+        <div id="parent-error" class="alert alert-danger hidden"></div>
+        <button type="submit" class="btn btn-primary w-full btn-lg" id="parent-btn">
+          <span id="parent-btn-text"><i class="fa-solid fa-right-to-bracket"></i> Parent Login</span>
+          <span id="parent-btn-spin" class="hidden"><i class="fa-solid fa-spinner fa-spin"></i> Authenticating…</span>
         </button>
       </form>
 
@@ -128,22 +149,59 @@
   let selectedRole = 'superadmin';
   const demoCreds = {
     superadmin: { email:'admin@anshashinekidsschool.com', password:'Admin@123', label:'Super Admin – Full access to all 10 branches' },
-    admin:       { email:'tambaram@anshashinekidsschool.com', password:'Branch@123', label:'Branch Admin – Tambaram West branch' },
+    admin:      { email:'tambaram@anshashinekidsschool.com', password:'Branch@123', label:'Branch Admin – Tambaram West branch' },
+    parent:     { phone:'9600000001', admNo:'ASKS/B001/2026-01', label:'Parent – View child attendance, fees & profile' },
   };
 
   function selectRole(role, btn) {
     selectedRole = role;
     document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
     btn.classList.add('active');
+
+    const isParent = role === 'parent';
+    document.getElementById('login-form').style.display  = isParent ? 'none' : 'block';
+    document.getElementById('parent-form').style.display = isParent ? 'block' : 'none';
+
     const c = demoCreds[role];
-    document.getElementById('demo-info').innerHTML = `
-      <p>📧 Email: <code>${c.email}</code></p>
-      <p>🔑 Password: <code>${c.password}</code></p>
-      <p style="color:var(--text-2);margin-top:4px;font-size:11.5px;">${c.label}</p>`;
-    document.getElementById('email').value = c.email;
-    document.getElementById('password').value = c.password;
+    if (isParent) {
+      document.getElementById('demo-info').innerHTML = `
+        <p>📱 Phone: <code>${c.phone}</code></p>
+        <p>🎓 Admission No: <code>${c.admNo}</code></p>
+        <p style="color:var(--text-2);margin-top:4px;font-size:11.5px;">${c.label}</p>`;
+      document.getElementById('parent-phone').value = c.phone;
+      document.getElementById('parent-admno').value  = c.admNo;
+    } else {
+      document.getElementById('demo-info').innerHTML = `
+        <p>📧 Email: <code>${c.email}</code></p>
+        <p>🔑 Password: <code>${c.password}</code></p>
+        <p style="color:var(--text-2);margin-top:4px;font-size:11.5px;">${c.label}</p>`;
+      document.getElementById('email').value    = c.email;
+      document.getElementById('password').value = c.password;
+    }
   }
   selectRole('superadmin', document.getElementById('tab-superadmin'));
+
+  function handleParentLogin(e) {
+    e.preventDefault();
+    const phone  = document.getElementById('parent-phone').value.trim();
+    const admNo  = document.getElementById('parent-admno').value.trim();
+    const errEl  = document.getElementById('parent-error');
+    document.getElementById('parent-btn-text').classList.add('hidden');
+    document.getElementById('parent-btn-spin').classList.remove('hidden');
+    errEl.classList.add('hidden');
+    setTimeout(() => {
+      const result = parentLogin(phone, admNo);
+      document.getElementById('parent-btn-text').classList.remove('hidden');
+      document.getElementById('parent-btn-spin').classList.add('hidden');
+      if (result.success) {
+        showToast(`Welcome, ${result.session.name}! 🎉`, 'success');
+        setTimeout(() => window.location.href = 'parent-dashboard.html', 500);
+      } else {
+        errEl.textContent = result.message;
+        errEl.classList.remove('hidden');
+      }
+    }, 600);
+  }
 
   function togglePw() {
     const p = document.getElementById('password');
