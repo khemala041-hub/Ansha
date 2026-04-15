@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admission Enquiry — Ansha Shine Kids School</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png"/>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root {
+    --red:   #c0392b;
+    --blue:  #1a5276;
+    --gold:  #f39c12;
+    --light: #f4f6f8;
+    --white: #ffffff;
+    --gray:  #7f8c8d;
+    --shadow: 0 4px 20px rgba(0,0,0,0.12);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #1a5276 0%, #c0392b 100%);
+    min-height: 100vh;
+    padding: 20px 15px 40px;
+  }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    padding: 20px 10px 10px;
+    color: white;
+  }
+  .school-logo {
+    width: 80px; height: 80px;
+    background: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    font-size: 28px; font-weight: 900;
+    color: var(--red);
+    letter-spacing: -2px;
+  }
+  .header h1 { font-size: 1.4rem; font-weight: 700; line-height: 1.3; }
+  .header p  { font-size: 0.85rem; opacity: 0.85; margin-top: 4px; }
+
+  /* ── Card ── */
+  .form-card {
+    background: white;
+    border-radius: 20px;
+    max-width: 600px;
+    margin: 20px auto 0;
+    padding: 28px 24px;
+    box-shadow: var(--shadow);
+  }
+  .form-card h2 {
+    color: var(--blue);
+    font-size: 1.15rem;
+    margin-bottom: 6px;
+  }
+  .form-card .subtitle {
+    color: var(--gray);
+    font-size: 0.82rem;
+    margin-bottom: 24px;
+    border-bottom: 2px solid var(--light);
+    padding-bottom: 14px;
+  }
+
+  /* ── Section titles ── */
+  .section-title {
+    background: linear-gradient(90deg, var(--blue), var(--red));
+    color: white;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin: 22px 0 14px;
+  }
+
+  /* ── Form fields ── */
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--blue);
+    margin-bottom: 5px;
+  }
+  .field label .req { color: var(--red); }
+  .field input,
+  .field select,
+  .field textarea {
+    width: 100%;
+    padding: 10px 13px;
+    border: 1.5px solid #dde;
+    border-radius: 9px;
+    font-size: 0.92rem;
+    font-family: inherit;
+    color: #333;
+    background: #fafbfc;
+    transition: border 0.2s;
+    outline: none;
+  }
+  .field input:focus,
+  .field select:focus,
+  .field textarea:focus {
+    border-color: var(--blue);
+    background: white;
+  }
+  .field textarea { resize: vertical; min-height: 80px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* ── Radio / Checkbox group ── */
+  .radio-group, .check-group {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px;
+  }
+  .radio-group label, .check-group label {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--light);
+    border: 1.5px solid #dde;
+    border-radius: 20px;
+    padding: 6px 13px;
+    font-size: 0.83rem;
+    font-weight: 500;
+    color: #444;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .radio-group input[type=radio],
+  .check-group input[type=checkbox] { accent-color: var(--red); }
+  .radio-group label:has(input:checked),
+  .check-group label:has(input:checked) {
+    background: #fde8e6;
+    border-color: var(--red);
+    color: var(--red);
+    font-weight: 700;
+  }
+
+  /* ── Submit button ── */
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(90deg, var(--blue), var(--red));
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 24px;
+    letter-spacing: 0.3px;
+    transition: opacity 0.2s;
+    box-shadow: 0 4px 15px rgba(192,57,43,0.35);
+  }
+  .btn-submit:hover   { opacity: 0.9; }
+  .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* ── Success state ── */
+  .success-card {
+    display: none;
+    background: white;
+    border-radius: 20px;
+    max-width: 600px;
+    margin: 20px auto 0;
+    padding: 40px 24px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .success-icon {
+    width: 80px; height: 80px;
+    background: #e8f8f5;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 36px;
+  }
+  .success-card h2 { color: #27ae60; font-size: 1.3rem; margin-bottom: 8px; }
+  .success-card p  { color: var(--gray); font-size: 0.9rem; line-height: 1.6; }
+  .success-card .ref-no {
+    background: var(--light);
+    border-radius: 10px;
+    padding: 12px 20px;
+    margin: 16px 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--blue);
+    letter-spacing: 1px;
+  }
+  .btn-wa {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #25D366;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 11px 22px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    margin-top: 12px;
+  }
+
+  /* ── QR Section ── */
+  .qr-section {
+    background: white;
+    border-radius: 20px;
+    max-width: 600px;
+    margin: 16px auto 0;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    text-align: center;
+  }
+  .qr-section h3 { color: var(--blue); font-size: 1rem; margin-bottom: 4px; }
+  .qr-section p  { color: var(--gray); font-size: 0.8rem; margin-bottom: 14px; }
+  #qrcode { display: inline-block; padding: 10px; background: white; border-radius: 10px; border: 2px solid var(--light); }
+  .qr-url { font-size: 0.78rem; color: var(--gray); margin-top: 10px; word-break: break-all; }
+  .btn-wa-share {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #25D366; color: white;
+    border: none; border-radius: 10px;
+    padding: 10px 20px; font-size: 0.88rem; font-weight: 600;
+    cursor: pointer; margin-top: 14px; text-decoration: none;
+  }
+  .btn-print {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--blue); color: white;
+    border: none; border-radius: 10px;
+    padding: 10px 20px; font-size: 0.88rem; font-weight: 600;
+    cursor: pointer; margin-top: 14px; margin-left: 8px; text-decoration: none;
+  }
+  .btn-print:hover, .btn-wa-share:hover { opacity: 0.88; }
+
+  @media(max-width:480px) {
+    .row-2 { grid-template-columns: 1fr; }
+    .form-card, .qr-section { padding: 20px 16px; }
+  }
+  @media print {
+    body { background: white; padding: 0; }
+    .form-card, .btn-submit, .qr-section { box-shadow: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<div class="header">
+  <div class="school-logo">AS</div>
+  <h1>Ansha Shine Kids School</h1>
+  <p>Chennai, Tamil Nadu &nbsp;|&nbsp; 10 Branches</p>
+</div>
+
+<!-- ── QR + Share Section (top) ── -->
+<div class="qr-section">
+  <h3>📱 Scan to Fill Admission Enquiry</h3>
+  <p>Share this QR code at reception desk or via WhatsApp</p>
+  <div id="qrcode"></div>
+  <div class="qr-url" id="form-url"></div>
+  <br>
+  <a id="wa-share-btn" class="btn-wa-share" href="#" target="_blank">
+    <svg width="18" height="18" fill="white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    Share via WhatsApp
+  </a>
+  <button class="btn-print" onclick="window.print()">
+    🖨️ Print QR Code
+  </button>
+</div>
+
+<!-- ── Enquiry Form ── -->
+<div class="form-card" id="form-card">
+  <h2>📋 Admission Enquiry Form</h2>
+  <div class="subtitle">Fill in the details below. Our team will contact you within 24 hours.</div>
+
+  <form id="enquiry-form" onsubmit="submitEnquiry(event)">
+
+    <!-- Child Info -->
+    <div class="section-title">👦 Child Information</div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Child's Full Name <span class="req">*</span></label>
+        <input type="text" name="childName" placeholder="e.g. Mohammed Aryan" required/>
+      </div>
+      <div class="field">
+        <label>Date of Birth <span class="req">*</span></label>
+        <input type="date" name="dob" required/>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Gender <span class="req">*</span></label>
+        <select name="gender" required>
+          <option value="">Select</option>
+          <option>Male</option>
+          <option>Female</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Religion <span class="req">*</span></label>
+        <select name="religion" required>
+          <option value="">Select</option>
+          <option>Islam</option>
+          <option>Hindu</option>
+          <option>Christian</option>
+          <option>Others</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Mother Tongue <span class="req">*</span></label>
+        <select name="motherTongue" required>
+          <option value="">Select</option>
+          <option>Tamil</option>
+          <option>Urdu</option>
+          <option>Hindi</option>
+          <option>Telugu</option>
+          <option>Malayalam</option>
+          <option>English</option>
+          <option>Others</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Class / Program Interested <span class="req">*</span></label>
+        <select name="program" required>
+          <option value="">Select</option>
+          <option>Play Group (2-3 yrs)</option>
+          <option>Nursery (3-4 yrs)</option>
+          <option>LKG (4-5 yrs)</option>
+          <option>UKG (5-6 yrs)</option>
+          <option>Grade 1</option>
+          <option>Grade 2</option>
+          <option>Grade 3</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Parent Info -->
+    <div class="section-title">👨‍👩‍👧 Parent / Guardian Information</div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>Father's Name <span class="req">*</span></label>
+        <input type="text" name="fatherName" placeholder="Full name" required/>
+      </div>
+      <div class="field">
+        <label>Mother's Name</label>
+        <input type="text" name="motherName" placeholder="Full name"/>
+      </div>
+    </div>
+
+    <div class="row-2">
+      <div class="field">
+        <label>WhatsApp Number <span class="req">*</span></label>
+        <input type="tel" name="whatsapp" placeholder="+91 9XXXXXXXXX" maxlength="15" required/>
+      </div>
+      <div class="field">
+        <label>Alternate Phone</label>
+        <input type="tel" name="altPhone" placeholder="+91 9XXXXXXXXX" maxlength="15"/>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Email ID</label>
+      <input type="email" name="email" placeholder="parent@email.com"/>
+    </div>
+
+    <div class="field">
+      <label>Permanent Address <span class="req">*</span></label>
+      <textarea name="address" placeholder="House No., Street, Area, City, Pincode" required></textarea>
+    </div>
+
+    <!-- Branch -->
+    <div class="section-title">🏫 Branch Preference</div>
+
+    <div class="field">
+      <label>Preferred Branch <span class="req">*</span></label>
+      <select name="branch" required>
+        <option value="">Select Branch</option>
+        <option value="B001">Branch 1 — Main Campus</option>
+        <option value="B002">Branch 2</option>
+        <option value="B003">Branch 3</option>
+        <option value="B004">Branch 4</option>
+        <option value="B005">Branch 5</option>
+        <option value="B006">Branch 6</option>
+        <option value="B007">Branch 7</option>
+        <option value="B008">Branch 8</option>
+        <option value="B009">Branch 9</option>
+        <option value="B010">Branch 10</option>
+      </select>
+    </div>
+
+    <!-- How did you hear -->
+    <div class="section-title">📣 How Did You Hear About Us?</div>
+
+    <div class="field">
+      <div class="check-group" id="referral-group">
+        <label><input type="checkbox" name="referral" value="YouTube"/> 📺 YouTube</label>
+        <label><input type="checkbox" name="referral" value="Facebook"/> 📘 Facebook</label>
+        <label><input type="checkbox" name="referral" value="Instagram"/> 📸 Instagram</label>
+        <label><input type="checkbox" name="referral" value="Google"/> 🔍 Google</label>
+        <label><input type="checkbox" name="referral" value="Friend/Family"/> 👥 Friend / Family</label>
+        <label><input type="checkbox" name="referral" value="Banner/Hoarding"/> 🪧 Banner / Hoarding</label>
+        <label><input type="checkbox" name="referral" value="Others"/> 💬 Others</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Any Specific Message / Questions?</label>
+      <textarea name="message" placeholder="Write any questions or special requirements..."></textarea>
+    </div>
+
+    <button type="submit" class="btn-submit" id="submit-btn">
+      ✅ Submit Enquiry
+    </button>
+
+  </form>
+</div>
+
+<!-- ── Success Card ── -->
+<div class="success-card" id="success-card">
+  <div class="success-icon">✅</div>
+  <h2>Enquiry Submitted!</h2>
+  <p>Thank you for your interest in <strong>Ansha Shine Kids School</strong>.<br/>Our team will contact you within 24 hours.</p>
+  <div class="ref-no" id="ref-no-display">REF: —</div>
+  <p style="font-size:0.8rem; color:#999">Please save this reference number.</p>
+  <br/>
+  <a id="wa-confirm-btn" href="#" target="_blank" class="btn-wa">
+    <svg width="18" height="18" fill="white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    Send to School via WhatsApp
+  </a>
+  <br/><br/>
+  <button onclick="location.reload()" style="background:none;border:1px solid #ddd;border-radius:8px;padding:8px 18px;color:#666;cursor:pointer;font-size:0.85rem;">Submit Another Enquiry</button>
+</div>
+
+<script>
+  // ── Config ──
+  const FORM_URL   = 'https://erp.anshashinekidsschool.com/enquiry.html';
+  const SCHOOL_WA  = '919600000000'; // Replace with school's WhatsApp number
+  const SUPABASE_URL = 'https://wtcumlqwapqqkbjpjoco.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_rOJdCtFChg6_FHm1hrQd1w_UcBC_m1T';
+
+  // ── Generate QR Code ──
+  document.getElementById('form-url').textContent = FORM_URL;
+  new QRCode(document.getElementById('qrcode'), {
+    text: FORM_URL,
+    width: 180, height: 180,
+    colorDark: '#1a5276',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  // ── WhatsApp Share Button ──
+  const waMsg = encodeURIComponent(
+    '📚 *Ansha Shine Kids School — Admission Enquiry*\n\nPlease fill this form to enquire about admission:\n' + FORM_URL
+  );
+  document.getElementById('wa-share-btn').href = `https://api.whatsapp.com/send?text=${waMsg}`;
+
+  // ── Supabase ──
+  let _sb = null;
+  try { _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) {}
+
+  // ── Generate Reference Number ──
+  function genRef() {
+    const d  = new Date();
+    const yr = d.getFullYear().toString().slice(-2);
+    const mo = String(d.getMonth()+1).padStart(2,'0');
+    const rn = Math.floor(1000 + Math.random() * 9000);
+    return `ASKS-ENQ-${yr}${mo}-${rn}`;
+  }
+
+  // ── Submit ──
+  async function submitEnquiry(e) {
+    e.preventDefault();
+    const btn  = document.getElementById('submit-btn');
+    const form = e.target;
+    btn.disabled  = true;
+    btn.textContent = '⏳ Submitting...';
+
+    // Collect referral checkboxes
+    const referrals = [...form.querySelectorAll('input[name=referral]:checked')].map(c => c.value);
+
+    const data = {
+      refNo:       genRef(),
+      submittedAt: new Date().toISOString(),
+      childName:   form.childName.value.trim(),
+      dob:         form.dob.value,
+      gender:      form.gender.value,
+      religion:    form.religion.value,
+      motherTongue:form.motherTongue.value,
+      program:     form.program.value,
+      fatherName:  form.fatherName.value.trim(),
+      motherName:  form.motherName.value.trim(),
+      whatsapp:    form.whatsapp.value.trim(),
+      altPhone:    form.altPhone.value.trim(),
+      email:       form.email.value.trim(),
+      address:     form.address.value.trim(),
+      branch:      form.branch.value,
+      referral:    referrals.join(', '),
+      message:     form.message.value.trim(),
+      status:      'New'
+    };
+
+    // Save to localStorage
+    const existing = JSON.parse(localStorage.getItem('asks_enquiries') || '[]');
+    existing.push(data);
+    localStorage.setItem('asks_enquiries', JSON.stringify(existing));
+
+    // Save to Supabase
+    if (_sb) {
+      try {
+        await _sb.from('erp_data').upsert(
+          { key: 'enquiries', value: existing, updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        );
+      } catch(err) { console.warn('Supabase save:', err); }
+    }
+
+    // Show success
+    document.getElementById('form-card').style.display   = 'none';
+    document.getElementById('success-card').style.display = 'block';
+    document.getElementById('ref-no-display').textContent = 'REF: ' + data.refNo;
+
+    // WhatsApp confirmation to school
+    const schoolMsg = encodeURIComponent(
+      `📋 *New Admission Enquiry*\n\n` +
+      `*Ref:* ${data.refNo}\n` +
+      `*Child:* ${data.childName}\n` +
+      `*Program:* ${data.program}\n` +
+      `*Father:* ${data.fatherName}\n` +
+      `*WhatsApp:* ${data.whatsapp}\n` +
+      `*Branch:* ${data.branch}\n` +
+      `*Referred by:* ${data.referral || 'Not specified'}\n` +
+      `*Date:* ${new Date().toLocaleDateString('en-IN')}`
+    );
+    document.getElementById('wa-confirm-btn').href =
+      `https://api.whatsapp.com/send?phone=${SCHOOL_WA}&text=${schoolMsg}`;
+
+    btn.disabled  = false;
+    btn.textContent = '✅ Submit Enquiry';
+  }
+</script>
+</body>
+</html>
