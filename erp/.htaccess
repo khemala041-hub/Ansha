@@ -1,0 +1,56 @@
+# Ansha Shine Kids School ERP — Apache Config for GoDaddy
+# =========================================================
+
+# Serve index.html as default
+DirectoryIndex index.html
+
+# Disable CGI execution (prevents server.pl from running)
+Options -ExecCGI
+RemoveHandler cgi-script .pl .py .sh
+AddType text/plain .pl .py .sh
+
+# Disable directory listing
+Options -Indexes
+
+# Enable CORS (for Supabase API calls)
+<IfModule mod_headers.c>
+  Header set Access-Control-Allow-Origin "*"
+  Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+  Header set Access-Control-Allow-Headers "Content-Type, Authorization"
+</IfModule>
+
+# Cache static assets
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html        "access plus 1 hour"
+  ExpiresByType text/css         "access plus 1 week"
+  ExpiresByType application/javascript "access plus 1 week"
+  ExpiresByType image/png        "access plus 1 month"
+  ExpiresByType image/jpeg       "access plus 1 month"
+  ExpiresByType image/svg+xml    "access plus 1 month"
+  ExpiresByType application/json "access plus 1 hour"
+</IfModule>
+
+# Compress text files
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json
+</IfModule>
+
+# Serve manifest.json with correct MIME type
+AddType application/manifest+json .webmanifest
+AddType application/json          .json
+
+# Service Worker — no cache
+<FilesMatch "sw\.js$">
+  Header set Cache-Control "no-cache, no-store, must-revalidate"
+  Header set Pragma "no-cache"
+</FilesMatch>
+
+# Block direct access to sensitive files
+<FilesMatch "(server\.pl|nginx\.conf|Dockerfile|\.dockerignore|supabase-schema\.sql)$">
+  Order Allow,Deny
+  Deny from all
+</FilesMatch>
+
+# Custom error pages
+ErrorDocument 404 /index.html
