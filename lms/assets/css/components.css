@@ -248,8 +248,57 @@
 }
 
 @media (max-width: 900px) {
-  .login-left { display: none; }
-  .login-right { width: 100%; }
+  .login-page { flex-direction: column; overflow: visible; min-height: 100vh; }
+
+  /* Left panel: compact strip at top */
+  .login-left {
+    width: 100%;
+    padding: 20px 18px 16px;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 0;
+  }
+
+  /* Brand row */
+  .login-left .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+    margin-bottom: 14px;
+  }
+  .login-left .brand-logo {
+    width: 46px; height: 46px;
+    font-size: 1.2rem;
+    margin: 0;
+    flex-shrink: 0;
+  }
+  .login-left .brand h1 { font-size: 1.15rem; margin-bottom: 2px; }
+  .login-left .brand p { font-size: 0.75rem; }
+
+  /* Hide feature list on mobile — save space */
+  .login-features { display: none; }
+
+  /* Founder card: horizontal, compact */
+  .founder-card {
+    flex-direction: row;
+    padding: 10px 12px;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .founder-photo-wrap { width: 64px; height: 64px; }
+  .founder-badge { font-size: 0.55rem; padding: 2px 7px; }
+  .founder-name { font-size: 0.78rem; }
+  .founder-quote { display: none; }
+
+  /* Co-founder: compact pill */
+  .cofounder-strip { padding: 8px 12px; }
+  .cofounder-photo-wrap { width: 40px; height: 40px; }
+  .cofounder-name { font-size: 0.72rem; }
+  .cofounder-role { font-size: 0.58rem; }
+
+  /* Right panel full width */
+  .login-right { width: 100%; box-shadow: none; }
 }
 
 /* ---- Lesson Viewer ---- */
