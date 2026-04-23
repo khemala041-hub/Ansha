@@ -5,264 +5,438 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Enquiries — Ansha Shine Kids School ERP</title>
 <link rel="stylesheet" href="assets/css/style.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root { --red:#c0392b; --blue:#1a5276; }
-  body { font-family:'Segoe UI',sans-serif; background:#f4f6f8; margin:0; }
-  .topbar {
-    background: linear-gradient(90deg,var(--blue),var(--red));
-    color:white; padding:14px 20px;
-    display:flex; align-items:center; justify-content:space-between;
-  }
-  .topbar h1 { font-size:1.1rem; }
-  .topbar a  { color:rgba(255,255,255,0.8); text-decoration:none; font-size:0.85rem; }
-  .container { max-width:1200px; margin:0 auto; padding:20px; }
 
   /* Stats */
-  .stats { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
-  .stat-card {
-    background:white; border-radius:12px; padding:16px;
-    box-shadow:0 2px 8px rgba(0,0,0,0.08); text-align:center;
+  .enq-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:20px; }
+  .enq-stat {
+    background:white; border-radius:12px; padding:16px 12px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.07); text-align:center;
+    border-top:3px solid var(--blue);
   }
-  .stat-card .num { font-size:1.8rem; font-weight:800; color:var(--blue); }
-  .stat-card .lbl { font-size:0.78rem; color:#777; margin-top:2px; }
+  .enq-stat.orange { border-color:#e67e22; }
+  .enq-stat.green  { border-color:#27ae60; }
+  .enq-stat.red    { border-color:var(--red); }
+  .enq-stat.purple { border-color:#8e44ad; }
+  .enq-stat .num   { font-size:1.9rem; font-weight:800; color:var(--blue); }
+  .enq-stat.orange .num { color:#e67e22; }
+  .enq-stat.green .num  { color:#27ae60; }
+  .enq-stat.red .num    { color:var(--red); }
+  .enq-stat.purple .num { color:#8e44ad; }
+  .enq-stat .lbl   { font-size:0.75rem; color:#777; margin-top:2px; font-weight:500; }
+
+  /* Branch badge */
+  .branch-badge {
+    background: linear-gradient(90deg,var(--blue),#2980b9);
+    color:white; padding:2px 8px; border-radius:20px;
+    font-size:0.72rem; font-weight:700;
+  }
 
   /* Table */
-  .card { background:white; border-radius:14px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
-  .card-header {
-    display:flex; align-items:center; justify-content:space-between;
-    margin-bottom:16px; flex-wrap:wrap; gap:10px;
-  }
-  .card-header h2 { font-size:1rem; color:var(--blue); }
-  .filters { display:flex; gap:8px; flex-wrap:wrap; }
+  .filters { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
   .filters input, .filters select {
     padding:7px 11px; border:1.5px solid #dde; border-radius:8px;
-    font-size:0.83rem; outline:none;
+    font-size:0.83rem; outline:none; font-family:inherit;
   }
+  .filters input:focus, .filters select:focus { border-color:var(--blue); }
   .btn-export {
     background:var(--blue); color:white; border:none;
     border-radius:8px; padding:8px 16px; font-size:0.83rem;
-    cursor:pointer; font-weight:600;
+    cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:6px;
   }
-  table { width:100%; border-collapse:collapse; font-size:0.83rem; }
-  th {
-    background:var(--blue); color:white;
-    padding:9px 10px; text-align:left; font-weight:600;
-    font-size:0.78rem; letter-spacing:0.3px;
+  .btn-wa-link {
+    display:inline-flex; align-items:center; gap:4px;
+    background:#25D366; color:white; border:none;
+    border-radius:6px; padding:4px 9px; font-size:0.73rem;
+    font-weight:600; cursor:pointer; text-decoration:none;
   }
-  th:first-child { border-radius:8px 0 0 0; }
-  th:last-child  { border-radius:0 8px 0 0; }
-  td { padding:9px 10px; border-bottom:1px solid #f0f0f0; color:#333; vertical-align:top; }
-  tr:hover td { background:#f8f9ff; }
-  .badge {
-    display:inline-block; padding:3px 9px; border-radius:20px;
-    font-size:0.72rem; font-weight:700;
+  .action-btn {
+    background:none; border:1px solid #dde; border-radius:6px;
+    padding:3px 9px; font-size:0.75rem; cursor:pointer; color:#555;
+    margin-right:3px; transition:all 0.15s;
   }
+  .action-btn:hover { background:var(--blue); color:white; border-color:var(--blue); }
+
+  .badge { display:inline-block; padding:3px 9px; border-radius:20px; font-size:0.72rem; font-weight:700; }
   .badge-new      { background:#e8f4fd; color:#1a5276; }
   .badge-called   { background:#e8f8f5; color:#1e8449; }
   .badge-admitted { background:#fef9e7; color:#b7950b; }
   .badge-lost     { background:#fdedec; color:#c0392b; }
-  .action-btn {
-    background:none; border:1px solid #dde; border-radius:6px;
-    padding:3px 9px; font-size:0.75rem; cursor:pointer; color:#555;
-    margin-right:3px;
+
+  table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+  th {
+    background:var(--blue); color:white; padding:9px 10px;
+    text-align:left; font-weight:600; font-size:0.77rem; letter-spacing:0.3px;
   }
-  .action-btn:hover { background:var(--blue); color:white; border-color:var(--blue); }
-  .empty { text-align:center; padding:40px; color:#aaa; font-size:0.9rem; }
-  @media(max-width:600px) {
-    .stats { grid-template-columns:1fr 1fr; }
-    table  { font-size:0.75rem; }
+  th:first-child { border-radius:8px 0 0 0; }
+  th:last-child  { border-radius:0 8px 0 0; }
+  td { padding:9px 10px; border-bottom:1px solid #f0f0f0; vertical-align:top; }
+  tr:hover td { background:#f8f9ff; }
+  .empty-state { text-align:center; padding:50px; color:#aaa; }
+  .empty-state .icon { font-size:2.5rem; margin-bottom:10px; }
+
+  /* Detail modal */
+  .modal-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.5); z-index:9999;
+    align-items:center; justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal-box {
+    background:white; border-radius:16px; padding:28px;
+    max-width:520px; width:95%; max-height:90vh; overflow-y:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,0.3);
+  }
+  .modal-box h3 { color:var(--blue); margin-bottom:16px; font-size:1.1rem; }
+  .detail-row { display:flex; gap:10px; margin-bottom:10px; font-size:0.88rem; }
+  .detail-label { color:#888; min-width:130px; font-weight:500; }
+  .detail-value { color:#333; font-weight:600; flex:1; }
+  .modal-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:18px; border-top:1px solid #eee; padding-top:14px; }
+
+  @media(max-width:700px) {
+    .enq-stats { grid-template-columns:1fr 1fr; }
+    table { font-size:0.74rem; }
+    th, td { padding:7px 6px; }
   }
 </style>
 </head>
 <body>
-
-<div class="topbar">
-  <h1>📋 Admission Enquiries</h1>
-  <a href="dashboard.html">← Back to Dashboard</a>
-</div>
-
-<div class="container">
-
-  <!-- Stats -->
-  <div class="stats">
-    <div class="stat-card"><div class="num" id="s-total">0</div><div class="lbl">Total Enquiries</div></div>
-    <div class="stat-card"><div class="num" id="s-new">0</div><div class="lbl">New (Today)</div></div>
-    <div class="stat-card"><div class="num" id="s-called">0</div><div class="lbl">Called / In Progress</div></div>
-    <div class="stat-card"><div class="num" id="s-admitted">0</div><div class="lbl">Admitted</div></div>
-  </div>
-
-  <!-- Table -->
-  <div class="card">
-    <div class="card-header">
-      <h2>All Enquiries</h2>
-      <div class="filters">
-        <input type="text" id="search" placeholder="🔍 Search name / phone..." oninput="renderTable()"/>
-        <select id="filter-status" onchange="renderTable()">
-          <option value="">All Status</option>
-          <option value="New">New</option>
-          <option value="Called">Called</option>
-          <option value="Admitted">Admitted</option>
-          <option value="Lost">Lost</option>
-        </select>
-        <select id="filter-branch" onchange="renderTable()">
-          <option value="">All Branches</option>
-          <option value="B001">Branch 1</option>
-          <option value="B002">Branch 2</option>
-          <option value="B003">Branch 3</option>
-          <option value="B004">Branch 4</option>
-          <option value="B005">Branch 5</option>
-          <option value="B006">Branch 6</option>
-          <option value="B007">Branch 7</option>
-          <option value="B008">Branch 8</option>
-          <option value="B009">Branch 9</option>
-          <option value="B010">Branch 10</option>
-        </select>
-        <button class="btn-export" onclick="exportCSV()">⬇ Export CSV</button>
+<div id="toast-container"></div>
+<div class="app-layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main-wrapper">
+    <header class="header">
+      <button class="header-toggle btn-icon"><i class="fa-solid fa-bars"></i></button>
+      <div class="breadcrumb">
+        <span class="breadcrumb-item">🏠 Home</span>
+        <span class="breadcrumb-sep">›</span>
+        <span class="breadcrumb-item">📋 Enquiries</span>
       </div>
-    </div>
-    <div style="overflow-x:auto">
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Ref No</th>
-            <th>Child Name</th>
-            <th>Program</th>
-            <th>Father Name</th>
-            <th>WhatsApp</th>
-            <th>Branch</th>
-            <th>Referred By</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="enquiry-tbody"></tbody>
-      </table>
-    </div>
-    <div id="empty-msg" class="empty" style="display:none">No enquiries found.</div>
+      <div class="header-right">
+        <div id="header-date" class="header-date"></div>
+        <div class="header-user" onclick="window.location.href='index.html'">
+          <div class="header-avatar" id="header-avatar">SA</div>
+          <div class="header-user-info">
+            <div class="name" id="header-user-name">Admin</div>
+            <div class="role" id="header-user-role">Role</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <div class="page-header">
+        <div class="page-title">
+          <h1>📋 Admission Enquiries</h1>
+          <p id="page-subtitle">Loading...</p>
+        </div>
+        <div class="page-actions">
+          <a href="enquiry.html" target="_blank" class="btn btn-ghost btn-sm">🔗 Open Form</a>
+          <button class="btn btn-primary btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="enq-stats" id="enq-stats"></div>
+
+      <!-- Table Card -->
+      <div class="card">
+        <div class="card-header" style="flex-wrap:wrap;gap:10px;">
+          <span class="card-title">All Enquiries <span id="record-count" style="color:#999;font-size:0.85rem;"></span></span>
+          <div class="filters">
+            <input type="text" id="search" placeholder="🔍 Name / Phone / Ref…" oninput="renderTable()" style="min-width:180px"/>
+            <select id="filter-status" onchange="renderTable()">
+              <option value="">All Status</option>
+              <option>New</option><option>Called</option><option>Admitted</option><option>Lost</option>
+            </select>
+            <select id="filter-branch" onchange="renderTable()" id="filter-branch"></select>
+            <select id="filter-ref" onchange="renderTable()">
+              <option value="">All Sources</option>
+              <option>YouTube</option><option>Facebook</option><option>Instagram</option>
+              <option>Google</option><option>Friend/Family</option><option>Banner/Hoarding</option><option>Others</option>
+            </select>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Ref No</th>
+                <th>Child Name</th>
+                <th>Program</th>
+                <th>Parent / WhatsApp</th>
+                <th>Branch</th>
+                <th>Source</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="enq-tbody"></tbody>
+          </table>
+        </div>
+        <div id="empty-state" class="empty-state" style="display:none">
+          <div class="icon">📭</div>
+          <div>No enquiries found for this filter.</div>
+        </div>
+      </div>
+    </main>
   </div>
 </div>
 
+<!-- Detail Modal -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal-box">
+    <h3 id="modal-title">Enquiry Details</h3>
+    <div id="modal-body"></div>
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<script src="assets/js/supabase-client.js"></script>
+<script src="assets/js/data.js"></script>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/utils.js"></script>
 <script>
-  const SUPABASE_URL = 'https://wtcumlqwapqqkbjpjoco.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_rOJdCtFChg6_FHm1hrQd1w_UcBC_m1T';
-  const SCHOOL_WA    = '919600000000'; // Replace with school WhatsApp
+  // ── Auth ──
+  const session = requireAuth(['superadmin','admin']);
+  if (!session) throw '';
 
-  let _sb  = null;
-  let DATA = [];
+  buildSidebar('enquiries');
 
-  try { _sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e){}
+  const isSA       = session.role === 'superadmin';
+  const myBranchId = session.branchId;
+
+  // Update header
+  document.getElementById('header-avatar').textContent    = session.avatar || session.name[0];
+  document.getElementById('header-user-name').textContent = session.name;
+  document.getElementById('header-user-role').textContent = session.role;
+  document.getElementById('header-date').textContent      = new Date().toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
+
+  // Branch filter dropdown — super admin sees all, branch admin sees only theirs
+  const branchSel = document.getElementById('filter-branch');
+  if (isSA) {
+    branchSel.innerHTML = '<option value="">All Branches</option>' +
+      BRANCHES.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+  } else {
+    const myBranch = getBranchById(myBranchId);
+    branchSel.innerHTML = `<option value="${myBranchId}">${myBranch?.name || myBranchId}</option>`;
+    branchSel.disabled = true;
+    document.getElementById('page-subtitle').textContent =
+      `Showing enquiries for ${myBranch?.name || myBranchId} only`;
+  }
+  if (isSA) {
+    document.getElementById('page-subtitle').textContent = 'All branches — click a row to view details';
+  }
+
+  // ── Data ──
+  let ALL_DATA = [];
 
   async function loadData() {
-    // Try Supabase first
-    if (_sb) {
+    // Try Supabase
+    const sb = typeof supabase !== 'undefined' && window._sb
+      ? window._sb
+      : (typeof supabase !== 'undefined' ? supabase.createClient('https://wtcumlqwapqqkbjpjoco.supabase.co','sb_publishable_rOJdCtFChg6_FHm1hrQd1w_UcBC_m1T') : null);
+
+    if (sb) {
       try {
-        const { data } = await _sb.from('erp_data').select('value').eq('key','enquiries').single();
+        const { data } = await sb.from('erp_data').select('value').eq('key','enquiries').single();
         if (data && Array.isArray(data.value)) {
-          DATA = data.value;
-          localStorage.setItem('asks_enquiries', JSON.stringify(DATA));
-          renderAll();
-          return;
+          ALL_DATA = data.value;
+          localStorage.setItem('asks_enquiries', JSON.stringify(ALL_DATA));
+          renderAll(); return;
         }
-      } catch(e){}
+      } catch(e) { console.warn('Supabase:', e); }
     }
-    // Fallback to localStorage
-    DATA = JSON.parse(localStorage.getItem('asks_enquiries') || '[]');
+    ALL_DATA = JSON.parse(localStorage.getItem('asks_enquiries') || '[]');
     renderAll();
   }
 
-  function renderAll() {
-    updateStats();
-    renderTable();
+  // ── Filter data by branch for non-superadmin ──
+  function getVisibleData() {
+    if (isSA) return ALL_DATA;
+    return ALL_DATA.filter(d => d.branch === myBranchId);
   }
 
-  function updateStats() {
+  // ── Stats ──
+  function renderStats() {
+    const data  = getVisibleData();
     const today = new Date().toDateString();
-    document.getElementById('s-total').textContent    = DATA.length;
-    document.getElementById('s-new').textContent      = DATA.filter(d => new Date(d.submittedAt).toDateString() === today).length;
-    document.getElementById('s-called').textContent   = DATA.filter(d => d.status === 'Called').length;
-    document.getElementById('s-admitted').textContent = DATA.filter(d => d.status === 'Admitted').length;
+    const stats = [
+      { label:'Total Enquiries', num: data.length,                                          cls:'',       icon:'📋' },
+      { label:'New Today',       num: data.filter(d=>new Date(d.submittedAt).toDateString()===today).length, cls:'orange', icon:'🆕' },
+      { label:'Called',          num: data.filter(d=>d.status==='Called').length,            cls:'purple', icon:'📞' },
+      { label:'Admitted',        num: data.filter(d=>d.status==='Admitted').length,          cls:'green',  icon:'✅' },
+      { label:'Lost',            num: data.filter(d=>d.status==='Lost').length,              cls:'red',    icon:'❌' },
+    ];
+    document.getElementById('enq-stats').innerHTML = stats.map(s =>
+      `<div class="enq-stat ${s.cls}">
+        <div style="font-size:1.4rem;margin-bottom:4px;">${s.icon}</div>
+        <div class="num">${s.num}</div>
+        <div class="lbl">${s.label}</div>
+      </div>`
+    ).join('');
   }
 
+  // ── Table ──
   function renderTable() {
-    const q       = document.getElementById('search').value.toLowerCase();
-    const sStat   = document.getElementById('filter-status').value;
-    const sBranch = document.getElementById('filter-branch').value;
+    const q      = document.getElementById('search').value.toLowerCase();
+    const sStat  = document.getElementById('filter-status').value;
+    const sBrn   = document.getElementById('filter-branch').value;
+    const sRef   = document.getElementById('filter-ref').value;
 
-    let filtered = DATA.filter(d => {
-      const match = (d.childName+d.fatherName+d.whatsapp+d.refNo).toLowerCase().includes(q);
-      const stat  = !sStat   || d.status  === sStat;
-      const brn   = !sBranch || d.branch  === sBranch;
-      return match && stat && brn;
+    let data = getVisibleData();
+
+    // Apply filters
+    data = data.filter(d => {
+      const matchQ   = (d.childName+d.fatherName+d.whatsapp+d.refNo+'').toLowerCase().includes(q);
+      const matchSt  = !sStat || d.status === sStat;
+      const matchBrn = !sBrn  || d.branch === sBrn;
+      const matchRef = !sRef  || (d.referral||'').includes(sRef);
+      return matchQ && matchSt && matchBrn && matchRef;
     });
 
-    const tbody = document.getElementById('enquiry-tbody');
-    const empty = document.getElementById('empty-msg');
+    const tbody = document.getElementById('enq-tbody');
+    const empty = document.getElementById('empty-state');
+    document.getElementById('record-count').textContent = `(${data.length})`;
 
-    if (filtered.length === 0) {
+    if (data.length === 0) {
       tbody.innerHTML = '';
       empty.style.display = 'block';
       return;
     }
     empty.style.display = 'none';
 
-    tbody.innerHTML = filtered.slice().reverse().map((d, i) => {
-      const date   = new Date(d.submittedAt).toLocaleDateString('en-IN');
-      const badge  = { New:'badge-new', Called:'badge-called', Admitted:'badge-admitted', Lost:'badge-lost' }[d.status] || 'badge-new';
-      const waLink = `https://api.whatsapp.com/send?phone=91${d.whatsapp.replace(/\D/g,'')}&text=${encodeURIComponent('Hello ' + d.fatherName + ', Thank you for enquiring about Ansha Shine Kids School. We will contact you shortly.')}`;
-      return `<tr>
-        <td>${i+1}</td>
-        <td style="font-size:0.72rem;color:#888">${d.refNo||'—'}</td>
-        <td><strong>${d.childName}</strong><br/><span style="color:#999;font-size:0.75rem">${d.program||''}</span></td>
-        <td>${d.program||'—'}</td>
-        <td>${d.fatherName||'—'}</td>
-        <td>${d.whatsapp||'—'}</td>
-        <td>${d.branch||'—'}</td>
-        <td>${d.referral||'—'}</td>
-        <td>${date}</td>
-        <td><span class="badge ${badge}">${d.status||'New'}</span></td>
+    tbody.innerHTML = [...data].reverse().map((d, i) => {
+      const date    = d.submittedAt ? new Date(d.submittedAt).toLocaleDateString('en-IN') : '—';
+      const badge   = { New:'badge-new', Called:'badge-called', Admitted:'badge-admitted', Lost:'badge-lost' }[d.status] || 'badge-new';
+      const brName  = getBranchById(d.branch)?.name || d.branch || '—';
+      const waNum   = (d.whatsapp||'').replace(/\D/g,'');
+      const waLink  = `https://api.whatsapp.com/send?phone=91${waNum}&text=${encodeURIComponent('Hello '+d.fatherName+', Thank you for enquiring about Ansha Shine Kids School!')}`;
+      return `<tr style="cursor:pointer" onclick="showDetail('${d.refNo}')">
+        <td style="color:#999">${i+1}</td>
+        <td style="font-size:0.72rem;color:#888;">${d.refNo||'—'}</td>
         <td>
-          <a href="${waLink}" target="_blank"><button class="action-btn">📱 WA</button></a>
-          <button class="action-btn" onclick="changeStatus('${d.refNo}','Called')">📞</button>
-          <button class="action-btn" onclick="changeStatus('${d.refNo}','Admitted')">✅</button>
-          <button class="action-btn" onclick="changeStatus('${d.refNo}','Lost')">❌</button>
+          <strong style="font-size:0.88rem;">${d.childName||'—'}</strong>
+          <div style="font-size:0.72rem;color:#999;">${d.program||''}</div>
+        </td>
+        <td style="font-size:0.82rem;">${d.program||'—'}</td>
+        <td>
+          <div style="font-size:0.85rem;font-weight:600;">${d.fatherName||'—'}</div>
+          <div style="font-size:0.75rem;color:#666;">${d.whatsapp||'—'}</div>
+        </td>
+        <td><span class="branch-badge">${brName}</span></td>
+        <td style="font-size:0.78rem;color:#555;">${d.referral||'—'}</td>
+        <td style="font-size:0.78rem;color:#777;">${date}</td>
+        <td><span class="badge ${badge}">${d.status||'New'}</span></td>
+        <td onclick="event.stopPropagation()">
+          <a href="${waLink}" target="_blank" class="btn-wa-link" title="WhatsApp">
+            <svg width="13" height="13" fill="white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WA
+          </a>
+          <button class="action-btn" onclick="updateStatus('${d.refNo}','Called')"   title="Mark Called">📞</button>
+          <button class="action-btn" onclick="updateStatus('${d.refNo}','Admitted')" title="Mark Admitted">✅</button>
+          <button class="action-btn" onclick="updateStatus('${d.refNo}','Lost')"     title="Mark Lost">❌</button>
         </td>
       </tr>`;
     }).join('');
   }
 
-  async function changeStatus(refNo, status) {
-    const idx = DATA.findIndex(d => d.refNo === refNo);
+  function renderAll() { renderStats(); renderTable(); }
+
+  // ── Show Detail Modal ──
+  function showDetail(refNo) {
+    const d = ALL_DATA.find(x => x.refNo === refNo);
+    if (!d) return;
+    const brName = getBranchById(d.branch)?.name || d.branch || '—';
+    const badge  = { New:'badge-new', Called:'badge-called', Admitted:'badge-admitted', Lost:'badge-lost' }[d.status] || 'badge-new';
+    const waNum  = (d.whatsapp||'').replace(/\D/g,'');
+
+    document.getElementById('modal-title').textContent = `📋 ${d.refNo}`;
+    document.getElementById('modal-body').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <span class="badge ${badge}" style="font-size:0.85rem;padding:5px 14px;">${d.status||'New'}</span>
+        <span style="color:#999;font-size:0.8rem;">${d.submittedAt?new Date(d.submittedAt).toLocaleString('en-IN'):''}</span>
+      </div>
+      <div style="background:#f8f9ff;border-radius:10px;padding:14px;margin-bottom:14px;">
+        <div style="font-weight:700;color:var(--blue);font-size:0.85rem;margin-bottom:8px;">👦 Child Information</div>
+        ${row('Name', d.childName)} ${row('Date of Birth', d.dob)} ${row('Gender', d.gender)}
+        ${row('Religion', d.religion)} ${row('Mother Tongue', d.motherTongue)} ${row('Program', d.program)}
+      </div>
+      <div style="background:#f8fff8;border-radius:10px;padding:14px;margin-bottom:14px;">
+        <div style="font-weight:700;color:#1e8449;font-size:0.85rem;margin-bottom:8px;">👨‍👩‍👧 Parent Information</div>
+        ${row('Father Name', d.fatherName)} ${row('Mother Name', d.motherName)}
+        ${row('WhatsApp', d.whatsapp)} ${row('Alt Phone', d.altPhone)}
+        ${row('Email', d.email)} ${row('Address', d.address)}
+      </div>
+      <div style="background:#fff8f0;border-radius:10px;padding:14px;">
+        <div style="font-weight:700;color:#e67e22;font-size:0.85rem;margin-bottom:8px;">🏫 Branch & Source</div>
+        ${row('Branch', brName)} ${row('Referred By', d.referral)} ${row('Message', d.message)}
+      </div>`;
+
+    document.getElementById('modal-actions').innerHTML = `
+      <a href="https://api.whatsapp.com/send?phone=91${waNum}&text=${encodeURIComponent('Hello '+d.fatherName+', Thank you for enquiring about Ansha Shine Kids School. We will get back to you shortly.')}" target="_blank" class="btn-wa-link" style="padding:8px 14px;font-size:0.85rem;">
+        <svg width="15" height="15" fill="white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        WhatsApp Parent
+      </a>
+      <button class="action-btn" onclick="updateStatus('${d.refNo}','Called');closeModal()"   style="padding:6px 14px;">📞 Mark Called</button>
+      <button class="action-btn" onclick="updateStatus('${d.refNo}','Admitted');closeModal()" style="padding:6px 14px;">✅ Mark Admitted</button>
+      <button class="action-btn" onclick="updateStatus('${d.refNo}','Lost');closeModal()"     style="padding:6px 14px;">❌ Mark Lost</button>
+      <button onclick="closeModal()" style="margin-left:auto;background:none;border:1px solid #dde;border-radius:8px;padding:6px 16px;cursor:pointer;color:#666;font-size:0.85rem;">Close</button>`;
+
+    document.getElementById('detail-modal').classList.add('open');
+  }
+  function row(label, val) {
+    if (!val) return '';
+    return `<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value">${val}</span></div>`;
+  }
+  function closeModal() { document.getElementById('detail-modal').classList.remove('open'); }
+  document.getElementById('detail-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ── Update Status ──
+  async function updateStatus(refNo, status) {
+    const idx = ALL_DATA.findIndex(d => d.refNo === refNo);
     if (idx < 0) return;
-    DATA[idx].status = status;
-    localStorage.setItem('asks_enquiries', JSON.stringify(DATA));
-    if (_sb) {
-      try {
-        await _sb.from('erp_data').upsert(
-          { key:'enquiries', value:DATA, updated_at: new Date().toISOString() },
-          { onConflict:'key' }
-        );
-      } catch(e){}
-    }
+    ALL_DATA[idx].status = status;
+    localStorage.setItem('asks_enquiries', JSON.stringify(ALL_DATA));
+
+    // Save to Supabase
+    try {
+      const sb = supabase.createClient('https://wtcumlqwapqqkbjpjoco.supabase.co','sb_publishable_rOJdCtFChg6_FHm1hrQd1w_UcBC_m1T');
+      await sb.from('erp_data').upsert(
+        { key:'enquiries', value:ALL_DATA, updated_at:new Date().toISOString() },
+        { onConflict:'key' }
+      );
+    } catch(e) {}
+
     renderAll();
+    if (typeof showToast === 'function') showToast(`Status updated to ${status}`, 'success');
   }
 
+  // ── Export CSV ──
   function exportCSV() {
+    const data = getVisibleData();
     const headers = ['RefNo','Date','ChildName','DOB','Gender','Religion','MotherTongue','Program','FatherName','MotherName','WhatsApp','AltPhone','Email','Address','Branch','ReferredBy','Status','Message'];
-    const rows = DATA.map(d => [
-      d.refNo, new Date(d.submittedAt).toLocaleDateString('en-IN'),
+    const rows = data.map(d => [
+      d.refNo, d.submittedAt ? new Date(d.submittedAt).toLocaleDateString('en-IN') : '',
       d.childName, d.dob, d.gender, d.religion, d.motherTongue, d.program,
       d.fatherName, d.motherName, d.whatsapp, d.altPhone, d.email,
-      `"${(d.address||'').replace(/"/g,'""')}"`, d.branch, d.referral, d.status,
+      `"${(d.address||'').replace(/"/g,'""')}"`,
+      getBranchById(d.branch)?.name || d.branch,
+      d.referral, d.status,
       `"${(d.message||'').replace(/"/g,'""')}"`
     ].join(','));
     const csv  = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type:'text/csv' });
+    const blob = new Blob(['\uFEFF'+csv], { type:'text/csv;charset=utf-8' });
     const a    = document.createElement('a');
     a.href     = URL.createObjectURL(blob);
-    a.download = 'enquiries_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.download = `enquiries_${isSA?'all':myBranchId}_${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
   }
 

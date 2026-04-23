@@ -175,6 +175,12 @@
       document.getElementById('dash-subtitle').innerHTML = `Real-time overview · <strong>All ${summary.activeBranches} Active Branches</strong>`;
     }
 
+    // Enquiry counts
+    const allEnq    = JSON.parse(localStorage.getItem('asks_enquiries') || '[]');
+    const myEnq     = isSA ? allEnq : allEnq.filter(e => e.branch === branchId);
+    const todayStr  = new Date().toDateString();
+    const newEnqToday = myEnq.filter(e => new Date(e.submittedAt).toDateString() === todayStr).length;
+
     // Stat Cards
     const cards = isSA ? [
       { label:'Total Students', value: summary.totalStudents, icon:'👧', color:'blue', change:'+12 this month', dir:'up' },
@@ -182,18 +188,18 @@
       { label:'Total Staff', value: summary.totalStaff, icon:'👩‍🏫', color:'green', change:'+4 this month', dir:'up' },
       { label:'Fee Collected', value: currencyINR(b001Summary.collectedFees), icon:'💰', color:'purple', change:'B001 branch', dir:'up' },
       { label:'Pending Fees', value: currencyINR(b001Summary.pendingFees), icon:'⚠️', color:'red', change:'Needs collection', dir:'down' },
-      { label:'Today Present', value: b001Summary.presentToday, icon:'✅', color:'teal', change:'B001 today', dir:'up' },
+      { label:'New Enquiries', value: myEnq.length, icon:'📋', color:'teal', change:`${newEnqToday} today`, dir:'up', link:'enquiries.html' },
     ] : [
       { label:'Total Students', value: b001Summary.students, icon:'👧', color:'blue', change:'+3 this month', dir:'up' },
       { label:'Staff Count', value: b001Summary.staff, icon:'👩‍🏫', color:'green', change:'All active', dir:'up' },
       { label:'Today Present', value: b001Summary.presentToday, icon:'✅', color:'teal', change:'Students present', dir:'up' },
       { label:'Fee Collected', value: currencyINR(b001Summary.collectedFees), icon:'💰', color:'purple', change:'This month', dir:'up' },
       { label:'Pending Fees', value: currencyINR(b001Summary.pendingFees), icon:'⚠️', color:'red', change:'To collect', dir:'down' },
-      { label:'Active Routes', value: getRoutesByBranch(branchId).length, icon:'🚌', color:'orange', change:'Transport routes', dir:'up' },
+      { label:'New Enquiries', value: myEnq.length, icon:'📋', color:'orange', change:`${newEnqToday} today`, dir:'up', link:'enquiries.html' },
     ];
 
     document.getElementById('stat-cards').innerHTML = cards.map(c => `
-      <div class="stat-card ${c.color}">
+      <div class="stat-card ${c.color}" ${c.link?`onclick="location.href='${c.link}'" style="cursor:pointer"`:''}>
         <div class="stat-icon">${c.icon}</div>
         <div class="stat-body">
           <div class="stat-label">${c.label}</div>
