@@ -5,7 +5,7 @@
    ================================================================ */
 
 /* ---- Data version — bump this to wipe old localStorage on next load ---- */
-const _DATA_VERSION = '5.1';
+const _DATA_VERSION = '5.2';
 (function _resetIfVersionChanged() {
   if (localStorage.getItem('asks_erp_version') !== _DATA_VERSION) {
     const keep = ['asks_erp_session', 'asks_erp_backup_history', 'asks_active_branch'];
@@ -35,9 +35,9 @@ function _saveStored(key, arr) {
 const _DEFAULT_BRANCHES = [
   { id:'B001', name:'Tambaram West',  addr:'No# 1A, Sundaram Colony 3rd St, Near Anchaneyar Kovil, Tambaram West, Chennai 600 045', phone:'860 861 2233', email:'tambaram@anshashinekidsschool.com',  adminId:'U002', status:'active',  est:'2015', students:0, staff:0 },
   { id:'B002', name:'Mudichur',       addr:'Dhanalaxmi St, South Laxmi Nager, Opp Nayara Petrol Bunk, Chennai 600 048',             phone:'984 172 6893', email:'mudichur@anshashinekidsschool.com',   adminId:'U003', status:'active',  est:'2017', students:0, staff:0 },
-  { id:'B003', name:'Padapai',        addr:'Ozur Amman Kovil St, Athencherry, Opp. Annai Sagaya Mary Church, Padapai 601 301',       phone:'936 771 2344', email:'padappai@anshashinekidsschool.com',   adminId:'U004', status:'active',  est:'2018', students:0, staff:0 },
-  { id:'B004', name:'Pallavakkam',    addr:'Periyar Nager Junction, Pallavakam, Chennai 600 041',                                    phone:'944 492 1124', email:'pallavakam@anshashinekidsschool.com',  adminId:'U005', status:'active',  est:'2019', students:0, staff:0 },
-  { id:'B005', name:'Mannivakkam',    addr:'Shanmuga Nagar, Mannivakkam, Chennai 600 048',                                           phone:'843 811 1248', email:'mannivakkam@anshashinekidsschool.com', adminId:'U006', status:'active',  est:'2019', students:0, staff:0 },
+  { id:'B003', name:'Padapai',        addr:'Ozur Amman Kovil St, Athencherry, Opp. Annai Sagaya Mary Church, Padapai 601 301',       phone:'7397242685',   email:'padappai@anshashinekidsschool.com',   adminId:'U004', status:'active',  est:'2018', students:0, staff:0 },
+  { id:'B004', name:'Pallavakkam',    addr:'Periyar Nager Junction, Pallavakam, Chennai 600 041',                                    phone:'9789688284',   email:'pallavakam@anshashinekidsschool.com',  adminId:'U005', status:'active',  est:'2019', students:0, staff:0 },
+  { id:'B005', name:'Mannivakkam',    addr:'Shanmuga Nagar, Mannivakkam, Chennai 600 048',                                           phone:'9500111248',   email:'mannivakkam@anshashinekidsschool.com', adminId:'U006', status:'active',  est:'2019', students:0, staff:0 },
   { id:'B006', name:'Kanathur',       addr:'ECR Main Road, Kanathur, Chennai 603 112',                                               phone:'98842 81223',  email:'kanathur@anshashinekidsschool.com',    adminId:'U007', status:'active',  est:'2020', students:0, staff:0 },
   { id:'B007', name:'Mappedu',        addr:'Near Mappedu Bus Stop, Mappedu, Thiruvallur 602 105',                                    phone:'90031 44556',  email:'mappedu@anshashinekidsschool.com',     adminId:'U008', status:'active',  est:'2021', students:0, staff:0 },
   { id:'B008', name:'Porur',          addr:'Arcot Road, Porur, Chennai 600 116',                                                     phone:'99401 22334',  email:'porur@anshashinekidsschool.com',       adminId:null,   status:'setup',  est:'2024', students:0, staff:0 },
@@ -59,17 +59,34 @@ const PROGRAMS = [
 
 /* ---------- USERS / ADMINS (static — passwords never exported) ---------- */
 const USERS = [
-  { id:'U001', name:'Super Admin',    email:'admin@anshashinekidsschool.com',      pass:'Admin@123',   role:'superadmin', branchId:null,   phone:'860 861 2200', avatar:'SA' },
-  { id:'U009', name:'Hemala',         email:'hemala@anshashinekidsschool.com',      pass:'Great786&*^', role:'superadmin', branchId:null,   phone:'',             avatar:'HE' },
-  { id:'U010', name:'Syed',           email:'syed@anshashinekidsschool.com',        pass:'Great786&*^', role:'superadmin', branchId:null,   phone:'',             avatar:'SY' },
-  { id:'U011', name:'Shakilah',       email:'shakilah@anshashinekidsschool.com',    pass:'Great786&*^', role:'superadmin', branchId:null,   phone:'',             avatar:'SH' },
-  { id:'U002', name:'Priya Devi',     email:'tambaram@anshashinekidsschool.com',    pass:'Branch@123',  role:'admin',      branchId:'B001', phone:'860 861 2233', avatar:'PD' },
-  { id:'U003', name:'Kavitha Rajan',  email:'mudichur@anshashinekidsschool.com',    pass:'Branch@123',  role:'admin',      branchId:'B002', phone:'984 172 6893', avatar:'KR' },
-  { id:'U004', name:'Sunita Kumari',  email:'padappai@anshashinekidsschool.com',    pass:'Branch@123',  role:'admin',      branchId:'B003', phone:'936 771 2344', avatar:'SK' },
-  { id:'U005', name:'Meena Lakshmi',  email:'pallavakam@anshashinekidsschool.com',  pass:'Branch@123',  role:'admin',      branchId:'B004', phone:'944 492 1124', avatar:'ML' },
-  { id:'U006', name:'Radha Mani',     email:'mannivakkam@anshashinekidsschool.com', pass:'Branch@123',  role:'admin',      branchId:'B005', phone:'843 811 1248', avatar:'RM' },
-  { id:'U007', name:'Sujatha Nair',   email:'kanathur@anshashinekidsschool.com',    pass:'Branch@123',  role:'admin',      branchId:'B006', phone:'98842 81223',  avatar:'SN' },
-  { id:'U008', name:'Anitha Bose',    email:'mappedu@anshashinekidsschool.com',     pass:'Branch@123',  role:'admin',      branchId:'B007', phone:'90031 44556',  avatar:'AB' },
+  // ── Super Admins ──
+  { id:'U001', name:'Super Admin',       email:'admin@anshashinekidsschool.com',         pass:'Admin@123',   role:'superadmin', branchId:null,   phone:'860 861 2200', avatar:'SA' },
+  { id:'U009', name:'Hemala',            email:'hemala@anshashinekidsschool.com',         pass:'Great786&*^', role:'superadmin', branchId:null,   phone:'',             avatar:'HE' },
+  { id:'U010', name:'Syed',              email:'syed@anshashinekidsschool.com',           pass:'Great786&*^', role:'superadmin', branchId:null,   phone:'',             avatar:'SY' },
+  { id:'U011', name:'Shakilah',          email:'shakilah@anshashinekidsschool.com',       pass:'Great786&*^', role:'superadmin', branchId:null,   phone:'',             avatar:'SH' },
+
+  // ── B001 Tambaram West ──
+  { id:'U002', name:'Rahmathunnisa',     email:'rahmathunnisa@anshashinekidsschool.com',  pass:'Great786',    role:'admin',      branchId:'B001', phone:'860 861 2233', avatar:'RN' },
+  { id:'U012', name:'A. Lingeshwari',    email:'lingeshwari@anshashinekidsschool.com',    pass:'Great786',    role:'admin',      branchId:'B001', phone:'',             avatar:'AL' },
+  { id:'U013', name:'Lakshmi',           email:'lakshmi@anshashinekidsschool.com',        pass:'Great786',    role:'admin',      branchId:'B001', phone:'',             avatar:'LA' },
+
+  // ── B002 Mudichur ──
+  { id:'U003', name:'Kavitha Rajan',     email:'mudichur@anshashinekidsschool.com',       pass:'Great786',    role:'admin',      branchId:'B002', phone:'984 172 6893', avatar:'KR' },
+
+  // ── B003 Padapai ──
+  { id:'U004', name:'A. K. Ranjani',     email:'ranjani@anshashinekidsschool.com',        pass:'Great786',    role:'admin',      branchId:'B003', phone:'7397242685',   avatar:'AK' },
+
+  // ── B004 Pallavakkam ──
+  { id:'U005', name:'Mrs. Sheema Rabiya',email:'sheema@anshashinekidsschool.com',         pass:'Great786',    role:'admin',      branchId:'B004', phone:'9789688284',   avatar:'SR' },
+
+  // ── B005 Mannivakkam ──
+  { id:'U006', name:'Abinaya Jothibasu', email:'abinaya@anshashinekidsschool.com',        pass:'Great786',    role:'admin',      branchId:'B005', phone:'9500111248',   avatar:'AJ' },
+
+  // ── B006 Kanathur ──
+  { id:'U007', name:'Mrs. Nabeela',      email:'nabeela@anshashinekidsschool.com',        pass:'Great786',    role:'admin',      branchId:'B006', phone:'',             avatar:'NA' },
+
+  // ── B007 Mappedu ──
+  { id:'U008', name:'Anitha Bose',       email:'mappedu@anshashinekidsschool.com',        pass:'Great786',    role:'admin',      branchId:'B007', phone:'90031 44556',  avatar:'AB' },
 ];
 
 /* ---------- STAFF ---------- */
