@@ -5,7 +5,7 @@
    ================================================================ */
 
 /* ---- Data version — bump this to wipe old localStorage on next load ---- */
-const _DATA_VERSION = '5.0';
+const _DATA_VERSION = '5.1';
 (function _resetIfVersionChanged() {
   if (localStorage.getItem('asks_erp_version') !== _DATA_VERSION) {
     const keep = ['asks_erp_session', 'asks_erp_backup_history', 'asks_active_branch'];
@@ -59,14 +59,17 @@ const PROGRAMS = [
 
 /* ---------- USERS / ADMINS (static — passwords never exported) ---------- */
 const USERS = [
-  { id:'U001', name:'Super Admin',    email:'admin@anshashinekidsschool.com',     pass:'Admin@123',  role:'superadmin', branchId:null,   phone:'860 861 2200', avatar:'SA' },
-  { id:'U002', name:'Priya Devi',     email:'tambaram@anshashinekidsschool.com',  pass:'Branch@123', role:'admin',      branchId:'B001', phone:'860 861 2233', avatar:'PD' },
-  { id:'U003', name:'Kavitha Rajan',  email:'mudichur@anshashinekidsschool.com',  pass:'Branch@123', role:'admin',      branchId:'B002', phone:'984 172 6893', avatar:'KR' },
-  { id:'U004', name:'Sunita Kumari',  email:'padappai@anshashinekidsschool.com',  pass:'Branch@123', role:'admin',      branchId:'B003', phone:'936 771 2344', avatar:'SK' },
-  { id:'U005', name:'Meena Lakshmi',  email:'pallavakam@anshashinekidsschool.com',pass:'Branch@123', role:'admin',      branchId:'B004', phone:'944 492 1124', avatar:'ML' },
-  { id:'U006', name:'Radha Mani',     email:'mannivakkam@anshashinekidsschool.com',pass:'Branch@123',role:'admin',      branchId:'B005', phone:'843 811 1248', avatar:'RM' },
-  { id:'U007', name:'Sujatha Nair',   email:'kanathur@anshashinekidsschool.com',  pass:'Branch@123', role:'admin',      branchId:'B006', phone:'98842 81223',  avatar:'SN' },
-  { id:'U008', name:'Anitha Bose',    email:'mappedu@anshashinekidsschool.com',   pass:'Branch@123', role:'admin',      branchId:'B007', phone:'90031 44556',  avatar:'AB' },
+  { id:'U001', name:'Super Admin',    email:'admin@anshashinekidsschool.com',      pass:'Admin@123',   role:'superadmin', branchId:null,   phone:'860 861 2200', avatar:'SA' },
+  { id:'U009', name:'Hemala',         email:'hemala@anshashinekidsschool.com',      pass:'Great786&*^', role:'superadmin', branchId:null,   phone:'',             avatar:'HE' },
+  { id:'U010', name:'Syed',           email:'syed@anshashinekidsschool.com',        pass:'Great786&*^', role:'superadmin', branchId:null,   phone:'',             avatar:'SY' },
+  { id:'U011', name:'Shakilah',       email:'shakilah@anshashinekidsschool.com',    pass:'Great786&*^', role:'superadmin', branchId:null,   phone:'',             avatar:'SH' },
+  { id:'U002', name:'Priya Devi',     email:'tambaram@anshashinekidsschool.com',    pass:'Branch@123',  role:'admin',      branchId:'B001', phone:'860 861 2233', avatar:'PD' },
+  { id:'U003', name:'Kavitha Rajan',  email:'mudichur@anshashinekidsschool.com',    pass:'Branch@123',  role:'admin',      branchId:'B002', phone:'984 172 6893', avatar:'KR' },
+  { id:'U004', name:'Sunita Kumari',  email:'padappai@anshashinekidsschool.com',    pass:'Branch@123',  role:'admin',      branchId:'B003', phone:'936 771 2344', avatar:'SK' },
+  { id:'U005', name:'Meena Lakshmi',  email:'pallavakam@anshashinekidsschool.com',  pass:'Branch@123',  role:'admin',      branchId:'B004', phone:'944 492 1124', avatar:'ML' },
+  { id:'U006', name:'Radha Mani',     email:'mannivakkam@anshashinekidsschool.com', pass:'Branch@123',  role:'admin',      branchId:'B005', phone:'843 811 1248', avatar:'RM' },
+  { id:'U007', name:'Sujatha Nair',   email:'kanathur@anshashinekidsschool.com',    pass:'Branch@123',  role:'admin',      branchId:'B006', phone:'98842 81223',  avatar:'SN' },
+  { id:'U008', name:'Anitha Bose',    email:'mappedu@anshashinekidsschool.com',     pass:'Branch@123',  role:'admin',      branchId:'B007', phone:'90031 44556',  avatar:'AB' },
 ];
 
 /* ---------- STAFF ---------- */
