@@ -159,7 +159,7 @@
       { label:'Pending',      value:currencyINR(pending),    icon:'⚠️', color:'red' },
       { label:'Paid Students',value:paidCount+' students',  icon:'👧', color:'teal' },
       { label:'Defaulters',   value:pendingCount+' students',icon:'🔔', color:'orange' },
-      { label:'Collection %', value:((collected/total)*100).toFixed(1)+'%', icon:'📈', color:'purple' },
+      { label:'Collection %', value:(total > 0 ? ((collected/total)*100).toFixed(1) : '0.0')+'%', icon:'📈', color:'purple' },
     ].map(s=>`<div class="stat-card ${s.color}"><div class="stat-icon">${s.icon}</div><div class="stat-body"><div class="stat-label">${s.label}</div><div class="stat-value">${s.value}</div></div></div>`).join('');
   }
 
