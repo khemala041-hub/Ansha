@@ -234,6 +234,22 @@
   }
   .btn-print:hover, .btn-wa-share:hover { opacity: 0.88; }
 
+  /* ── Bank tabs ── */
+  .bank-tab {
+    background:#e8eef7; border:none; border-radius:20px;
+    padding:5px 13px; font-size:0.78rem; font-weight:600;
+    color:#1a5276; cursor:pointer; transition:all 0.2s;
+  }
+  .bank-tab.active { background:var(--blue); color:white; }
+  .bank-row {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:8px 0; border-bottom:1px solid #e8e8e8; font-size:0.83rem;
+  }
+  .bank-row span { color:#888; }
+  .bank-row strong { color:#333; text-align:right; }
+  .copyable { color:var(--blue)!important; cursor:pointer; }
+  .copyable:hover { text-decoration:underline; }
+
   @media(max-width:480px) {
     .row-2 { grid-template-columns: 1fr; }
     .form-card, .qr-section { padding: 20px 16px; }
@@ -415,6 +431,127 @@
       <textarea name="message" placeholder="Write any questions or special requirements..."></textarea>
     </div>
 
+    <!-- ── Payment Section ── -->
+    <div class="section-title">💳 Registration Fee Payment</div>
+
+    <div style="background:#fff8f0;border:2px solid #f39c12;border-radius:12px;padding:14px 16px;margin-bottom:16px;text-align:center;">
+      <div style="font-size:0.82rem;color:#888;margin-bottom:4px;">Registration Fee</div>
+      <div style="font-size:2rem;font-weight:900;color:#c0392b;">₹ 500</div>
+      <div style="font-size:0.75rem;color:#999;">One-time non-refundable registration fee</div>
+    </div>
+
+    <!-- Payment Mode -->
+    <div class="field">
+      <label>Select Payment Mode <span class="req">*</span></label>
+      <div class="radio-group" id="pay-mode-group">
+        <label><input type="radio" name="payMode" value="Cash" required onchange="showPayDetails('Cash')"/> 💵 Cash on Hand</label>
+        <label><input type="radio" name="payMode" value="GPay" onchange="showPayDetails('GPay')"/> 📱 GPay / UPI</label>
+        <label><input type="radio" name="payMode" value="Bank Transfer" onchange="showPayDetails('Bank')"/> 🏦 Bank Transfer</label>
+      </div>
+    </div>
+
+    <!-- Cash Details -->
+    <div id="pay-cash" class="pay-details" style="display:none;background:#e8f8f5;border-radius:12px;padding:16px;margin-bottom:14px;text-align:center;">
+      <div style="font-size:1.5rem;margin-bottom:8px;">💵</div>
+      <div style="font-weight:700;color:#1e8449;font-size:1rem;">Pay Cash at School</div>
+      <div style="color:#555;font-size:0.85rem;margin-top:6px;">Please bring ₹500 cash when you visit the branch.<br/>Our staff will issue a receipt immediately.</div>
+    </div>
+
+    <!-- GPay / UPI Details -->
+    <div id="pay-gpay" class="pay-details" style="display:none;background:#e8f4fd;border-radius:12px;padding:16px;margin-bottom:14px;text-align:center;">
+      <div style="font-size:1rem;font-weight:700;color:#1a5276;margin-bottom:10px;">📱 Pay via GPay / PhonePe / Any UPI App</div>
+      <div style="background:white;border-radius:10px;padding:16px;display:inline-block;margin-bottom:10px;">
+        <div id="gpay-qr"></div>
+      </div>
+      <div style="margin:8px 0;">
+        <span style="background:#1a5276;color:white;padding:6px 16px;border-radius:20px;font-size:0.9rem;font-weight:700;letter-spacing:1px;" id="upi-id-display">9500111248@ybl</span>
+      </div>
+      <div style="font-size:0.78rem;color:#666;margin-top:6px;">Scan QR code OR send to UPI ID above<br/>Amount: <strong>₹500</strong> | Note: Child's Name</div>
+      <button type="button" onclick="copyUPI()" style="margin-top:8px;background:none;border:1px solid #1a5276;border-radius:8px;padding:5px 14px;color:#1a5276;font-size:0.78rem;cursor:pointer;">📋 Copy UPI ID</button>
+    </div>
+
+    <!-- Bank Transfer Details -->
+    <div id="pay-bank" class="pay-details" style="display:none;background:#f4f6f8;border-radius:12px;padding:16px;margin-bottom:14px;">
+      <div style="font-size:1rem;font-weight:700;color:#1a5276;margin-bottom:12px;text-align:center;">🏦 Bank Account Details</div>
+
+      <!-- Bank Tabs -->
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;" id="bank-tabs">
+        <button type="button" class="bank-tab active" onclick="showBank('yesbank')">YES Bank</button>
+        <button type="button" class="bank-tab" onclick="showBank('kvb')">KVB</button>
+        <button type="button" class="bank-tab" onclick="showBank('idbi')">IDBI</button>
+        <button type="button" class="bank-tab" onclick="showBank('kotak')">Kotak</button>
+        <button type="button" class="bank-tab" onclick="showBank('union')">Union Bank</button>
+        <button type="button" class="bank-tab" onclick="showBank('sbi')">SBI</button>
+      </div>
+
+      <!-- YES Bank -->
+      <div class="bank-detail" id="bank-yesbank">
+        <div class="bank-row"><span>Bank Name</span><strong>YES Bank</strong></div>
+        <div class="bank-row"><span>Account Name</span><strong>Mohammed Hussain S</strong></div>
+        <div class="bank-row"><span>Account Number</span><strong class="copyable" onclick="copyText('119161900001537')">119161900001537 📋</strong></div>
+        <div class="bank-row"><span>Account Type</span><strong>Current Account</strong></div>
+        <div class="bank-row"><span>IFSC Code</span><strong class="copyable" onclick="copyText('YESB0001191')">YESB0001191 📋</strong></div>
+      </div>
+
+      <!-- KVB -->
+      <div class="bank-detail" id="bank-kvb" style="display:none">
+        <div class="bank-row"><span>Bank Name</span><strong>Karur Vysya Bank</strong></div>
+        <div class="bank-row"><span>Account Name</span><strong>Ansha Montessori Training Institute</strong></div>
+        <div class="bank-row"><span>Account Number</span><strong class="copyable" onclick="copyText('119190100000031')">119190100000031 📋</strong></div>
+        <div class="bank-row"><span>Account Type</span><strong>Current Account</strong></div>
+        <div class="bank-row"><span>Branch</span><strong>West Tambaram, Chennai – 600045</strong></div>
+      </div>
+
+      <!-- IDBI -->
+      <div class="bank-detail" id="bank-idbi" style="display:none">
+        <div class="bank-row"><span>Bank Name</span><strong>IDBI Bank</strong></div>
+        <div class="bank-row"><span>Account Name</span><strong>Mr. S Mohammed Husain</strong></div>
+        <div class="bank-row"><span>Account Number</span><strong class="copyable" onclick="copyText('370104000026239')">370104000026239 📋</strong></div>
+        <div class="bank-row"><span>IFSC Code</span><strong class="copyable" onclick="copyText('IBKL0000370')">IBKL0000370 📋</strong></div>
+        <div class="bank-row"><span>MICR Code</span><strong>600259017</strong></div>
+        <div class="bank-row"><span>Customer ID</span><strong>71468571</strong></div>
+      </div>
+
+      <!-- Kotak -->
+      <div class="bank-detail" id="bank-kotak" style="display:none">
+        <div class="bank-row"><span>Bank Name</span><strong>Kotak Mahindra Bank Ltd</strong></div>
+        <div class="bank-row"><span>Account Type</span><strong>Current Account (Pro)</strong></div>
+        <div class="bank-row"><span>IFSC Code</span><strong class="copyable" onclick="copyText('KKBK0008525')">KKBK0008525 📋</strong></div>
+        <div class="bank-row"><span>Branch</span><strong>Plot No.163, Rajaji Salai, Chennai – 600045</strong></div>
+      </div>
+
+      <!-- Union Bank -->
+      <div class="bank-detail" id="bank-union" style="display:none">
+        <div class="bank-row"><span>Bank Name</span><strong>Union Bank of India</strong></div>
+        <div class="bank-row"><span>Account Type</span><strong>Current Account</strong></div>
+        <div class="bank-row"><span>IFSC Code</span><strong class="copyable" onclick="copyText('UBIN0560618')">UBIN0560618 📋</strong></div>
+        <div class="bank-row"><span>Branch</span><strong>West Tambaram Branch</strong></div>
+      </div>
+
+      <!-- SBI -->
+      <div class="bank-detail" id="bank-sbi" style="display:none">
+        <div class="bank-row"><span>Bank Name</span><strong>State Bank of India</strong></div>
+        <div class="bank-row"><span>Account Type</span><strong>SB Account</strong></div>
+        <div class="bank-row"><span>Branch</span><strong>West Tambaram, Chennai – 600045</strong></div>
+        <div class="bank-row"><span>Details</span><strong>Contact school for account number</strong></div>
+      </div>
+
+      <div style="margin-top:12px;background:#fff3cd;border-radius:8px;padding:10px;font-size:0.78rem;color:#856404;text-align:center;">
+        ⚠️ After transfer, enter the transaction reference number below
+      </div>
+    </div>
+
+    <!-- Payment Reference -->
+    <div class="field" id="pay-ref-field" style="display:none">
+      <label>Transaction / Reference Number <span class="req">*</span></label>
+      <input type="text" name="payRef" id="payRef" placeholder="Enter UPI/Bank transaction reference number"/>
+    </div>
+
+    <div class="field">
+      <label>Payment Amount Paid (₹)</label>
+      <input type="number" name="payAmount" placeholder="500" value="500" min="0"/>
+    </div>
+
     <button type="submit" class="btn-submit" id="submit-btn">
       ✅ Submit Enquiry
     </button>
@@ -441,9 +578,54 @@
 <script>
   // ── Config ──
   const FORM_URL   = 'https://erp.anshashinekidsschool.com/enquiry.html';
-  const SCHOOL_WA  = '919600000000'; // Replace with school's WhatsApp number
+  const SCHOOL_WA  = '919500111248';
+  const UPI_ID     = '9500111248@ybl'; // Update with correct UPI ID
   const SUPABASE_URL = 'https://wtcumlqwapqqkbjpjoco.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_rOJdCtFChg6_FHm1hrQd1w_UcBC_m1T';
+
+  // ── Payment functions ──
+  function showPayDetails(mode) {
+    document.querySelectorAll('.pay-details').forEach(el => el.style.display = 'none');
+    document.getElementById('pay-ref-field').style.display = 'none';
+    if (mode === 'Cash')  { document.getElementById('pay-cash').style.display = 'block'; }
+    if (mode === 'GPay')  { document.getElementById('pay-gpay').style.display = 'block'; document.getElementById('pay-ref-field').style.display = 'block'; }
+    if (mode === 'Bank')  { document.getElementById('pay-bank').style.display = 'block'; document.getElementById('pay-ref-field').style.display = 'block'; }
+  }
+
+  function showBank(bankId) {
+    document.querySelectorAll('.bank-detail').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.bank-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('bank-' + bankId).style.display = 'block';
+    event.target.classList.add('active');
+  }
+
+  function copyText(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      const el = event.target;
+      const orig = el.textContent;
+      el.textContent = '✅ Copied!';
+      setTimeout(() => el.textContent = orig, 1500);
+    });
+  }
+
+  function copyUPI() {
+    navigator.clipboard.writeText(UPI_ID).then(() => {
+      const btn = event.target;
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = '📋 Copy UPI ID', 1500);
+    });
+  }
+
+  // ── GPay QR Code ──
+  const upiLink = `upi://pay?pa=${UPI_ID}&pn=Ansha+Shine+Kids+School&am=500&cu=INR&tn=Registration+Fee`;
+  document.getElementById('upi-id-display').textContent = UPI_ID;
+  new QRCode(document.getElementById('gpay-qr'), {
+    text: upiLink,
+    width: 160, height: 160,
+    colorDark: '#1a5276',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.H
+  });
 
   // ── Generate QR Code ──
   document.getElementById('form-url').textContent = FORM_URL;
@@ -503,6 +685,9 @@
       branch:      form.branch.value,
       referral:    referrals.join(', '),
       message:     form.message.value.trim(),
+      payMode:     form.payMode ? [...form.querySelectorAll('input[name=payMode]:checked')].map(r=>r.value)[0] || 'Not selected' : 'Not selected',
+      payRef:      form.payRef ? form.payRef.value.trim() : '',
+      payAmount:   form.payAmount ? form.payAmount.value : '500',
       status:      'New'
     };
 
@@ -536,6 +721,9 @@
       `*WhatsApp:* ${data.whatsapp}\n` +
       `*Branch:* ${data.branch}\n` +
       `*Referred by:* ${data.referral || 'Not specified'}\n` +
+      `*Payment Mode:* ${data.payMode}\n` +
+      `*Amount Paid:* ₹${data.payAmount}\n` +
+      `*Txn Ref:* ${data.payRef || 'N/A'}\n` +
       `*Date:* ${new Date().toLocaleDateString('en-IN')}`
     );
     document.getElementById('wa-confirm-btn').href =
