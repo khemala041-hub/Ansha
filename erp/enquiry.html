@@ -443,9 +443,10 @@
     <!-- Payment Mode -->
     <div class="field">
       <label>Select Payment Mode <span class="req">*</span></label>
+      <div style="font-size:0.8rem;color:#e67e22;margin-bottom:8px;">⚠️ Please select your branch above first</div>
       <div class="radio-group" id="pay-mode-group">
         <label><input type="radio" name="payMode" value="Cash" required onchange="showPayDetails('Cash')"/> 💵 Cash on Hand</label>
-        <label><input type="radio" name="payMode" value="GPay" onchange="showPayDetails('GPay')"/> 📱 GPay / UPI</label>
+        <label id="gpay-radio-label" style="display:none"><input type="radio" name="payMode" value="GPay" onchange="showPayDetails('GPay')"/> 📱 GPay / UPI</label>
         <label><input type="radio" name="payMode" value="Bank Transfer" onchange="showPayDetails('Bank')"/> 🏦 Bank Transfer</label>
       </div>
     </div>
@@ -464,8 +465,9 @@
         <div id="gpay-qr"></div>
       </div>
       <div style="margin:8px 0;">
-        <span style="background:#1a5276;color:white;padding:6px 16px;border-radius:20px;font-size:0.9rem;font-weight:700;letter-spacing:1px;" id="upi-id-display">9500111248@ybl</span>
+        <span style="background:#1a5276;color:white;padding:6px 16px;border-radius:20px;font-size:0.9rem;font-weight:700;letter-spacing:1px;" id="upi-id-display">9962761100@ybl</span>
       </div>
+      <div style="font-size:0.8rem;color:#555;margin-top:4px;font-weight:600;" id="upi-name-display">SHAKILA BANU MOHAMMED HUSSAIN</div>
       <div style="font-size:0.78rem;color:#666;margin-top:6px;">Scan QR code OR send to UPI ID above<br/>Amount: <strong>₹500</strong> | Note: Child's Name</div>
       <button type="button" onclick="copyUPI()" style="margin-top:8px;background:none;border:1px solid #1a5276;border-radius:8px;padding:5px 14px;color:#1a5276;font-size:0.78rem;cursor:pointer;">📋 Copy UPI ID</button>
     </div>
@@ -578,10 +580,56 @@
 <script>
   // ── Config ──
   const FORM_URL   = 'https://erp.anshashinekidsschool.com/enquiry.html';
-  const SCHOOL_WA  = '919500111248';
-  const UPI_ID     = '9962761100@ybl'; // PhonePe • YES Bank • SHAKILA BANU MOHAMMED HUSSAIN
+  const SCHOOL_WA  = '919962761100';
   const SUPABASE_URL = 'https://wtcumlqwapqqkbjpjoco.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_rOJdCtFChg6_FHm1hrQd1w_UcBC_m1T';
+
+  // ── Branch-specific Payment Config ──
+  // Add UPI ID for each branch as you get them. Leave upiId blank to hide GPay option.
+  const BRANCH_PAYMENTS = {
+    'B001': { upiId: '', upiName: '',                                         waNo: '918608612233' }, // Tambaram — no UPI yet
+    'B002': { upiId: '', upiName: '',                                         waNo: '919841726893' }, // Mudichur
+    'B003': { upiId: '', upiName: '',                                         waNo: '917397242685' }, // Padapai
+    'B004': { upiId: '9962761100@ybl', upiName: 'SHAKILA BANU MOHAMMED HUSSAIN', waNo: '919789688284' }, // Pallavakkam ✅
+    'B005': { upiId: '', upiName: '',                                         waNo: '919500111248' }, // Mannivakkam
+    'B006': { upiId: '9962761100@ybl', upiName: 'SHAKILA BANU MOHAMMED HUSSAIN', waNo: '919962761100' }, // Kanathur ✅
+    'B007': { upiId: '', upiName: '',                                         waNo: '919003144556' }, // Mappedu
+    'B008': { upiId: '', upiName: '',                                         waNo: '' },
+    'B009': { upiId: '', upiName: '',                                         waNo: '' },
+    'B010': { upiId: '', upiName: '',                                         waNo: '' },
+  };
+
+  let currentUpiId = '';
+  let qrInstance   = null;
+
+  // ── Update payment options when branch changes ──
+  document.querySelector('select[name=branch]').addEventListener('change', function() {
+    const branchId = this.value;
+    const pay = BRANCH_PAYMENTS[branchId] || { upiId: '', upiName: '' };
+    currentUpiId = pay.upiId;
+
+    // Show/hide GPay radio based on branch
+    const gpayLabel = document.getElementById('gpay-radio-label');
+    if (pay.upiId) {
+      gpayLabel.style.display = 'flex';
+      // Update UPI details
+      document.getElementById('upi-id-display').textContent = pay.upiId;
+      document.getElementById('upi-name-display').textContent = pay.upiName;
+      // Regenerate QR
+      const qrEl = document.getElementById('gpay-qr');
+      qrEl.innerHTML = '';
+      const upiLink = `upi://pay?pa=${pay.upiId}&pn=Ansha+Shine+Kids+School&am=500&cu=INR&tn=Registration+Fee`;
+      new QRCode(qrEl, { text: upiLink, width: 160, height: 160, colorDark:'#1a5276', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.H });
+    } else {
+      gpayLabel.style.display = 'none';
+      // Deselect GPay if it was selected
+      const gpayRadio = document.querySelector('input[name=payMode][value=GPay]');
+      if (gpayRadio && gpayRadio.checked) {
+        gpayRadio.checked = false;
+        showPayDetails('');
+      }
+    }
+  });
 
   // ── Payment functions ──
   function showPayDetails(mode) {
@@ -609,16 +657,16 @@
   }
 
   function copyUPI() {
-    navigator.clipboard.writeText(UPI_ID).then(() => {
+    navigator.clipboard.writeText(currentUpiId).then(() => {
       const btn = event.target;
       btn.textContent = '✅ Copied!';
       setTimeout(() => btn.textContent = '📋 Copy UPI ID', 1500);
     });
   }
 
-  // ── GPay QR Code ──
-  const upiLink = `upi://pay?pa=${UPI_ID}&pn=Ansha+Shine+Kids+School&am=500&cu=INR&tn=Registration+Fee`;
-  document.getElementById('upi-id-display').textContent = UPI_ID;
+  // ── Initial GPay QR (hidden until branch selected) ──
+  const upiLink = `upi://pay?pa=9962761100@ybl&pn=Ansha+Shine+Kids+School&am=500&cu=INR&tn=Registration+Fee`;
+  document.getElementById('upi-id-display').textContent = '9962761100@ybl';
   new QRCode(document.getElementById('gpay-qr'), {
     text: upiLink,
     width: 160, height: 160,
