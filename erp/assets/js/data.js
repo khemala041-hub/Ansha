@@ -5,7 +5,7 @@
    ================================================================ */
 
 /* ---- Data version — bump this to wipe old localStorage on next load ---- */
-const _DATA_VERSION = '5.4';
+const _DATA_VERSION = '5.5';
 (function _resetIfVersionChanged() {
   if (localStorage.getItem('asks_erp_version') !== _DATA_VERSION) {
     const keep = ['asks_erp_session', 'asks_erp_backup_history', 'asks_active_branch'];
@@ -40,11 +40,10 @@ const _DEFAULT_BRANCHES = [
   { id:'B005', name:'Mannivakkam',    addr:'Shanmuga Nagar, Mannivakkam, Chennai 600 048',                                           phone:'9500111248',   email:'mannivakkam@anshashinekidsschool.com', adminId:'U006', status:'active',  est:'2019', students:0, staff:0 },
   { id:'B006', name:'Kanathur',       addr:'ECR Main Road, Kanathur, Chennai 603 112',                                               phone:'98842 81223',  email:'kanathur@anshashinekidsschool.com',    adminId:'U007', status:'active',  est:'2020', students:0, staff:0 },
   { id:'B007', name:'Mappedu',        addr:'Near Mappedu Bus Stop, Mappedu, Thiruvallur 602 105',                                    phone:'90031 44556',  email:'mappedu@anshashinekidsschool.com',     adminId:'U008', status:'active',  est:'2021', students:0, staff:0 },
-  { id:'B008', name:'Porur',          addr:'Arcot Road, Porur, Chennai 600 116',                                                     phone:'99401 22334',  email:'porur@anshashinekidsschool.com',       adminId:null,   status:'setup',  est:'2024', students:0, staff:0 },
-  { id:'B009', name:'Tambaram East',  addr:'GST Road, Tambaram East, Chennai 600 059',                                               phone:'',             email:'',                                     adminId:null,   status:'setup',  est:'2024', students:0, staff:0 },
-  { id:'B010', name:'Chromepet',      addr:'Chromepet Main Road, Chennai 600 044',                                                   phone:'',             email:'',                                        adminId:null,   status:'planned',est:'2025', students:0, staff:0 },
-  { id:'B011', name:'Neelangkarai',   addr:'Neelangkarai, Chennai',                                                                    phone:'9841616086',   email:'neelangkarai@anshashinekidsschool.com',   adminId:null,   status:'active', est:'2024', students:0, staff:0 },
-  { id:'B012', name:'Pallavakkam 2',  addr:'Pallavakkam, Chennai',                                                                     phone:'9841616086',   email:'pallavakkam2@anshashinekidsschool.com',   adminId:null,   status:'active', est:'2024', students:0, staff:0 },
+  { id:'B009', name:'Tambaram East',  addr:'GST Road, Tambaram East, Chennai 600 059',                                               phone:'',             email:'',                                          adminId:null,   status:'setup',  est:'2024', students:0, staff:0 },
+  { id:'B011', name:'Neelangkarai',   addr:'Neelangkarai, Chennai',                                                                  phone:'9841616086',   email:'neelangkarai@anshashinekidsschool.com',     adminId:null,   status:'active', est:'2024', students:0, staff:0 },
+  { id:'B012', name:'Pallavakkam 2',  addr:'Pallavakkam, Chennai',                                                                   phone:'9841616086',   email:'pallavakkam2@anshashinekidsschool.com',     adminId:null,   status:'active', est:'2024', students:0, staff:0 },
+  { id:'B013', name:'Keel Padappai',  addr:'Keel Padappai, Chennai',                                                                 phone:'',             email:'keelpadappai@anshashinekidsschool.com',     adminId:null,   status:'active', est:'2024', students:0, staff:0 },
 ];
 const BRANCHES = _loadStored('asks_erp_branches', _DEFAULT_BRANCHES);
 

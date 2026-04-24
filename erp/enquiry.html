@@ -405,11 +405,10 @@
         <option value="B005">Branch 5 — Mannivakkam</option>
         <option value="B006">Branch 6 — Kanathur</option>
         <option value="B007">Branch 7 — Mappedu</option>
-        <option value="B008">Branch 8 — Porur</option>
         <option value="B009">Branch 9 — Tambaram East</option>
-        <option value="B010">Branch 10 — Chromepet</option>
         <option value="B011">Branch 11 — Neelangkarai</option>
         <option value="B012">Branch 12 — Pallavakkam 2</option>
+        <option value="B013">Branch 13 — Keel Padappai</option>
       </select>
     </div>
 
@@ -437,9 +436,7 @@
     <div class="section-title">💳 Registration Fee Payment</div>
 
     <div style="background:#fff8f0;border:2px solid #f39c12;border-radius:12px;padding:14px 16px;margin-bottom:16px;text-align:center;">
-      <div style="font-size:0.82rem;color:#888;margin-bottom:4px;">Registration Fee</div>
-      <div style="font-size:2rem;font-weight:900;color:#c0392b;">₹ 500</div>
-      <div style="font-size:0.75rem;color:#999;">One-time non-refundable registration fee</div>
+      <div style="font-size:0.85rem;color:#666;">Select your payment mode below and complete the payment</div>
     </div>
 
     <!-- Payment Mode -->
@@ -454,10 +451,26 @@
     </div>
 
     <!-- Cash Details -->
-    <div id="pay-cash" class="pay-details" style="display:none;background:#e8f8f5;border-radius:12px;padding:16px;margin-bottom:14px;text-align:center;">
-      <div style="font-size:1.5rem;margin-bottom:8px;">💵</div>
-      <div style="font-weight:700;color:#1e8449;font-size:1rem;">Pay Cash at School</div>
-      <div style="color:#555;font-size:0.85rem;margin-top:6px;">Please bring ₹500 cash when you visit the branch.<br/>Our staff will issue a receipt immediately.</div>
+    <div id="pay-cash" class="pay-details" style="display:none;background:#e8f8f5;border-radius:12px;padding:16px;margin-bottom:14px;">
+      <div style="text-align:center;margin-bottom:12px;">
+        <div style="font-size:1.5rem;margin-bottom:6px;">💵</div>
+        <div style="font-weight:700;color:#1e8449;font-size:1rem;">Pay Cash at School</div>
+        <div style="color:#555;font-size:0.83rem;margin-top:4px;">Please bring ₹500 cash when you visit the branch.<br/>Our staff will issue a receipt immediately.</div>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label style="color:#1e8449;">Remarks <span class="req">*</span></label>
+        <textarea name="cashRemarks" id="cashRemarks" rows="2" placeholder="e.g. Paid at reception on 24-Apr-2026, collected by Rahmathunnisa" style="width:100%;padding:9px;border:1.5px solid #b2dfdb;border-radius:8px;font-size:0.85rem;font-family:inherit;background:white;"></textarea>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label style="color:#1e8449;">📎 Attach Bill / Receipt Photo</label>
+        <input type="file" id="billPhoto" name="billPhoto" accept="image/*" capture="environment"
+          onchange="previewBill(this)"
+          style="width:100%;padding:8px;border:1.5px dashed #b2dfdb;border-radius:8px;background:white;font-size:0.83rem;cursor:pointer;"/>
+        <div id="bill-preview" style="display:none;margin-top:8px;text-align:center;">
+          <img id="bill-img" src="" style="max-width:100%;max-height:200px;border-radius:8px;border:2px solid #b2dfdb;"/>
+          <div style="font-size:0.75rem;color:#1e8449;margin-top:4px;">✅ Bill attached</div>
+        </div>
+      </div>
     </div>
 
     <!-- GPay / UPI Details -->
@@ -552,8 +565,8 @@
     </div>
 
     <div class="field">
-      <label>Payment Amount Paid (₹)</label>
-      <input type="number" name="payAmount" placeholder="500" value="500" min="0"/>
+      <label>Amount Paid (₹) <span class="req">*</span></label>
+      <input type="number" name="payAmount" placeholder="Enter amount paid" min="0" required/>
     </div>
 
     <button type="submit" class="btn-submit" id="submit-btn">
@@ -582,7 +595,7 @@
 <script>
   // ── Config ──
   const FORM_URL   = 'https://erp.anshashinekidsschool.com/enquiry.html';
-  const SCHOOL_WA  = '919962761100';
+  const SCHOOL_WA  = '917010302155'; // Main school WhatsApp
   const SUPABASE_URL = 'https://wtcumlqwapqqkbjpjoco.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_rOJdCtFChg6_FHm1hrQd1w_UcBC_m1T';
 
@@ -596,9 +609,8 @@
     'B005': { upiId: '', upiName: '',                                         waNo: '919500111248' }, // Mannivakkam
     'B006': { upiId: '9962761100@ybl', upiName: 'SHAKILA BANU MOHAMMED HUSSAIN', waNo: '919962761100' }, // Kanathur ✅
     'B007': { upiId: '', upiName: '',                                         waNo: '919003144556' }, // Mappedu
-    'B008': { upiId: '', upiName: '',                                         waNo: '' },
-    'B009': { upiId: '', upiName: '',                                         waNo: '' },
-    'B010': { upiId: '', upiName: '',                                              waNo: '' },
+    'B009': { upiId: '', upiName: '', waNo: '' }, // Tambaram East
+    'B013': { upiId: '', upiName: '', waNo: '' }, // Keel Padappai
     'B011': { upiId: 'paytmqr6dfa6p@ptys', upiName: 'MOHAMMED HUSSAIN SYED MOHAMMED', waNo: '919841616086' }, // Neelangkarai ✅
     'B012': { upiId: 'paytmqr6dfa6p@ptys', upiName: 'MOHAMMED HUSSAIN SYED MOHAMMED', waNo: '919841616086' }, // Pallavakkam 2 ✅
   };
@@ -622,7 +634,7 @@
       // Regenerate QR
       const qrEl = document.getElementById('gpay-qr');
       qrEl.innerHTML = '';
-      const upiLink = `upi://pay?pa=${pay.upiId}&pn=Ansha+Shine+Kids+School&am=500&cu=INR&tn=Registration+Fee`;
+      const upiLink = `upi://pay?pa=${pay.upiId}&pn=Ansha+Shine+Kids+School&cu=INR&tn=Registration+Fee`;
       new QRCode(qrEl, { text: upiLink, width: 160, height: 160, colorDark:'#1a5276', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.H });
     } else {
       gpayLabel.style.display = 'none';
@@ -660,6 +672,17 @@
     });
   }
 
+  function previewBill(input) {
+    if (input.files && input.files[0]) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        document.getElementById('bill-img').src = e.target.result;
+        document.getElementById('bill-preview').style.display = 'block';
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+  }
+
   function copyUPI() {
     navigator.clipboard.writeText(currentUpiId).then(() => {
       const btn = event.target;
@@ -669,7 +692,7 @@
   }
 
   // ── Initial GPay QR (hidden until branch selected) ──
-  const upiLink = `upi://pay?pa=9962761100@ybl&pn=Ansha+Shine+Kids+School&am=500&cu=INR&tn=Registration+Fee`;
+  const upiLink = `upi://pay?pa=9962761100@ybl&pn=Ansha+Shine+Kids+School&cu=INR&tn=Registration+Fee`;
   document.getElementById('upi-id-display').textContent = '9962761100@ybl';
   new QRCode(document.getElementById('gpay-qr'), {
     text: upiLink,
@@ -739,7 +762,9 @@
       message:     form.message.value.trim(),
       payMode:     form.payMode ? [...form.querySelectorAll('input[name=payMode]:checked')].map(r=>r.value)[0] || 'Not selected' : 'Not selected',
       payRef:      form.payRef ? form.payRef.value.trim() : '',
-      payAmount:   form.payAmount ? form.payAmount.value : '500',
+      payAmount:   form.payAmount ? form.payAmount.value : '',
+      cashRemarks: form.cashRemarks ? form.cashRemarks.value.trim() : '',
+      billPhoto:   document.getElementById('bill-img') ? document.getElementById('bill-img').src : '',
       status:      'New'
     };
 
@@ -774,10 +799,15 @@
       `*Branch:* ${data.branch}\n` +
       `*Referred by:* ${data.referral || 'Not specified'}\n` +
       `*Payment Mode:* ${data.payMode}\n` +
-      `*Amount Paid:* ₹${data.payAmount}\n` +
+      `*Amount Paid:* ₹${data.payAmount || 'Not specified'}\n` +
       `*Txn Ref:* ${data.payRef || 'N/A'}\n` +
+      (data.cashRemarks ? `*Remarks:* ${data.cashRemarks}\n` : '') +
       `*Date:* ${new Date().toLocaleDateString('en-IN')}`
     );
+    // Auto-send WhatsApp if cash payment
+    if (data.payMode === 'Cash') {
+      window.open(`https://api.whatsapp.com/send?phone=${SCHOOL_WA}&text=${schoolMsg}`, '_blank');
+    }
     document.getElementById('wa-confirm-btn').href =
       `https://api.whatsapp.com/send?phone=${SCHOOL_WA}&text=${schoolMsg}`;
 
