@@ -5,7 +5,7 @@
    ================================================================ */
 
 /* ---- Data version — bump this to wipe old localStorage on next load ---- */
-const _DATA_VERSION = '5.3';
+const _DATA_VERSION = '5.4';
 (function _resetIfVersionChanged() {
   if (localStorage.getItem('asks_erp_version') !== _DATA_VERSION) {
     const keep = ['asks_erp_session', 'asks_erp_backup_history', 'asks_active_branch'];
@@ -44,6 +44,7 @@ const _DEFAULT_BRANCHES = [
   { id:'B009', name:'Tambaram East',  addr:'GST Road, Tambaram East, Chennai 600 059',                                               phone:'',             email:'',                                     adminId:null,   status:'setup',  est:'2024', students:0, staff:0 },
   { id:'B010', name:'Chromepet',      addr:'Chromepet Main Road, Chennai 600 044',                                                   phone:'',             email:'',                                        adminId:null,   status:'planned',est:'2025', students:0, staff:0 },
   { id:'B011', name:'Neelangkarai',   addr:'Neelangkarai, Chennai',                                                                    phone:'9841616086',   email:'neelangkarai@anshashinekidsschool.com',   adminId:null,   status:'active', est:'2024', students:0, staff:0 },
+  { id:'B012', name:'Pallavakkam 2',  addr:'Pallavakkam, Chennai',                                                                     phone:'9841616086',   email:'pallavakkam2@anshashinekidsschool.com',   adminId:null,   status:'active', est:'2024', students:0, staff:0 },
 ];
 const BRANCHES = _loadStored('asks_erp_branches', _DEFAULT_BRANCHES);
 
