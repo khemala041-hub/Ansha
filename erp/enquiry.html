@@ -788,26 +788,30 @@
     document.getElementById('success-card').style.display = 'block';
     document.getElementById('ref-no-display').textContent = 'REF: ' + data.refNo;
 
-    // WhatsApp confirmation to school
-    const schoolMsg = encodeURIComponent(
-      `📋 *New Admission Enquiry*\n\n` +
-      `*Ref:* ${data.refNo}\n` +
-      `*Child:* ${data.childName}\n` +
-      `*Program:* ${data.program}\n` +
-      `*Father:* ${data.fatherName}\n` +
-      `*WhatsApp:* ${data.whatsapp}\n` +
-      `*Branch:* ${data.branch}\n` +
-      `*Referred by:* ${data.referral || 'Not specified'}\n` +
-      `*Payment Mode:* ${data.payMode}\n` +
-      `*Amount Paid:* ₹${data.payAmount || 'Not specified'}\n` +
-      `*Txn Ref:* ${data.payRef || 'N/A'}\n` +
-      (data.cashRemarks ? `*Remarks:* ${data.cashRemarks}\n` : '') +
-      `*Date:* ${new Date().toLocaleDateString('en-IN')}`
+    // ── Auto WhatsApp Receipt to School (ALL payment modes) ──
+    const branchName = document.querySelector('select[name=branch] option:checked')?.textContent || data.branch;
+    const receiptMsg = encodeURIComponent(
+      `🧾 *Payment Receipt — Ansha Shine Kids School*\n\n` +
+      `*Ref No:* ${data.refNo}\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `👦 *Child:* ${data.childName}\n` +
+      `📚 *Program:* ${data.program}\n` +
+      `👨 *Father:* ${data.fatherName}\n` +
+      `📱 *WhatsApp:* ${data.whatsapp}\n` +
+      `🏫 *Branch:* ${branchName}\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `💳 *Payment Mode:* ${data.payMode}\n` +
+      `💰 *Amount Paid:* ₹${data.payAmount || 'Not specified'}\n` +
+      (data.payRef ? `🔢 *Txn Ref:* ${data.payRef}\n` : '') +
+      (data.cashRemarks ? `📝 *Remarks:* ${data.cashRemarks}\n` : '') +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `📅 *Date:* ${new Date().toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'})}\n` +
+      `⏰ *Time:* ${new Date().toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'})}\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n` +
+      `✅ Enquiry submitted successfully`
     );
-    // Auto-send WhatsApp if cash payment
-    if (data.payMode === 'Cash') {
-      window.open(`https://api.whatsapp.com/send?phone=${SCHOOL_WA}&text=${schoolMsg}`, '_blank');
-    }
+    // Send WhatsApp receipt for ALL payment modes
+    window.open(`https://api.whatsapp.com/send?phone=${SCHOOL_WA}&text=${receiptMsg}`, '_blank');
     document.getElementById('wa-confirm-btn').href =
       `https://api.whatsapp.com/send?phone=${SCHOOL_WA}&text=${schoolMsg}`;
 
