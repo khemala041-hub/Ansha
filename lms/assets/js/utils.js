@@ -276,6 +276,8 @@ function buildSidebar(user) {
     <a href="payment.html"      class="nav-item"><span class="nav-icon"><i class="fa-solid fa-receipt"></i></span> Payment</a>
     <a href="expenses.html"     class="nav-item"><span class="nav-icon"><i class="fa-solid fa-arrow-trend-down"></i></span> Expenses</a>
     <a href="profit-loss.html"  class="nav-item"><span class="nav-icon"><i class="fa-solid fa-chart-line"></i></span> Profit & Loss</a>
+    <div class="nav-section-title">Workshops</div>
+    <a href="workshop-responses.html" class="nav-item"><span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span> Workshop Responses</a>
     <div class="nav-section-title">System</div>
     <a href="reports.html"          class="nav-item"><span class="nav-icon"><i class="fa-solid fa-file-chart-column"></i></span> Reports</a>
     <a href="feedback-report.html"  class="nav-item"><span class="nav-icon"><i class="fa-solid fa-star-half-stroke"></i></span> Feedback Report</a>

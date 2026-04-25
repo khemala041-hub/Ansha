@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <title>Workshop Responses — Admin</title>
+  <link rel="stylesheet" href="../assets/css/main.css?v=20260421">
+  <link rel="stylesheet" href="../assets/css/components.css?v=20260421">
+  <style>
+    /* ── Stats row ── */
+    .ws-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px,1fr)); gap: 14px; margin-bottom: 24px; }
+    .ws-stat { background: #fff; border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow); text-align: center; border-top: 4px solid var(--primary); }
+    .ws-stat .val { font-size: 2rem; font-weight: 800; color: var(--primary); line-height: 1; }
+    .ws-stat .lbl { font-size: 0.72rem; color: var(--gray-500); margin-top: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    /* ── Share link box ── */
+    .share-box { background: linear-gradient(135deg,#0d9488,#0f766e); border-radius: 14px; padding: 18px 20px; margin-bottom: 24px; color: #fff; }
+    .share-box h3 { font-size: 0.9rem; font-weight: 700; margin-bottom: 10px; }
+    .share-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .share-input { flex: 1; min-width: 200px; padding: 9px 12px; border-radius: 8px; border: none; font-size: 0.82rem; color: #374151; background: rgba(255,255,255,0.95); }
+    .share-btn { background: rgba(255,255,255,0.2); color: #fff; border: 1px solid rgba(255,255,255,0.4); padding: 9px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+    .share-btn:hover { background: rgba(255,255,255,0.3); }
+    .ws-name-input { padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.15); color: #fff; font-size: 0.85rem; min-width: 200px; }
+    .ws-name-input::placeholder { color: rgba(255,255,255,0.6); }
+
+    /* ── Filters ── */
+    .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; align-items: center; }
+    .filter-select { padding: 8px 12px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 0.85rem; color: var(--gray-700); background: #fff; }
+    .search-box { flex: 1; min-width: 200px; padding: 8px 12px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 0.85rem; }
+    .export-btn { background: #10b981; color: #fff; border: none; padding: 8px 16px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; }
+
+    /* ── Table ── */
+    .resp-table-wrap { background: #fff; border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+    .resp-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+    .resp-table th { background: var(--gray-50); color: var(--gray-600); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--gray-200); font-weight: 700; }
+    .resp-table td { padding: 12px 14px; border-bottom: 1px solid var(--gray-100); color: var(--gray-800); vertical-align: top; }
+    .resp-table tr:last-child td { border-bottom: none; }
+    .resp-table tr:hover td { background: var(--gray-50); }
+
+    /* Stars display */
+    .stars-disp { color: #f59e0b; font-size: 0.9rem; letter-spacing: 1px; }
+    .no-rating { color: var(--gray-400); font-size: 0.75rem; }
+
+    /* WA button */
+    .wa-btn { display: inline-flex; align-items: center; gap: 4px; background: #25D366; color: #fff; padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; text-decoration: none; }
+    .wa-btn:hover { background: #1da851; color: #fff; }
+
+    /* Workshop badge */
+    .ws-badge { background: var(--primary-light); color: var(--primary-dark); padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; display: inline-block; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--gray-400); }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+
+    /* Loading */
+    .loading { text-align: center; padding: 40px; color: var(--gray-400); font-size: 0.9rem; }
+
+    /* City pill */
+    .city-pill { background: #ede9fe; color: #5b21b6; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; }
+
+    /* Feedback preview */
+    .fb-preview { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--gray-600); font-size: 0.8rem; }
+    .fb-preview:hover { white-space: normal; overflow: visible; }
+
+    @media(max-width:768px){
+      .resp-table th:nth-child(5), .resp-table td:nth-child(5),
+      .resp-table th:nth-child(6), .resp-table td:nth-child(6) { display: none; }
+      .ws-stats { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div id="app-layout" class="app-layout">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main-content">
+    <header class="top-bar" id="top-bar"></header>
+    <main class="page-content" id="page-content">
+
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">📋 Workshop Responses</h1>
+          <p class="page-subtitle">View and manage feedback from all workshop participants</p>
+        </div>
+        <button class="export-btn" onclick="exportCSV()">⬇️ Export CSV</button>
+      </div>
+
+      <!-- Share Link Box -->
+      <div class="share-box">
+        <h3>🔗 Share Feedback Form with Participants</h3>
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+          <input type="text" class="ws-name-input" id="ws-title-input" placeholder="Workshop name (e.g. Phonics Intro Day)" value="">
+          <button class="share-btn" onclick="generateLink()">Generate Link</button>
+        </div>
+        <div class="share-row">
+          <input type="text" class="share-input" id="share-url" value="Fill workshop name above and click Generate" readonly>
+          <button class="share-btn" onclick="copyLink()">📋 Copy</button>
+          <button class="share-btn" onclick="shareWA()">💬 WhatsApp</button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="ws-stats">
+        <div class="ws-stat">
+          <div class="val" id="stat-total">—</div>
+          <div class="lbl">Total Responses</div>
+        </div>
+        <div class="ws-stat" style="border-color:#f59e0b;">
+          <div class="val" id="stat-avg" style="color:#f59e0b;">—</div>
+          <div class="lbl">Avg Rating</div>
+        </div>
+        <div class="ws-stat" style="border-color:#10b981;">
+          <div class="val" id="stat-cities" style="color:#10b981;">—</div>
+          <div class="lbl">Cities</div>
+        </div>
+        <div class="ws-stat" style="border-color:#8b5cf6;">
+          <div class="val" id="stat-today" style="color:#8b5cf6;">—</div>
+          <div class="lbl">Today</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters">
+        <input type="text" class="search-box" id="search-box" placeholder="🔍 Search by name, city, workshop..." oninput="applyFilters()">
+        <select class="filter-select" id="filter-workshop" onchange="applyFilters()">
+          <option value="">All Workshops</option>
+        </select>
+        <select class="filter-select" id="filter-rating" onchange="applyFilters()">
+          <option value="">All Ratings</option>
+          <option value="5">⭐⭐⭐⭐⭐ Excellent</option>
+          <option value="4">⭐⭐⭐⭐ Very Good</option>
+          <option value="3">⭐⭐⭐ Good</option>
+          <option value="2">⭐⭐ Fair</option>
+          <option value="1">⭐ Poor</option>
+        </select>
+        <select class="filter-select" id="filter-date" onchange="applyFilters()">
+          <option value="">All Dates</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+        </select>
+      </div>
+
+      <!-- Table -->
+      <div class="resp-table-wrap">
+        <div class="loading" id="loading">Loading responses... ⏳</div>
+        <div class="empty-state hidden" id="empty-state">
+          <div class="icon">📭</div>
+          <p>No responses yet. Share the form link with workshop participants!</p>
+        </div>
+        <table class="resp-table hidden" id="resp-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>WhatsApp</th>
+              <th>City</th>
+              <th>Workshop</th>
+              <th>Rating</th>
+              <th>Feedback</th>
+              <th>Remarks</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="resp-tbody"></tbody>
+        </table>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../assets/js/data.js"></script>
+<script src="../assets/js/supabase.js"></script>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/utils.js"></script>
+<script>
+  // Auth guard
+  const session = getSession();
+  if (!session || !['admin','teacher'].includes(session.role)) {
+    window.location.href = '/lms/index.html';
+  }
+
+  // Render shell
+  document.getElementById('sidebar').innerHTML  = buildSidebar('workshop-responses', session);
+  document.getElementById('top-bar').innerHTML  = buildTopBar(session);
+
+  let allResponses = [];
+  const TODAY = new Date().toISOString().split('T')[0];
+  const BASE_URL = window.location.origin + '/lms/workshop-feedback.html';
+
+  // ── Load from Supabase ──
+  async function loadResponses() {
+    const SUPA_URL = 'https://twzcefikdychhsjwjekf.supabase.co';
+    const SUPA_KEY = 'sb_publishable_GijBRmulhuyIp3bigyhMUw_hVmQiB0y';
+    const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+    const { data, error } = await sb
+      .from('workshop_feedback')
+      .select('*')
+      .order('submitted_at', { ascending: false });
+
+    document.getElementById('loading').classList.add('hidden');
+
+    if (error || !data) {
+      document.getElementById('empty-state').classList.remove('hidden');
+      console.error(error);
+      return;
+    }
+
+    allResponses = data;
+    populateWorkshopFilter(data);
+    updateStats(data);
+    renderTable(data);
+  }
+
+  function populateWorkshopFilter(data) {
+    const titles = [...new Set(data.map(r => r.workshop_title).filter(Boolean))];
+    const sel = document.getElementById('filter-workshop');
+    titles.forEach(t => {
+      const o = document.createElement('option');
+      o.value = t; o.textContent = t;
+      sel.appendChild(o);
+    });
+  }
+
+  function updateStats(data) {
+    document.getElementById('stat-total').textContent = data.length;
+    const rated = data.filter(r => r.rating > 0);
+    const avg = rated.length ? (rated.reduce((s,r)=>s+r.rating,0)/rated.length).toFixed(1) : '—';
+    document.getElementById('stat-avg').textContent = avg !== '—' ? avg + ' ★' : '—';
+    const cities = new Set(data.map(r => (r.city||'').toLowerCase().trim()).filter(Boolean));
+    document.getElementById('stat-cities').textContent = cities.size;
+    const todayCount = data.filter(r => (r.submitted_at||'').startsWith(TODAY)).length;
+    document.getElementById('stat-today').textContent = todayCount;
+  }
+
+  function renderTable(data) {
+    const tbody = document.getElementById('resp-tbody');
+    if (!data.length) {
+      document.getElementById('resp-table').classList.add('hidden');
+      document.getElementById('empty-state').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('empty-state').classList.add('hidden');
+    document.getElementById('resp-table').classList.remove('hidden');
+
+    tbody.innerHTML = data.map((r, i) => {
+      const stars = r.rating ? '★'.repeat(r.rating) + '☆'.repeat(5-r.rating) : '';
+      const date  = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'2-digit'}) : '—';
+      const wa    = (r.whatsapp||'').replace(/\D/g,'');
+      return `<tr>
+        <td style="color:var(--gray-400);font-size:0.75rem;">${i+1}</td>
+        <td><strong style="color:var(--gray-800);">${esc(r.name||'')}</strong></td>
+        <td>
+          <a href="https://wa.me/${wa}" target="_blank" class="wa-btn">💬 WhatsApp</a>
+          <div style="font-size:0.68rem;color:var(--gray-400);margin-top:3px;">+${esc(r.whatsapp||'')}</div>
+        </td>
+        <td><span class="city-pill">${esc(r.city||'')}</span></td>
+        <td><span class="ws-badge">${esc(r.workshop_title||'Workshop')}</span></td>
+        <td>
+          ${stars ? `<span class="stars-disp">${stars}</span><br><span style="font-size:0.68rem;color:var(--gray-400);">${r.rating}/5</span>` : '<span class="no-rating">Not rated</span>'}
+        </td>
+        <td><div class="fb-preview" title="${esc(r.feedback||'')}">${esc(r.feedback||'—')}</div></td>
+        <td><div class="fb-preview" title="${esc(r.remarks||'')}">${esc(r.remarks||'—')}</div></td>
+        <td style="font-size:0.78rem;color:var(--gray-500);white-space:nowrap;">${date}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  function applyFilters() {
+    const q     = document.getElementById('search-box').value.toLowerCase();
+    const ws    = document.getElementById('filter-workshop').value;
+    const rt    = document.getElementById('filter-rating').value;
+    const dt    = document.getElementById('filter-date').value;
+    const now   = new Date();
+
+    let filtered = allResponses.filter(r => {
+      const text = [r.name,r.city,r.workshop_title,r.feedback,r.remarks].join(' ').toLowerCase();
+      if (q && !text.includes(q)) return false;
+      if (ws && r.workshop_title !== ws) return false;
+      if (rt && r.rating !== +rt) return false;
+      if (dt) {
+        const sub = new Date(r.submitted_at);
+        if (dt === 'today' && sub.toDateString() !== now.toDateString()) return false;
+        if (dt === 'week') {
+          const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate() - now.getDay());
+          if (sub < startOfWeek) return false;
+        }
+        if (dt === 'month' && (sub.getMonth() !== now.getMonth() || sub.getFullYear() !== now.getFullYear())) return false;
+      }
+      return true;
+    });
+
+    renderTable(filtered);
+    updateStats(filtered);
+  }
+
+  // ── Share link generation ──
+  function generateLink() {
+    const title = document.getElementById('ws-title-input').value.trim() || 'Ansha Workshop';
+    const url = `${BASE_URL}?workshop=${encodeURIComponent(title)}&date=${TODAY}`;
+    document.getElementById('share-url').value = url;
+  }
+
+  function copyLink() {
+    const url = document.getElementById('share-url').value;
+    if (url.includes('Generate')) { alert('Please generate a link first.'); return; }
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = event.target;
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => btn.textContent = '📋 Copy', 2000);
+    });
+  }
+
+  function shareWA() {
+    const url = document.getElementById('share-url').value;
+    if (url.includes('Generate')) { generateLink(); return; }
+    const msg = `📚 *Ansha Montessori Workshop Feedback*\n\nDear participant, we'd love to hear your thoughts on today's workshop!\n\nPlease fill in this quick form:\n${url}\n\nThank you! 🙏`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  }
+
+  // ── Export CSV ──
+  function exportCSV() {
+    if (!allResponses.length) { alert('No data to export.'); return; }
+    const headers = ['#','Name','WhatsApp','City','Workshop','Rating','Feedback','Remarks','Date'];
+    const rows = allResponses.map((r,i) => [
+      i+1, r.name, r.whatsapp, r.city,
+      r.workshop_title, r.rating||'',
+      (r.feedback||'').replace(/,/g,';'),
+      (r.remarks||'').replace(/,/g,';'),
+      r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : ''
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = `workshop-feedback-${TODAY}.csv`;
+    a.click();
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // Init
+  loadResponses();
+  // Set default workshop link
+  document.getElementById('ws-title-input').value = "Today's Workshop";
+  generateLink();
+</script>
+</body>
+</html>
