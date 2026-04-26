@@ -239,14 +239,18 @@
 var session = null;
 try {
   session = getSession();
-  if (!session || !['admin','teacher'].includes(session.role)) window.location.href = '../index.html';
-} catch(e) {}
-try {
-  if (session) {
-    document.getElementById('sidebar').innerHTML = buildSidebar('workshop-certificates', session);
-    document.getElementById('top-bar').innerHTML = buildTopBar(session);
+  if (!session || !['admin','teacher'].includes(session.role)) {
+    window.location.href = '../index.html';
   }
 } catch(e) {}
+
+// Build sidebar (pass session object — one argument only)
+try {
+  if (session) {
+    document.getElementById('sidebar').innerHTML = buildSidebar(session);
+    setActiveNav();
+  }
+} catch(e) { console.warn('Sidebar error:', e); }
 
 // ── Constants ─────────────────────────────────────────────────
 var PAGE_W       = 842.2;
