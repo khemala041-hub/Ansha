@@ -141,9 +141,9 @@
         </div>
 
         <div id="part-list">
-          <div class="empty-cert" id="loading-cert">
-            <div class="icon">⏳</div>
-            <p>Loading participants...</p>
+          <div class="empty-cert">
+            <div class="icon">📋</div>
+            <p>Type a name above and click <strong>+ Add</strong> to generate a certificate.</p>
           </div>
         </div>
       </div>
@@ -164,191 +164,170 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- jsPDF only — no other external dependencies needed for certificate generation -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="../assets/js/data.js"></script>
-<script src="../assets/js/supabase.js"></script>
-<script src="../assets/js/auth.js"></script>
-<script src="../assets/js/utils.js"></script>
+<script src="../assets/js/data.js?v=3"></script>
+<script src="../assets/js/supabase.js?v=3"></script>
+<script src="../assets/js/auth.js?v=3"></script>
+<script src="../assets/js/utils.js?v=3"></script>
 <script>
-  const session = getSession();
-  if (!session || !['admin','teacher'].includes(session.role)) window.location.href = '/lms/index.html';
+  // ── Auth (wrapped — never crash the page) ────────────────
+  var session = null;
+  try {
+    session = getSession();
+    if (!session || !['admin','teacher'].includes(session.role)) {
+      window.location.href = '../index.html';
+    }
+  } catch(e) { console.warn('Auth error:', e); }
 
-  document.getElementById('sidebar').innerHTML = buildSidebar('workshop-certificates', session);
-  document.getElementById('top-bar').innerHTML = buildTopBar(session);
+  try {
+    if (session) {
+      document.getElementById('sidebar').innerHTML = buildSidebar('workshop-certificates', session);
+      document.getElementById('top-bar').innerHTML = buildTopBar(session);
+    }
+  } catch(e) { console.warn('Sidebar error:', e); }
 
-  // Use global Supabase client from supabase.js (_sb)
-  // Page dimensions (landscape A4-ish, PDF points)
-  const PAGE_W  = 842.2;
-  const PAGE_H  = 595.5;
-  // Name baseline y from TOP of page (measured via analysis: center of name area)
-  const NAME_Y  = 276.5;
-  // Template JPEG (rendered from PDF at 3× zoom for crisp quality)
+  // ── Constants ────────────────────────────────────────────
+  const PAGE_W       = 842.2;
+  const PAGE_H       = 595.5;
+  const NAME_Y       = 276.5;   // baseline from top (pts), from PDF analysis
   const TEMPLATE_IMG = '../assets/certificates/workshop-template.jpg';
 
-  let participants   = [];
-  let templateCache  = null;  // cached base64 image data
+  var participants  = [];
+  var templateCache = null;
 
-  // ── Pre-load template image ──────────────────────────────
-  async function getTemplate() {
-    if (templateCache) return templateCache;
-    const resp = await fetch(TEMPLATE_IMG + '?v=20260426');
-    if (!resp.ok) throw new Error('Certificate template image not found. Please redeploy the site.');
-    const blob = await resp.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload  = () => { templateCache = reader.result; resolve(reader.result); };
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
+  // ── Load template image (cached) ─────────────────────────
+  function getTemplate() {
+    if (templateCache) return Promise.resolve(templateCache);
+    return fetch(TEMPLATE_IMG + '?t=' + Date.now())
+      .then(function(r) {
+        if (!r.ok) throw new Error('Template image not found (' + r.status + ')');
+        return r.blob();
+      })
+      .then(function(blob) {
+        return new Promise(function(resolve, reject) {
+          var reader = new FileReader();
+          reader.onload  = function() { templateCache = reader.result; resolve(reader.result); };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      });
+  }
+
+  // ── Build PDF ────────────────────────────────────────────
+  function buildCertificate(name) {
+    return getTemplate().then(function(imgData) {
+      var jsPDF = window.jspdf.jsPDF;
+      var pdf   = new jsPDF({ orientation: 'landscape', unit: 'pt', format: [PAGE_W, PAGE_H] });
+      pdf.addImage(imgData, 'JPEG', 0, 0, PAGE_W, PAGE_H);
+
+      pdf.setFont('helvetica', 'bold');
+      var fontSize = 44;
+      pdf.setFontSize(fontSize);
+      var tw = pdf.getTextWidth(name);
+      while (tw > 580 && fontSize > 22) {
+        fontSize -= 1;
+        pdf.setFontSize(fontSize);
+        tw = pdf.getTextWidth(name);
+      }
+
+      pdf.setTextColor(2, 49, 106);
+      pdf.text(name, PAGE_W / 2, NAME_Y, { align: 'center' });
+      return pdf.output('blob');
     });
   }
 
-  // ── Core: build certificate PDF using jsPDF ──────────────
-  async function buildCertificate(participantName) {
-    const imgData = await getTemplate();
-    const { jsPDF } = window.jspdf;
-
-    const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: [PAGE_W, PAGE_H] });
-
-    // Background
-    pdf.addImage(imgData, 'JPEG', 0, 0, PAGE_W, PAGE_H);
-
-    // Font — auto-scale to fit
-    pdf.setFont('helvetica', 'bold');
-    let fontSize = 44;
-    pdf.setFontSize(fontSize);
-    let textWidth = pdf.getTextWidth(participantName);
-    while (textWidth > 580 && fontSize > 22) {
-      fontSize -= 1;
-      pdf.setFontSize(fontSize);
-      textWidth = pdf.getTextWidth(participantName);
-    }
-
-    // Name in navy blue, centered
-    pdf.setTextColor(2, 49, 106);   // #02316A
-    pdf.text(participantName, PAGE_W / 2, NAME_Y, { align: 'center' });
-
-    return pdf.output('blob');
-  }
-
-  // ── Download helper ──────────────────────────────────────
+  // ── Download ─────────────────────────────────────────────
   function downloadCert(blob, name) {
-    const safeName = name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
-    const url = URL.createObjectURL(blob);
-    const a   = document.createElement('a');
+    var safe = name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
     a.href     = url;
-    a.download = `Certificate_${safeName}.pdf`;
+    a.download = 'Certificate_' + safe + '.pdf';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
   }
 
-  // ── Load participants from Supabase ──────────────────────
-  async function loadParticipants() {
-    // Show UI immediately — never block on Supabase
-    const loader = document.getElementById('loading-cert');
-    if (loader) loader.remove();
-    renderParticipants();
-
-    // Pre-load template in background
-    getTemplate().catch(() => {});
-
-    // Try to fetch from Supabase with a 5-second timeout
-    try {
-      const timeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('timeout')), 5000)
-      );
-      const query = _sb
-        .from('workshop_feedback')
-        .select('id, name, whatsapp, city, workshop_title, submitted_at')
-        .order('submitted_at', { ascending: false });
-
-      const { data, error } = await Promise.race([query, timeout]);
-      if (!error && data && data.length) {
-        participants = data.map(r => ({ ...r, source: 'db' }));
-        renderParticipants();
-      }
-    } catch (err) {
-      console.warn('Supabase load skipped:', err.message);
-      // Page is already usable — manual entry works fine
-    }
-  }
-
+  // ── Render participant list ───────────────────────────────
   function renderParticipants() {
-    const list = document.getElementById('part-list');
-    document.getElementById('part-count').textContent = `(${participants.length})`;
+    var list = document.getElementById('part-list');
+    var cnt  = document.getElementById('part-count');
+    if (cnt) cnt.textContent = participants.length ? '(' + participants.length + ')' : '';
 
     if (!participants.length) {
-      list.innerHTML = `<div class="empty-cert">
-        <div class="icon">📭</div>
-        <p>No participants yet. Add names manually above, or collect responses via the feedback form.</p>
-      </div>`;
+      list.innerHTML = '<div class="empty-cert"><div class="icon">📋</div>' +
+        '<p>Type a name above and click <strong>+ Add</strong> to generate a certificate.</p></div>';
       return;
     }
 
-    list.innerHTML = participants.map((p, i) => {
-      const initials = p.name.split(' ').map(w => w[0]).join('').substring(0,2).toUpperCase();
-      const meta = [p.city, p.workshop_title, p.whatsapp ? '📱 ' + p.whatsapp : ''].filter(Boolean).join(' · ');
-      return `<div class="part-row" id="row-${i}">
-        <input type="checkbox" class="part-check" id="chk-${i}" onchange="updateGenBtn()">
-        <div class="part-avatar">${initials}</div>
-        <div class="part-info">
-          <div class="part-name">${esc(p.name)}</div>
-          <div class="part-meta">${esc(meta)}</div>
-        </div>
-        <button class="btn-cert" id="btn-${i}" onclick="generateOne(${i})">🎓 Generate</button>
-        ${p.whatsapp ? `<button class="btn-wa-cert" onclick="shareWACert(${i})">💬 WhatsApp</button>` : ''}
-      </div>`;
+    list.innerHTML = participants.map(function(p, i) {
+      var initials = p.name.split(' ').map(function(w){ return w[0]||''; })
+                           .join('').substring(0,2).toUpperCase();
+      var meta = [p.city, p.workshop_title, p.whatsapp ? '📱 ' + p.whatsapp : '']
+                   .filter(Boolean).join(' · ');
+      return '<div class="part-row" id="row-' + i + '">' +
+        '<input type="checkbox" class="part-check" id="chk-' + i + '" onchange="updateGenBtn()">' +
+        '<div class="part-avatar">' + initials + '</div>' +
+        '<div class="part-info">' +
+          '<div class="part-name">' + esc(p.name) + '</div>' +
+          '<div class="part-meta">' + esc(meta) + '</div>' +
+        '</div>' +
+        '<button class="btn-cert" id="btn-' + i + '" onclick="generateOne(' + i + ')">🎓 Generate</button>' +
+        (p.whatsapp ? '<button class="btn-wa-cert" onclick="shareWACert(' + i + ')">💬 WhatsApp</button>' : '') +
+      '</div>';
     }).join('');
   }
 
+  // ── Add name manually ────────────────────────────────────
   function addManualName() {
-    const inp  = document.getElementById('manual-name');
-    const name = inp.value.trim();
+    var inp  = document.getElementById('manual-name');
+    var name = inp.value.trim();
     if (!name) return;
-    participants.unshift({ name, whatsapp:'', city:'', workshop_title: document.getElementById('ws-title').value, source:'manual' });
+    participants.unshift({
+      name: name, whatsapp: '', city: '',
+      workshop_title: (document.getElementById('ws-title') || {}).value || '',
+      source: 'manual'
+    });
     inp.value = '';
     renderParticipants();
   }
 
-  document.getElementById('manual-name').addEventListener('keydown', e => { if (e.key === 'Enter') addManualName(); });
+  document.getElementById('manual-name').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') addManualName();
+  });
 
   function toggleAll(cb) {
-    document.querySelectorAll('.part-check').forEach(c => c.checked = cb.checked);
+    document.querySelectorAll('.part-check').forEach(function(c){ c.checked = cb.checked; });
     updateGenBtn();
   }
 
   function updateGenBtn() {
-    const any = [...document.querySelectorAll('.part-check')].some(c => c.checked);
+    var any = Array.from(document.querySelectorAll('.part-check')).some(function(c){ return c.checked; });
     document.getElementById('btn-gen-all').disabled = !any;
   }
 
-  // ── Generate + preview one certificate ───────────────────
-  async function generateOne(idx) {
-    const p   = participants[idx];
-    const btn = document.getElementById('btn-' + idx);
+  // ── Generate one ─────────────────────────────────────────
+  function generateOne(idx) {
+    var p   = participants[idx];
+    var btn = document.getElementById('btn-' + idx);
     btn.innerHTML = '⏳ Generating...';
     btn.disabled  = true;
 
-    try {
-      const blob    = await buildCertificate(p.name);
-      const blobUrl = URL.createObjectURL(blob);
-
-      // Show preview modal
-      document.getElementById('preview-frame').src = blobUrl;
+    buildCertificate(p.name).then(function(blob) {
+      var url = URL.createObjectURL(blob);
+      document.getElementById('preview-frame').src = url;
       document.getElementById('modal-name').textContent = '🎓 Certificate — ' + p.name;
       document.getElementById('preview-modal').classList.add('show');
-      document.getElementById('btn-download-cert').onclick = () => downloadCert(blob, p.name);
-
+      document.getElementById('btn-download-cert').onclick = function(){ downloadCert(blob, p.name); };
       btn.innerHTML = '✅ Done';
       btn.classList.add('done');
-    } catch (err) {
-      console.error(err);
-      alert('Certificate generation failed:\n' + err.message);
+    }).catch(function(err) {
+      alert('Failed: ' + err.message);
       btn.innerHTML = '🎓 Generate';
       btn.disabled  = false;
-    }
+    });
   }
 
   function closeModal() {
@@ -356,51 +335,82 @@
     document.getElementById('preview-frame').src = '';
   }
 
-  // ── Bulk generate selected ────────────────────────────────
-  async function generateSelected() {
-    const selected = [...document.querySelectorAll('.part-check')]
-      .map((c, i) => c.checked ? i : -1).filter(i => i >= 0);
+  // ── Bulk generate ─────────────────────────────────────────
+  function generateSelected() {
+    var selected = Array.from(document.querySelectorAll('.part-check'))
+      .map(function(c, i){ return c.checked ? i : -1; }).filter(function(i){ return i >= 0; });
     if (!selected.length) return;
 
-    const statusEl = document.getElementById('bulk-status');
-    const msgEl    = document.getElementById('bulk-msg');
-    const progEl   = document.getElementById('bulk-progress');
+    var statusEl = document.getElementById('bulk-status');
+    var msgEl    = document.getElementById('bulk-msg');
+    var progEl   = document.getElementById('bulk-progress');
     statusEl.classList.add('show');
     document.getElementById('btn-gen-all').disabled = true;
 
-    for (let n = 0; n < selected.length; n++) {
-      const i = selected[n];
-      const p = participants[i];
-      msgEl.textContent  = `Generating ${n+1}/${selected.length}: ${p.name}...`;
-      progEl.style.width = ((n / selected.length) * 100) + '%';
-      try {
-        const blob = await buildCertificate(p.name);
-        downloadCert(blob, p.name);
-        const btn = document.getElementById('btn-' + i);
-        if (btn) { btn.innerHTML = '✅ Done'; btn.classList.add('done'); }
-        await new Promise(r => setTimeout(r, 800));
-      } catch (err) {
-        console.error(`Failed for ${p.name}:`, err);
+    var n = 0;
+    function next() {
+      if (n >= selected.length) {
+        progEl.style.width = '100%';
+        msgEl.textContent  = 'Done! ' + selected.length + ' certificate(s) downloaded.';
+        document.getElementById('btn-gen-all').disabled = false;
+        return;
       }
+      var i = selected[n];
+      var p = participants[i];
+      msgEl.textContent  = 'Generating ' + (n+1) + '/' + selected.length + ': ' + p.name + '...';
+      progEl.style.width = ((n / selected.length) * 100) + '%';
+      buildCertificate(p.name).then(function(blob) {
+        downloadCert(blob, p.name);
+        var btn = document.getElementById('btn-' + i);
+        if (btn) { btn.innerHTML = '✅ Done'; btn.classList.add('done'); }
+        n++;
+        setTimeout(next, 800);
+      }).catch(function(err) {
+        console.error('Failed for ' + p.name + ':', err);
+        n++;
+        setTimeout(next, 200);
+      });
     }
-
-    progEl.style.width = '100%';
-    msgEl.textContent  = `Done! ${selected.length} certificate(s) downloaded.`;
-    document.getElementById('btn-gen-all').disabled = false;
+    next();
   }
 
-  // ── WhatsApp notify ───────────────────────────────────────
-  async function shareWACert(idx) {
-    const p   = participants[idx];
-    const msg = `Dear ${p.name},\n\nThank you for attending our workshop!\nYour *Certificate of Participation* from Ansha Montessori Teacher Training Institute is ready.\n\nPlease contact us to receive your certificate.\n\n- Ansha Montessori Team`;
-    const wa  = (p.whatsapp || '').replace(/\D/g, '');
-    window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
+  // ── WhatsApp ──────────────────────────────────────────────
+  function shareWACert(idx) {
+    var p   = participants[idx];
+    var msg = 'Dear ' + p.name + ',\n\nThank you for attending our workshop!\n' +
+              'Your *Certificate of Participation* from Ansha Montessori Teacher Training Institute is ready.\n\n' +
+              'Please contact us to receive your certificate.\n\n- Ansha Montessori Team';
+    var wa  = (p.whatsapp || '').replace(/\D/g, '');
+    window.open('https://wa.me/' + wa + '?text=' + encodeURIComponent(msg), '_blank');
   }
 
-  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
 
-  // Init
-  loadParticipants();
+  // ── Init: render immediately, then try Supabase ───────────
+  renderParticipants();
+  getTemplate().catch(function(){});  // pre-warm template cache
+
+  // Try loading from Supabase silently (5s timeout)
+  try {
+    var sbTimeout = setTimeout(function(){}, 5000);
+    var sbClient = (typeof _sb !== 'undefined') ? _sb : null;
+    if (sbClient) {
+      Promise.race([
+        sbClient.from('workshop_feedback')
+          .select('id,name,whatsapp,city,workshop_title,submitted_at')
+          .order('submitted_at', { ascending: false }),
+        new Promise(function(_, rej){ setTimeout(function(){ rej('timeout'); }, 5000); })
+      ]).then(function(result) {
+        var data = result && result.data;
+        if (data && data.length) {
+          participants = data.map(function(r){ return Object.assign({}, r, { source: 'db' }); });
+          renderParticipants();
+        }
+      }).catch(function(e){ console.warn('Supabase skipped:', e); });
+    }
+  } catch(e) { console.warn('Supabase init skipped:', e); }
 </script>
 </body>
 </html>
