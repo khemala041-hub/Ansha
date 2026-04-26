@@ -6,6 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>Workshop Certificates — Admin</title>
   <link rel="stylesheet" href="../assets/css/main.css">
+  <link rel="stylesheet" href="../assets/css/dashboard.css">
   <link rel="stylesheet" href="../assets/css/components.css">
   <style>
     /* ── Hero ── */
@@ -106,10 +107,13 @@
   </style>
 </head>
 <body>
-<div id="app-layout" class="app-layout">
+<div class="app-shell">
   <aside class="sidebar" id="sidebar"></aside>
   <div class="main-content">
-    <header class="top-bar" id="top-bar"></header>
+    <header class="top-header">
+      <div class="header-left"><span class="page-title">🎓 Certificates</span></div>
+      <div class="header-right"><span id="user-name" class="text-sm font-medium"></span></div>
+    </header>
     <main class="page-content">
 
       <!-- Hero -->
@@ -249,6 +253,8 @@ try {
   if (session) {
     document.getElementById('sidebar').innerHTML = buildSidebar(session);
     setActiveNav();
+    var uEl = document.getElementById('user-name');
+    if (uEl) uEl.textContent = session.name || session.email || '';
   }
 } catch(e) { console.warn('Sidebar error:', e); }
 

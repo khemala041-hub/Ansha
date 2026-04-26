@@ -318,7 +318,7 @@ function deleteScheduleSession(id) {
    SEED DATA
    ============================================= */
 function initSeedData() {
-  if (localStorage.getItem('lms_seeded')) return;
+  if (localStorage.getItem('lms_seeded')) { patchNewCourses(); return; }
 
   /* --- Users --- */
   const users = [
@@ -380,6 +380,22 @@ function initSeedData() {
       duration: '4 Months', level: 'Intermediate', icon: '🧠', color: '#db2777',
       modules: ['Child Development Stages', 'Cognitive Development', 'Emotional & Social Development', 'Learning Disabilities & Special Needs', 'Classroom Behavior Management'],
       maxStudents: 25, fee: 10000, createdAt: '2024-02-01T00:00:00Z'
+    },
+    {
+      id: 'c5', title: 'Phonics A–Z: Letter-by-Letter Reference',
+      category: 'phonics', teacherId: 'u2',
+      description: 'A standalone interactive reference for teacher trainees — every English letter A through Z with its IPA sound, example words, articulation cue, and classroom-ready trainer tip. Includes a 29-slide playful rainbow training deck to download.',
+      duration: '4 Weeks', level: 'All Levels', icon: '🔤', color: '#e11d48',
+      modules: ['A – I', 'J – R', 'S – Z', 'Course Deck'],
+      maxStudents: 30, fee: 3500, createdAt: '2024-03-10T00:00:00Z'
+    },
+    {
+      id: 'c6', title: 'Storytelling for Young Minds',
+      category: 'storytelling', teacherId: 'u3',
+      description: 'A teacher-training module on the art of storytelling for Montessori Casa children aged 3–5. Four original value stories (kindness, sharing, patience, courage), voice & body craft, props & the story basket, and a four-week practice plan.',
+      duration: '6 Weeks', level: 'All Levels', icon: '📖', color: '#8A3C32',
+      modules: ['Introduction', 'Foundations', 'The Craft', 'The Instrument', 'Value Stories', 'Delivery', 'Practice', 'Course Deck'],
+      maxStudents: 25, fee: 4500, createdAt: '2024-03-15T00:00:00Z'
     }
   ];
   dbSet(DB.COURSES, courses);
@@ -408,6 +424,53 @@ function initSeedData() {
     { id: 'lb2', courseId: 'c4', module: 'Course Books', title: 'AMT-002: Foundations of Educational Psychology', type: 'text', content: '<p>Download the full course book below.</p>', duration: '', order: 10, pdf: 'assets/pdfs/amt-002-educational-psychology.pdf' },
     { id: 'lb3', courseId: 'c1', module: 'Course Books', title: 'AMT-003: Montessori Philosophy and Method', type: 'text', content: '<p>Download the full course book below.</p>', duration: '', order: 11, pdf: 'assets/pdfs/amt-003-montessori-philosophy.pdf' },
     { id: 'lb4', courseId: 'c1', module: 'Course Books', title: 'AMT-004: Pre-School Education', type: 'text', content: '<p>Download the full course book below.</p>', duration: '', order: 12, pdf: 'assets/pdfs/amt-004-preschool-education.pdf' },
+    // --- New: Phonics A–Z + Storytelling lessons ---
+    { id: 'lphx1', courseId: 'c5', module: 'A – I', title: "Letter Aa — Apple", type: 'text', content: "<h3>Aa  ·  /æ/</h3><p><strong>Example words:</strong> <strong>A</strong>pple · <strong>A</strong>nt · <strong>A</strong>stronaut</p><p><strong>Articulation cue:</strong> Open mouth wide, tongue rests low and flat.</p><p><strong>Trainer's tip:</strong> Short /a/. Use sandpaper letters; trace with finger while voicing the sound.</p>", duration: '3 min', order: 1 },
+    { id: 'lphx2', courseId: 'c5', module: 'A – I', title: "Letter Bb — Ball", type: 'text', content: "<h3>Bb  ·  /b/</h3><p><strong>Example words:</strong> <strong>B</strong>all · <strong>B</strong>ear · <strong>B</strong>alloon</p><p><strong>Articulation cue:</strong> Press both lips together, release with a puff of voice.</p><p><strong>Trainer's tip:</strong> Voiced consonant. Pair with /p/ later to teach voiced vs. unvoiced pairs.</p>", duration: '3 min', order: 2 },
+    { id: 'lphx3', courseId: 'c5', module: 'A – I', title: "Letter Cc — Cat", type: 'text', content: "<h3>Cc  ·  /k/</h3><p><strong>Example words:</strong> <strong>C</strong>at · <strong>C</strong>up · <strong>C</strong>arrot</p><p><strong>Articulation cue:</strong> Back of tongue rises to soft palate, brief puff.</p><p><strong>Trainer's tip:</strong> Hard C. Introduce soft C (/s/) only after the hard sound is secure.</p>", duration: '3 min', order: 3 },
+    { id: 'lphx4', courseId: 'c5', module: 'A – I', title: "Letter Dd — Dog", type: 'text', content: "<h3>Dd  ·  /d/</h3><p><strong>Example words:</strong> <strong>D</strong>og · <strong>D</strong>rum · <strong>D</strong>uck</p><p><strong>Articulation cue:</strong> Tongue tip taps behind top teeth, released with voice.</p><p><strong>Trainer's tip:</strong> Voiced pair to /t/. Place child's hand on throat to feel vibration.</p>", duration: '3 min', order: 4 },
+    { id: 'lphx5', courseId: 'c5', module: 'A – I', title: "Letter Ee — Egg", type: 'text', content: "<h3>Ee  ·  /ɛ/</h3><p><strong>Example words:</strong> <strong>E</strong>gg · <strong>E</strong>lephant · <strong>E</strong>lbow</p><p><strong>Articulation cue:</strong> Mouth slightly open, tongue mid-front, lips relaxed.</p><p><strong>Trainer's tip:</strong> Short /e/. Practise with echo games: teacher says /e/, child repeats.</p>", duration: '3 min', order: 5 },
+    { id: 'lphx6', courseId: 'c5', module: 'A – I', title: "Letter Ff — Fish", type: 'text', content: "<h3>Ff  ·  /f/</h3><p><strong>Example words:</strong> <strong>F</strong>ish · <strong>F</strong>rog · <strong>F</strong>eather</p><p><strong>Articulation cue:</strong> Upper teeth touch lower lip, air flows through — no voice.</p><p><strong>Trainer's tip:</strong> Unvoiced fricative. Use paper-blowing to feel the airflow.</p>", duration: '3 min', order: 6 },
+    { id: 'lphx7', courseId: 'c5', module: 'A – I', title: "Letter Gg — Goat", type: 'text', content: "<h3>Gg  ·  /g/</h3><p><strong>Example words:</strong> <strong>G</strong>oat · <strong>G</strong>arden · <strong>G</strong>rape</p><p><strong>Articulation cue:</strong> Back of tongue lifts to soft palate, releases with voice.</p><p><strong>Trainer's tip:</strong> Hard G. Defer soft G (/dʒ/) until the child is confident.</p>", duration: '3 min', order: 7 },
+    { id: 'lphx8', courseId: 'c5', module: 'A – I', title: "Letter Hh — Hat", type: 'text', content: "<h3>Hh  ·  /h/</h3><p><strong>Example words:</strong> <strong>H</strong>at · <strong>H</strong>orse · <strong>H</strong>ouse</p><p><strong>Articulation cue:</strong> Mouth open, warm breath flows out — no tongue movement.</p><p><strong>Trainer's tip:</strong> Like fogging a mirror. Have child exhale onto their hand to feel the sound.</p>", duration: '3 min', order: 8 },
+    { id: 'lphx9', courseId: 'c5', module: 'A – I', title: "Letter Ii — Igloo", type: 'text', content: "<h3>Ii  ·  /ɪ/</h3><p><strong>Example words:</strong> <strong>I</strong>gloo · <strong>I</strong>nk · <strong>I</strong>nsect</p><p><strong>Articulation cue:</strong> Mouth slightly open, tongue high-front, lips relaxed.</p><p><strong>Trainer's tip:</strong> Short /i/. Contrast with long /iː/ later (as in 'ice').</p>", duration: '3 min', order: 9 },
+    { id: 'lphx10', courseId: 'c5', module: 'J – R', title: "Letter Jj — Jug", type: 'text', content: "<h3>Jj  ·  /dʒ/</h3><p><strong>Example words:</strong> <strong>J</strong>ug · <strong>J</strong>am · <strong>J</strong>et</p><p><strong>Articulation cue:</strong> Tongue starts at ridge behind teeth, lips slightly rounded.</p><p><strong>Trainer's tip:</strong> Always voiced. Use 'juicy' words to make the sound memorable.</p>", duration: '3 min', order: 10 },
+    { id: 'lphx11', courseId: 'c5', module: 'J – R', title: "Letter Kk — Kite", type: 'text', content: "<h3>Kk  ·  /k/</h3><p><strong>Example words:</strong> <strong>K</strong>ite · <strong>K</strong>ing · <strong>K</strong>ey</p><p><strong>Articulation cue:</strong> Back of tongue lifts to soft palate, unvoiced puff.</p><p><strong>Trainer's tip:</strong> Same sound as hard C. Teach K after C to build the bridge.</p>", duration: '3 min', order: 11 },
+    { id: 'lphx12', courseId: 'c5', module: 'J – R', title: "Letter Ll — Lion", type: 'text', content: "<h3>Ll  ·  /l/</h3><p><strong>Example words:</strong> <strong>L</strong>ion · <strong>L</strong>eaf · <strong>L</strong>amp</p><p><strong>Articulation cue:</strong> Tongue tip touches ridge behind top teeth, voice flows on sides.</p><p><strong>Trainer's tip:</strong> Show child tongue placement in a mirror; a lateral sound.</p>", duration: '3 min', order: 12 },
+    { id: 'lphx13', courseId: 'c5', module: 'J – R', title: "Letter Mm — Monkey", type: 'text', content: "<h3>Mm  ·  /m/</h3><p><strong>Example words:</strong> <strong>M</strong>onkey · <strong>M</strong>oon · <strong>M</strong>ouse</p><p><strong>Articulation cue:</strong> Lips pressed together, humming through the nose.</p><p><strong>Trainer's tip:</strong> Nasal, continuous sound. Perfect for stretching: mmmmm.</p>", duration: '3 min', order: 13 },
+    { id: 'lphx14', courseId: 'c5', module: 'J – R', title: "Letter Nn — Nest", type: 'text', content: "<h3>Nn  ·  /n/</h3><p><strong>Example words:</strong> <strong>N</strong>est · <strong>N</strong>et · <strong>N</strong>ose</p><p><strong>Articulation cue:</strong> Tongue tip touches ridge behind top teeth, humming through nose.</p><p><strong>Trainer's tip:</strong> Another nasal. Contrast with /m/: lips closed vs. lips open.</p>", duration: '3 min', order: 14 },
+    { id: 'lphx15', courseId: 'c5', module: 'J – R', title: "Letter Oo — Octopus", type: 'text', content: "<h3>Oo  ·  /ɒ/</h3><p><strong>Example words:</strong> <strong>O</strong>ctopus · <strong>O</strong>range · <strong>O</strong>live</p><p><strong>Articulation cue:</strong> Mouth open and rounded, tongue low.</p><p><strong>Trainer's tip:</strong> Short /o/. Build muscle memory with circle-shaped object sorting.</p>", duration: '3 min', order: 15 },
+    { id: 'lphx16', courseId: 'c5', module: 'J – R', title: "Letter Pp — Pig", type: 'text', content: "<h3>Pp  ·  /p/</h3><p><strong>Example words:</strong> <strong>P</strong>ig · <strong>P</strong>en · <strong>P</strong>umpkin</p><p><strong>Articulation cue:</strong> Press both lips together, release with a puff — no voice.</p><p><strong>Trainer's tip:</strong> Unvoiced pair to /b/. Hold a tissue — /p/ moves it, /b/ doesn't.</p>", duration: '3 min', order: 16 },
+    { id: 'lphx17', courseId: 'c5', module: 'J – R', title: "Letter Qq — Queen", type: 'text', content: "<h3>Qq  ·  /kw/</h3><p><strong>Example words:</strong> <strong>Q</strong>ueen · <strong>Q</strong>uilt · <strong>Q</strong>uail</p><p><strong>Articulation cue:</strong> Back of tongue lifts, lips round: two blended sounds — /k/ + /w/.</p><p><strong>Trainer's tip:</strong> Q is almost always followed by U. Teach 'qu' as a unit.</p>", duration: '3 min', order: 17 },
+    { id: 'lphx18', courseId: 'c5', module: 'J – R', title: "Letter Rr — Rabbit", type: 'text', content: "<h3>Rr  ·  /r/</h3><p><strong>Example words:</strong> <strong>R</strong>abbit · <strong>R</strong>ed · <strong>R</strong>ainbow</p><p><strong>Articulation cue:</strong> Tongue curls back slightly, lips round, voice flows.</p><p><strong>Trainer's tip:</strong> Can be tricky. Use growling games: 'rrrrrr' like a lion.</p>", duration: '3 min', order: 18 },
+    { id: 'lphx19', courseId: 'c5', module: 'S – Z', title: "Letter Ss — Sun", type: 'text', content: "<h3>Ss  ·  /s/</h3><p><strong>Example words:</strong> <strong>S</strong>un · <strong>S</strong>nake · <strong>S</strong>tar</p><p><strong>Articulation cue:</strong> Tongue near ridge, teeth nearly closed, air hisses out.</p><p><strong>Trainer's tip:</strong> Unvoiced. Use snake play: sssssss. Pair with /z/ later.</p>", duration: '3 min', order: 19 },
+    { id: 'lphx20', courseId: 'c5', module: 'S – Z', title: "Letter Tt — Tiger", type: 'text', content: "<h3>Tt  ·  /t/</h3><p><strong>Example words:</strong> <strong>T</strong>iger · <strong>T</strong>ree · <strong>T</strong>rain</p><p><strong>Articulation cue:</strong> Tongue tip taps ridge behind top teeth, unvoiced puff.</p><p><strong>Trainer's tip:</strong> Pair with /d/. Clapping rhythm helps internalise the crisp sound.</p>", duration: '3 min', order: 20 },
+    { id: 'lphx21', courseId: 'c5', module: 'S – Z', title: "Letter Uu — Umbrella", type: 'text', content: "<h3>Uu  ·  /ʌ/</h3><p><strong>Example words:</strong> <strong>U</strong>mbrella · <strong>U</strong>ncle · <strong>U</strong>p</p><p><strong>Articulation cue:</strong> Mouth relaxed, slightly open, tongue mid-central.</p><p><strong>Trainer's tip:</strong> Short /u/. Often confused with /a/ — isolate with matched word pairs.</p>", duration: '3 min', order: 21 },
+    { id: 'lphx22', courseId: 'c5', module: 'S – Z', title: "Letter Vv — Van", type: 'text', content: "<h3>Vv  ·  /v/</h3><p><strong>Example words:</strong> <strong>V</strong>an · <strong>V</strong>iolin · <strong>V</strong>ase</p><p><strong>Articulation cue:</strong> Upper teeth touch lower lip, air flows with voice.</p><p><strong>Trainer's tip:</strong> Voiced pair to /f/. Hand on throat to feel the difference.</p>", duration: '3 min', order: 22 },
+    { id: 'lphx23', courseId: 'c5', module: 'S – Z', title: "Letter Ww — Water", type: 'text', content: "<h3>Ww  ·  /w/</h3><p><strong>Example words:</strong> <strong>W</strong>ater · <strong>W</strong>olf · <strong>W</strong>eb</p><p><strong>Articulation cue:</strong> Lips tightly rounded, glide to next vowel.</p><p><strong>Trainer's tip:</strong> Glide consonant. Always precedes a vowel; practise 'wa', 'we', 'wi'.</p>", duration: '3 min', order: 23 },
+    { id: 'lphx24', courseId: 'c5', module: 'S – Z', title: "Letter Xx — Fox", type: 'text', content: "<h3>Xx  ·  /ks/</h3><p><strong>Example words:</strong> <strong>F</strong>ox · <strong>B</strong>ox · <strong>S</strong>ix</p><p><strong>Articulation cue:</strong> Blend of /k/ + /s/ — brief puff then hiss.</p><p><strong>Trainer's tip:</strong> X usually ends words. Teach the sound first, spelling later.</p>", duration: '3 min', order: 24 },
+    { id: 'lphx25', courseId: 'c5', module: 'S – Z', title: "Letter Yy — Yo-yo", type: 'text', content: "<h3>Yy  ·  /j/</h3><p><strong>Example words:</strong> <strong>Y</strong>o-yo · <strong>Y</strong>ellow · <strong>Y</strong>ak</p><p><strong>Articulation cue:</strong> Tongue high-front, lips spread, glide into vowel.</p><p><strong>Trainer's tip:</strong> At the start of words it's /j/. End of words, often /iː/ as in 'happy'.</p>", duration: '3 min', order: 25 },
+    { id: 'lphx26', courseId: 'c5', module: 'S – Z', title: "Letter Zz — Zebra", type: 'text', content: "<h3>Zz  ·  /z/</h3><p><strong>Example words:</strong> <strong>Z</strong>ebra · <strong>Z</strong>ip · <strong>Z</strong>oo</p><p><strong>Articulation cue:</strong> Tongue near ridge, teeth nearly closed, voice buzzes out.</p><p><strong>Trainer's tip:</strong> Voiced pair to /s/. Bee-buzzing games make it stick: zzzzzz.</p>", duration: '3 min', order: 26 },
+    { id: 'lphx_deck', courseId: 'c5', module: 'Course Deck', title: 'Phonics A–Z — Full Slide Deck', type: 'text', content: '<p>Download the full 29-slide training deck with rainbow letter design, A–Z overview, and trainer guide.</p>', duration: '', order: 100, pdf: 'assets/decks/Phonics_A_to_Z_Teacher_Training.pptx' },
+    { id: 'lstr1', courseId: 'c6', module: 'Introduction', title: "Welcome & course overview", type: 'text', content: "<h3>The Art of Storytelling for Young Minds</h3><p>An 18-lesson training module for Ansha Casa guides teaching children aged 3–5. You will learn how to prepare, structure, voice, and tell stories that quietly plant Montessori values: kindness, sharing, patience, and courage.</p><p><em>Download the slide deck at the end of the course for a printable reference.</em></p>", duration: '5 min', order: 1 },
+    { id: 'lstr2', courseId: 'c6', module: 'Foundations', title: "Why stories matter at 3–5", type: 'text', content: "<h3>The developing mind at 3–5</h3><ul><li><strong>1000+ new words a year</strong> — ages 3–5 is the language explosion.</li><li><strong>90% brain growth by 5</strong> — most neural architecture is set.</li><li><strong>Rhythm before meaning</strong> — children absorb cadence long before words.</li><li><strong>Seeds that bloom later</strong> — a value told at 3 may surface at 13.</li></ul>", duration: '5 min', order: 2 },
+    { id: 'lstr3', courseId: 'c6', module: 'Foundations', title: "The storyteller's mindset", type: 'text', content: "<h3>You are the gardener — not the flower</h3><ol><li>The story serves the child — you are the messenger.</li><li>Calm is the first gift — your breath sets the tempo.</li><li>Less expression, more intention — soft voice reaches further than loud.</li><li>Trust the silence — children think during your pauses.</li></ol>", duration: '5 min', order: 3 },
+    { id: 'lstr4', courseId: 'c6', module: 'The Craft', title: "Five principles of Casa-age storytelling", type: 'text', content: "<h3>Every story should pass these five tests</h3><ol><li><strong>Short enough</strong> — 3 to 5 minutes maximum.</li><li><strong>Concrete</strong> — real animals, real objects. Defer metaphor.</li><li><strong>Repetitive</strong> — a refrain they can echo by the third telling.</li><li><strong>Emotionally safe</strong> — no fear, no sudden loss, no wicked villains.</li><li><strong>One seed, one value</strong> — a single lesson, never two at once.</li></ol>", duration: '5 min', order: 4 },
+    { id: 'lstr5', courseId: 'c6', module: 'The Craft', title: "Preparing the space & yourself", type: 'text', content: "<h3>Before you begin</h3><h4>The space</h4><ul><li>Soft warm light, no overhead glare</li><li>A circle of floor cushions on a natural rug</li><li>A small low basket for your story props</li><li>Empty walls in the child's line of sight</li></ul><h4>Yourself</h4><ul><li>Three slow breaths before you sit</li><li>Release the morning's events — arrive here</li><li>Let your eyes meet each child, one by one</li><li>Begin only when your body is still</li></ul>", duration: '5 min', order: 5 },
+    { id: 'lstr6', courseId: 'c6', module: 'The Craft', title: "Anatomy of a story", type: 'text', content: "<h3>A simple, reliable shape</h3><ol><li><strong>Opening phrase</strong> — the same one every time: \"Once in a little wooden house...\"</li><li><strong>One character</strong> — one protagonist only.</li><li><strong>One small problem</strong> — a lost mitten, a cold bird.</li><li><strong>One or two events + a refrain</strong> — a repeating phrase children echo.</li><li><strong>Closing phrase</strong> — \"And that is the story of...\"</li></ol>", duration: '5 min', order: 6 },
+    { id: 'lstr7', courseId: 'c6', module: 'The Instrument', title: "Voice — pace, pause, volume", type: 'text', content: "<h3>Your three tools</h3><p><strong>Pace:</strong> slower than you think. Count silently one-two-three after each sentence.</p><p><strong>Pause:</strong> 2–3 seconds before a surprise; longer at the end. Do not fear the quiet.</p><p><strong>Volume:</strong> soften for a secret, warm for love, never loud or sharp. Whisper the most important line.</p>", duration: '5 min', order: 7 },
+    { id: 'lstr8', courseId: 'c6', module: 'The Instrument', title: "Body & gesture", type: 'text', content: "<h3>Your stillness is the frame</h3><ul><li>Sit at the children's level — feet tucked, spine long.</li><li>Small, slow gestures — a hand that rises once means more than ten flourishes.</li><li>Let your face carry the story, not your arms.</li><li>Use stillness as a tool — freeze before the important moment.</li></ul>", duration: '5 min', order: 8 },
+    { id: 'lstr9', courseId: 'c6', module: 'The Instrument', title: "Story props & materials", type: 'text', content: "<h3>The Montessori story basket</h3><ul><li><strong>Small wooden animals</strong> — hand-carved, unpainted.</li><li><strong>Natural objects</strong> — pine cones, stones, shells, dried leaves.</li><li><strong>Peg dolls</strong> — simple, faceless figures for family stories.</li><li><strong>Cloth backdrops</strong> — green for meadow, blue for sea, brown for earth.</li></ul><h4>How to use</h4><ol><li>Reveal one object at a time — slowly.</li><li>Place each on the cloth with reverence.</li><li>Leave everything in view until the story ends.</li><li>Let children look, never let them grab.</li></ol>", duration: '5 min', order: 9 },
+    { id: 'lstr10', courseId: 'c6', module: 'Value Stories', title: "KINDNESS — The Sparrow and the Bread", type: 'text', content: "<h3>The Sparrow and the Bread</h3><p><em>A little girl · A hungry sparrow</em></p><p>On a cold winter morning, a sparrow lands at a little girl's window. She is eating a small piece of bread — her whole breakfast. She looks at the bird. She looks at her bread. She opens the window. The sparrow's eyes grow wide. She breaks the bread in two and gives half.</p><p><strong>Refrain:</strong> \"Not all who are small need little.\"</p><p><strong>When to tell it:</strong> when you notice a child closing off from others. Do not mention them by name.</p>", duration: '5 min', order: 10 },
+    { id: 'lstr11', courseId: 'c6', module: 'Value Stories', title: "SHARING — Two Spoons", type: 'text', content: "<h3>Two Spoons</h3><p><em>Two children · One bowl of warm porridge</em></p><p>Two little children sat by a bowl. There was only one spoon on the shelf. The first child reached for it. The second child reached for it. They pulled. They frowned. Then the first child said, \"One for you.\" She ate. \"One for me.\" She passed the spoon. The porridge was gone before they knew it.</p><p><strong>Refrain:</strong> \"One for you, one for me.\"</p><p><strong>When to tell it:</strong> after a sharing disagreement has passed — not in the middle of one.</p>", duration: '5 min', order: 11 },
+    { id: 'lstr12', courseId: 'c6', module: 'Value Stories', title: "PATIENCE — The Little Seed Who Waited", type: 'text', content: "<h3>The Little Seed Who Waited</h3><p><em>A small brown seed · The rain · The sun</em></p><p>Deep in the dark earth, a little seed woke up. It was cold. It was damp. It wanted to see the sun. But the seed waited. The rain came. The seed waited. The cold came. Still, the seed waited. One morning — a tiny green shoot. And then, the sun.</p><p><strong>Refrain:</strong> \"Still, still, the seed waits.\"</p><p><strong>When to tell it:</strong> pair this with a real seed-and-soil activity in the week that follows.</p>", duration: '5 min', order: 12 },
+    { id: 'lstr13', courseId: 'c6', module: 'Value Stories', title: "COURAGE — The Quiet Bear", type: 'text', content: "<h3>The Quiet Bear</h3><p><em>A small brown bear · A wide cool river</em></p><p>A small bear lived by a river. Every day he walked to the bank. Every day the river looked too big. One morning, without knowing why, he placed one paw on the cool water. Then another. Then — he was swimming. The river was no smaller. But the bear was braver.</p><p><strong>Refrain:</strong> \"One small step today.\"</p><p><strong>When to tell it:</strong> when you see a child hesitating before a new work they wish to try.</p>", duration: '5 min', order: 13 },
+    { id: 'lstr14', courseId: 'c6', module: 'Delivery', title: "Repetition & participation", type: 'text', content: "<h3>The magic of the refrain</h3><ul><li>Repeat a phrase three times per story.</li><li>Tell the same story 3–5 times across weeks.</li><li>Invite echo, never quizzing: \"Say it with me.\"</li><li>Celebrate every small voice — a whisper, a nod, a look.</li></ul>", duration: '5 min', order: 14 },
+    { id: 'lstr15', courseId: 'c6', module: 'Delivery', title: "What to avoid — always", type: 'text', content: "<h3>Six things we do not bring into the circle</h3><ol><li>Scary villains & dark imagery.</li><li>Too many characters — one is best.</li><li>Abstract morals — show, never preach.</li><li>Over-acting & theatrics — whispers are louder.</li><li>Quizzing the child after.</li><li>Rushed endings — never hurry the last line.</li></ol>", duration: '5 min', order: 15 },
+    { id: 'lstr16', courseId: 'c6', module: 'Delivery', title: "After the story — the afterglow", type: 'text', content: "<h3>How to end</h3><ol><li>Breathe together — ten slow seconds.</li><li>Do not quiz — trust the seed has been planted.</li><li>Listen, don't correct — every reading is valid.</li><li>Leave the props visible for a day or two.</li><li>Re-tell later — a week, a month, a year.</li></ol>", duration: '5 min', order: 16 },
+    { id: 'lstr17', courseId: 'c6', module: 'Practice', title: "Build your story collection", type: 'text', content: "<h3>The teacher's journal</h3><ol><li>Keep a small notebook — one story per page.</li><li>Collect 10 stories per Montessori value.</li><li>Practice aloud, never in your head.</li><li>Share with colleagues — exchange monthly.</li><li>Retire any story that no longer serves the child.</li></ol>", duration: '5 min', order: 17 },
+    { id: 'lstr18', courseId: 'c6', module: 'Practice', title: "Your four-week practice plan", type: 'text', content: "<h3>Plant one story. Tend it for four weeks.</h3><ul><li><strong>Week 01:</strong> Choose one value, one story. Write it in five sentences.</li><li><strong>Week 02:</strong> Tell it three times. Observe the room.</li><li><strong>Week 03:</strong> Add a single prop.</li><li><strong>Week 04:</strong> Teach a colleague.</li></ul>", duration: '5 min', order: 18 },
+    { id: 'lstr_deck', courseId: 'c6', module: 'Course Deck', title: 'Storytelling — Full Slide Deck', type: 'text', content: '<p>Download the full 18-slide training deck with four Montessori value stories and a four-week practice plan.</p>', duration: '', order: 100, pdf: 'assets/decks/Storytelling_for_Young_Minds.pptx' },
   ];
   dbSet(DB.LESSONS, lessons);
 
@@ -1064,3 +1127,141 @@ function getAssessmentResults(assessmentId) {
     console.log(`✅ Excel fee data applied to ${changed} enrollments`);
   }
 })();
+
+/* =============================================
+   PATCH — ensure Phonics A–Z + Storytelling
+   courses & lessons exist for users who were
+   seeded before these courses were added.
+   ============================================= */
+function patchNewCourses() {
+  try {
+    const courses = dbGet(DB.COURSES) || [];
+    const lessons = dbGet(DB.LESSONS) || [];
+    let touched = false;
+
+    if (!courses.find(c => c.id === 'c5')) {
+      courses.push({
+        id: 'c5', title: 'Phonics A–Z: Letter-by-Letter Reference',
+        category: 'phonics', teacherId: 'u2',
+        description: 'A standalone interactive reference for teacher trainees — every English letter A through Z with its IPA sound, example words, articulation cue, and classroom-ready trainer tip. Includes a 29-slide playful rainbow training deck to download.',
+        duration: '4 Weeks', level: 'All Levels', icon: '🔤', color: '#e11d48',
+        modules: ['A – I', 'J – R', 'S – Z', 'Course Deck'],
+        maxStudents: 30, fee: 3500, createdAt: new Date().toISOString()
+      });
+      touched = true;
+    }
+    if (!courses.find(c => c.id === 'c6')) {
+      courses.push({
+        id: 'c6', title: 'Storytelling for Young Minds',
+        category: 'storytelling', teacherId: 'u3',
+        description: 'A teacher-training module on the art of storytelling for Montessori Casa children aged 3–5. Four original value stories (kindness, sharing, patience, courage), voice & body craft, props & the story basket, and a four-week practice plan.',
+        duration: '6 Weeks', level: 'All Levels', icon: '📖', color: '#8A3C32',
+        modules: ['Introduction', 'Foundations', 'The Craft', 'The Instrument', 'Value Stories', 'Delivery', 'Practice', 'Course Deck'],
+        maxStudents: 25, fee: 4500, createdAt: new Date().toISOString()
+      });
+      touched = true;
+    }
+
+    // Helper — only add a lesson if its id is not already present
+    function addLessonIfMissing(l) {
+      if (!lessons.find(x => x.id === l.id)) { lessons.push(l); touched = true; }
+    }
+
+    // Phonics letter lessons (c5)
+    const PHX = [
+      ['A','/æ/',['Apple','Ant','Astronaut'],'Open mouth wide, tongue rests low and flat.','Short /a/. Use sandpaper letters; trace with finger while voicing the sound.'],
+      ['B','/b/',['Ball','Bear','Balloon'],'Press both lips together, release with a puff of voice.','Voiced consonant. Pair with /p/ later to teach voiced vs. unvoiced pairs.'],
+      ['C','/k/',['Cat','Cup','Carrot'],'Back of tongue rises to soft palate, brief puff.','Hard C. Introduce soft C (/s/) only after the hard sound is secure.'],
+      ['D','/d/',['Dog','Drum','Duck'],'Tongue tip taps behind top teeth, released with voice.','Voiced pair to /t/. Place child\'s hand on throat to feel vibration.'],
+      ['E','/ɛ/',['Egg','Elephant','Elbow'],'Mouth slightly open, tongue mid-front, lips relaxed.','Short /e/. Practise with echo games: teacher says /e/, child repeats.'],
+      ['F','/f/',['Fish','Frog','Feather'],'Upper teeth touch lower lip, air flows through — no voice.','Unvoiced fricative. Use paper-blowing to feel the airflow.'],
+      ['G','/g/',['Goat','Garden','Grape'],'Back of tongue lifts to soft palate, releases with voice.','Hard G. Defer soft G (/dʒ/) until the child is confident.'],
+      ['H','/h/',['Hat','Horse','House'],'Mouth open, warm breath flows out — no tongue movement.','Like fogging a mirror. Have child exhale onto their hand to feel the sound.'],
+      ['I','/ɪ/',['Igloo','Ink','Insect'],'Mouth slightly open, tongue high-front, lips relaxed.','Short /i/. Contrast with long /iː/ later (as in \'ice\').'],
+      ['J','/dʒ/',['Jug','Jam','Jet'],'Tongue starts at ridge behind teeth, lips slightly rounded.','Always voiced. Use \'juicy\' words to make the sound memorable.'],
+      ['K','/k/',['Kite','King','Key'],'Back of tongue lifts to soft palate, unvoiced puff.','Same sound as hard C. Teach K after C to build the bridge.'],
+      ['L','/l/',['Lion','Leaf','Lamp'],'Tongue tip touches ridge behind top teeth, voice flows on sides.','Show child tongue placement in a mirror; a lateral sound.'],
+      ['M','/m/',['Monkey','Moon','Mouse'],'Lips pressed together, humming through the nose.','Nasal, continuous sound. Perfect for stretching: mmmmm.'],
+      ['N','/n/',['Nest','Net','Nose'],'Tongue tip touches ridge behind top teeth, humming through nose.','Another nasal. Contrast with /m/: lips closed vs. lips open.'],
+      ['O','/ɒ/',['Octopus','Orange','Olive'],'Mouth open and rounded, tongue low.','Short /o/. Build muscle memory with circle-shaped object sorting.'],
+      ['P','/p/',['Pig','Pen','Pumpkin'],'Press both lips together, release with a puff — no voice.','Unvoiced pair to /b/. Hold a tissue — /p/ moves it, /b/ doesn\'t.'],
+      ['Q','/kw/',['Queen','Quilt','Quail'],'Back of tongue lifts, lips round: two blended sounds — /k/ + /w/.','Q is almost always followed by U. Teach \'qu\' as a unit.'],
+      ['R','/r/',['Rabbit','Red','Rainbow'],'Tongue curls back slightly, lips round, voice flows.','Can be tricky. Use growling games: \'rrrrrr\' like a lion.'],
+      ['S','/s/',['Sun','Snake','Star'],'Tongue near ridge, teeth nearly closed, air hisses out.','Unvoiced. Use snake play: sssssss. Pair with /z/ later.'],
+      ['T','/t/',['Tiger','Tree','Train'],'Tongue tip taps ridge behind top teeth, unvoiced puff.','Pair with /d/. Clapping rhythm helps internalise the crisp sound.'],
+      ['U','/ʌ/',['Umbrella','Uncle','Up'],'Mouth relaxed, slightly open, tongue mid-central.','Short /u/. Often confused with /a/ — isolate with matched word pairs.'],
+      ['V','/v/',['Van','Violin','Vase'],'Upper teeth touch lower lip, air flows with voice.','Voiced pair to /f/. Hand on throat to feel the difference.'],
+      ['W','/w/',['Water','Wolf','Web'],'Lips tightly rounded, glide to next vowel.','Glide consonant. Always precedes a vowel; practise \'wa\', \'we\', \'wi\'.'],
+      ['X','/ks/',['Fox','Box','Six'],'Blend of /k/ + /s/ — brief puff then hiss.','X usually ends words. Teach the sound first, spelling later.'],
+      ['Y','/j/',['Yo-yo','Yellow','Yak'],'Tongue high-front, lips spread, glide into vowel.','At the start of words it\'s /j/. End of words, often /iː/ as in \'happy\'.'],
+      ['Z','/z/',['Zebra','Zip','Zoo'],'Tongue near ridge, teeth nearly closed, voice buzzes out.','Voiced pair to /s/. Bee-buzzing games make it stick: zzzzzz.']
+    ];
+    PHX.forEach((p, i) => {
+      const [L, ipa, words, mouth, tip] = p;
+      const moduleName = i < 9 ? 'A – I' : i < 18 ? 'J – R' : 'S – Z';
+      const wordsHtml = words.map(w => `<strong>${w[0]}</strong>${w.slice(1)}`).join(' · ');
+      const content = `<h3>${L}${L.toLowerCase()}  ·  ${ipa}</h3>`
+        + `<p><strong>Example words:</strong> ${wordsHtml}</p>`
+        + `<p><strong>Articulation cue:</strong> ${mouth}</p>`
+        + `<p><strong>Trainer's tip:</strong> ${tip}</p>`;
+      addLessonIfMissing({
+        id: 'lphx' + (i + 1), courseId: 'c5', module: moduleName,
+        title: `Letter ${L}${L.toLowerCase()} — ${words[0]}`,
+        type: 'text', content: content, duration: '3 min', order: i + 1
+      });
+    });
+    addLessonIfMissing({
+      id: 'lphx_deck', courseId: 'c5', module: 'Course Deck',
+      title: 'Phonics A–Z — Full Slide Deck',
+      type: 'text',
+      content: '<p>Download the full 29-slide training deck with rainbow letter design, A–Z overview, and trainer guide.</p>',
+      duration: '', order: 100,
+      pdf: 'assets/decks/Phonics_A_to_Z_Teacher_Training.pptx'
+    });
+
+    // Storytelling lessons (c6)
+    const STR = [
+      ['Introduction',   'Welcome & course overview',                '<h3>The Art of Storytelling for Young Minds</h3><p>An 18-lesson training module for Ansha Casa guides teaching children aged 3–5. You will learn how to prepare, structure, voice, and tell stories that quietly plant Montessori values: kindness, sharing, patience, and courage.</p><p><em>Download the slide deck at the end of the course for a printable reference.</em></p>'],
+      ['Foundations',    'Why stories matter at 3–5',                '<h3>The developing mind at 3–5</h3><ul><li><strong>1000+ new words a year</strong> — ages 3–5 is the language explosion.</li><li><strong>90% brain growth by 5</strong> — most neural architecture is set.</li><li><strong>Rhythm before meaning</strong> — children absorb cadence long before words.</li><li><strong>Seeds that bloom later</strong> — a value told at 3 may surface at 13.</li></ul>'],
+      ['Foundations',    'The storyteller\'s mindset',               '<h3>You are the gardener — not the flower</h3><ol><li>The story serves the child — you are the messenger.</li><li>Calm is the first gift — your breath sets the tempo.</li><li>Less expression, more intention — soft voice reaches further than loud.</li><li>Trust the silence — children think during your pauses.</li></ol>'],
+      ['The Craft',      'Five principles of Casa-age storytelling', '<h3>Every story should pass these five tests</h3><ol><li><strong>Short enough</strong> — 3 to 5 minutes maximum.</li><li><strong>Concrete</strong> — real animals, real objects. Defer metaphor.</li><li><strong>Repetitive</strong> — a refrain they can echo by the third telling.</li><li><strong>Emotionally safe</strong> — no fear, no sudden loss, no wicked villains.</li><li><strong>One seed, one value</strong> — a single lesson, never two at once.</li></ol>'],
+      ['The Craft',      'Preparing the space & yourself',           '<h3>Before you begin</h3><h4>The space</h4><ul><li>Soft warm light, no overhead glare</li><li>A circle of floor cushions on a natural rug</li><li>A small low basket for your story props</li><li>Empty walls in the child\'s line of sight</li></ul><h4>Yourself</h4><ul><li>Three slow breaths before you sit</li><li>Release the morning\'s events — arrive here</li><li>Let your eyes meet each child, one by one</li><li>Begin only when your body is still</li></ul>'],
+      ['The Craft',      'Anatomy of a story',                       '<h3>A simple, reliable shape</h3><ol><li><strong>Opening phrase</strong> — the same one every time.</li><li><strong>One character</strong> — one protagonist only.</li><li><strong>One small problem</strong> — a lost mitten, a cold bird.</li><li><strong>One or two events + a refrain</strong> — a repeating phrase children echo.</li><li><strong>Closing phrase</strong> — "And that is the story of..."</li></ol>'],
+      ['The Instrument', 'Voice — pace, pause, volume',              '<h3>Your three tools</h3><p><strong>Pace:</strong> slower than you think. Count silently one-two-three after each sentence.</p><p><strong>Pause:</strong> 2–3 seconds before a surprise; longer at the end.</p><p><strong>Volume:</strong> soften for a secret, warm for love, never loud. Whisper the most important line.</p>'],
+      ['The Instrument', 'Body & gesture',                           '<h3>Your stillness is the frame</h3><ul><li>Sit at the children\'s level — feet tucked, spine long.</li><li>Small, slow gestures.</li><li>Let your face carry the story, not your arms.</li><li>Freeze before the important moment.</li></ul>'],
+      ['The Instrument', 'Story props & materials',                  '<h3>The Montessori story basket</h3><ul><li>Small wooden animals — hand-carved, unpainted.</li><li>Natural objects — pine cones, stones, shells.</li><li>Peg dolls — simple, faceless figures.</li><li>Cloth backdrops — green for meadow, blue for sea.</li></ul><h4>How to use</h4><ol><li>Reveal one object at a time — slowly.</li><li>Place each on the cloth with reverence.</li><li>Leave everything in view until the story ends.</li></ol>'],
+      ['Value Stories',  'KINDNESS — The Sparrow and the Bread',     '<h3>The Sparrow and the Bread</h3><p><em>A little girl · A hungry sparrow</em></p><p>On a cold winter morning, a sparrow lands at a little girl\'s window. She is eating a small piece of bread — her whole breakfast. She looks at the bird. She looks at her bread. She opens the window. She breaks the bread in two and gives half.</p><p><strong>Refrain:</strong> "Not all who are small need little."</p><p><strong>When to tell it:</strong> when you notice a child closing off from others.</p>'],
+      ['Value Stories',  'SHARING — Two Spoons',                     '<h3>Two Spoons</h3><p><em>Two children · One bowl of warm porridge</em></p><p>Two little children sat by a bowl. There was only one spoon on the shelf. They pulled. They frowned. Then the first child said, "One for you." She ate. "One for me." She passed the spoon.</p><p><strong>Refrain:</strong> "One for you, one for me."</p><p><strong>When to tell it:</strong> after a sharing disagreement has passed.</p>'],
+      ['Value Stories',  'PATIENCE — The Little Seed Who Waited',    '<h3>The Little Seed Who Waited</h3><p><em>A small brown seed · The rain · The sun</em></p><p>Deep in the dark earth, a little seed woke up. It wanted to see the sun. But the seed waited. The rain came. The seed waited. Still, the seed waited. One morning — a tiny green shoot. And then, the sun.</p><p><strong>Refrain:</strong> "Still, still, the seed waits."</p><p><strong>When to tell it:</strong> pair with a real seed-and-soil activity.</p>'],
+      ['Value Stories',  'COURAGE — The Quiet Bear',                 '<h3>The Quiet Bear</h3><p><em>A small brown bear · A wide cool river</em></p><p>A small bear lived by a river. Every day he walked to the bank. Every day the river looked too big. One morning he placed one paw on the cool water. Then another. Then — he was swimming.</p><p><strong>Refrain:</strong> "One small step today."</p><p><strong>When to tell it:</strong> when a child hesitates before a new work.</p>'],
+      ['Delivery',       'Repetition & participation',               '<h3>The magic of the refrain</h3><ul><li>Repeat a phrase three times per story.</li><li>Tell the same story 3–5 times across weeks.</li><li>Invite echo, never quizzing: "Say it with me."</li><li>Celebrate every small voice.</li></ul>'],
+      ['Delivery',       'What to avoid — always',                   '<h3>Six things we do not bring into the circle</h3><ol><li>Scary villains & dark imagery.</li><li>Too many characters.</li><li>Abstract morals.</li><li>Over-acting & theatrics.</li><li>Quizzing the child after.</li><li>Rushed endings.</li></ol>'],
+      ['Delivery',       'After the story — the afterglow',          '<h3>How to end</h3><ol><li>Breathe together — ten slow seconds.</li><li>Do not quiz.</li><li>Listen, don\'t correct.</li><li>Leave the props visible for a day.</li><li>Re-tell later.</li></ol>'],
+      ['Practice',       'Build your story collection',              '<h3>The teacher\'s journal</h3><ol><li>Keep a small notebook.</li><li>Collect 10 stories per Montessori value.</li><li>Practice aloud, never in your head.</li><li>Share with colleagues — exchange monthly.</li><li>Retire any story that no longer serves.</li></ol>'],
+      ['Practice',       'Your four-week practice plan',             '<h3>Plant one story. Tend it for four weeks.</h3><ul><li><strong>Week 01:</strong> Choose one value, one story.</li><li><strong>Week 02:</strong> Tell it three times.</li><li><strong>Week 03:</strong> Add a single prop.</li><li><strong>Week 04:</strong> Teach a colleague.</li></ul>']
+    ];
+    STR.forEach((row, i) => {
+      addLessonIfMissing({
+        id: 'lstr' + (i + 1), courseId: 'c6', module: row[0],
+        title: row[1], type: 'text', content: row[2],
+        duration: '5 min', order: i + 1
+      });
+    });
+    addLessonIfMissing({
+      id: 'lstr_deck', courseId: 'c6', module: 'Course Deck',
+      title: 'Storytelling — Full Slide Deck',
+      type: 'text',
+      content: '<p>Download the full 18-slide training deck with four Montessori value stories and a four-week practice plan.</p>',
+      duration: '', order: 100,
+      pdf: 'assets/decks/Storytelling_for_Young_Minds.pptx'
+    });
+
+    if (touched) {
+      dbSet(DB.COURSES, courses);
+      dbSet(DB.LESSONS, lessons);
+      console.log('✅ Patched: Phonics A–Z + Storytelling courses added');
+    }
+  } catch (err) {
+    console.error('patchNewCourses failed:', err);
+  }
+}
