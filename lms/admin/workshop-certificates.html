@@ -165,8 +165,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/downloadjs@1.4.7"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="../assets/js/data.js"></script>
 <script src="../assets/js/supabase.js"></script>
 <script src="../assets/js/auth.js"></script>
@@ -178,37 +177,90 @@
   document.getElementById('sidebar').innerHTML = buildSidebar('workshop-certificates', session);
   document.getElementById('top-bar').innerHTML = buildTopBar(session);
 
-  const SUPA_URL = 'https://twzcefikdychhsjwjekf.supabase.co';
-  const SUPA_KEY = 'sb_publishable_GijBRmulhuyIp3bigyhMUw_hVmQiB0y';
-  const _sbc = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+  // Use global Supabase client from supabase.js (_sb)
+  // Page dimensions (landscape A4-ish, PDF points)
+  const PAGE_W  = 842.2;
+  const PAGE_H  = 595.5;
+  // Name baseline y from TOP of page (measured via analysis: center of name area)
+  const NAME_Y  = 276.5;
+  // Template JPEG (rendered from PDF at 3× zoom for crisp quality)
+  const TEMPLATE_IMG = '../assets/certificates/workshop-template.jpg';
 
-  // PDF template path (relative to this page)
-  const TEMPLATE_URL = '../assets/certificates/workshop-template.pdf';
+  let participants   = [];
+  let templateCache  = null;  // cached base64 image data
 
-  // Name coordinates (PDF points, bottom-left origin)
-  // Page: 842.2 x 595.5 pts
-  // Name center x: 421, y from bottom: ~319 (= 595.5 - 276.5)
-  const PAGE_W = 842.2;
-  const PAGE_H = 595.5;
-  const NAME_CENTER_X = 421;
-  const NAME_Y_BOTTOM = 319;  // baseline y from bottom
-  const NAME_COLOR = [2/255, 49/255, 106/255]; // #02316A dark navy
+  // ── Pre-load template image ──────────────────────────────
+  async function getTemplate() {
+    if (templateCache) return templateCache;
+    const resp = await fetch(TEMPLATE_IMG + '?v=20260426');
+    if (!resp.ok) throw new Error('Certificate template image not found. Please redeploy the site.');
+    const blob = await resp.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload  = () => { templateCache = reader.result; resolve(reader.result); };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
 
-  let participants = [];
-  let currentPdfBytes = null;
-  let currentName = '';
+  // ── Core: build certificate PDF using jsPDF ──────────────
+  async function buildCertificate(participantName) {
+    const imgData = await getTemplate();
+    const { jsPDF } = window.jspdf;
 
-  // ── Load participants from Supabase ──
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: [PAGE_W, PAGE_H] });
+
+    // Background
+    pdf.addImage(imgData, 'JPEG', 0, 0, PAGE_W, PAGE_H);
+
+    // Font — auto-scale to fit
+    pdf.setFont('helvetica', 'bold');
+    let fontSize = 44;
+    pdf.setFontSize(fontSize);
+    let textWidth = pdf.getTextWidth(participantName);
+    while (textWidth > 580 && fontSize > 22) {
+      fontSize -= 1;
+      pdf.setFontSize(fontSize);
+      textWidth = pdf.getTextWidth(participantName);
+    }
+
+    // Name in navy blue, centered
+    pdf.setTextColor(2, 49, 106);   // #02316A
+    pdf.text(participantName, PAGE_W / 2, NAME_Y, { align: 'center' });
+
+    return pdf.output('blob');
+  }
+
+  // ── Download helper ──────────────────────────────────────
+  function downloadCert(blob, name) {
+    const safeName = name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href     = url;
+    a.download = `Certificate_${safeName}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
+
+  // ── Load participants from Supabase ──────────────────────
   async function loadParticipants() {
-    const { data } = await _sbc
-      .from('workshop_feedback')
-      .select('id, name, whatsapp, city, workshop_title, submitted_at')
-      .order('submitted_at', { ascending: false });
-
-    document.getElementById('loading-cert').remove();
-
-    participants = (data || []).map(r => ({ ...r, source: 'db' }));
+    try {
+      const { data } = await _sb
+        .from('workshop_feedback')
+        .select('id, name, whatsapp, city, workshop_title, submitted_at')
+        .order('submitted_at', { ascending: false });
+      participants = (data || []).map(r => ({ ...r, source: 'db' }));
+    } catch (err) {
+      console.warn('Could not load from Supabase:', err.message);
+      participants = [];
+    }
+    const loader = document.getElementById('loading-cert');
+    if (loader) loader.remove();
     renderParticipants();
+    // Pre-load template in background for faster first generate
+    getTemplate().catch(() => {});
   }
 
   function renderParticipants() {
@@ -218,7 +270,7 @@
     if (!participants.length) {
       list.innerHTML = `<div class="empty-cert">
         <div class="icon">📭</div>
-        <p>No participants yet. Add names manually above or collect responses via the feedback form.</p>
+        <p>No participants yet. Add names manually above, or collect responses via the feedback form.</p>
       </div>`;
       return;
     }
@@ -240,7 +292,7 @@
   }
 
   function addManualName() {
-    const inp = document.getElementById('manual-name');
+    const inp  = document.getElementById('manual-name');
     const name = inp.value.trim();
     if (!name) return;
     participants.unshift({ name, whatsapp:'', city:'', workshop_title: document.getElementById('ws-title').value, source:'manual' });
@@ -260,76 +312,31 @@
     document.getElementById('btn-gen-all').disabled = !any;
   }
 
-  // ── Core: generate certificate PDF in browser ──
-  async function buildCertificate(participantName) {
-    const templateBytes = await fetch(TEMPLATE_URL + '?v=20260426').then(r => {
-      if (!r.ok) throw new Error('Template PDF not found');
-      return r.arrayBuffer();
-    });
-
-    const { PDFDocument, rgb, StandardFonts } = PDFLib;
-    const pdfDoc = await PDFDocument.load(templateBytes);
-    const page   = pdfDoc.getPages()[0];
-
-    // Embed bold font
-    const font = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-    // Auto-scale font size to fit the name
-    let fontSize = 44;
-    let textWidth = font.widthOfTextAtSize(participantName, fontSize);
-    while (textWidth > 580 && fontSize > 22) {
-      fontSize -= 1;
-      textWidth = font.widthOfTextAtSize(participantName, fontSize);
-    }
-
-    // Center the name horizontally
-    const x = (PAGE_W - textWidth) / 2;
-    const y = NAME_Y_BOTTOM - fontSize * 0.15; // slight adjustment for baseline
-
-    page.drawText(participantName, {
-      x,
-      y,
-      size: fontSize,
-      font,
-      color: rgb(...NAME_COLOR),
-    });
-
-    return await pdfDoc.save();
-  }
-
-  // ── Generate + download one certificate ──
+  // ── Generate + preview one certificate ───────────────────
   async function generateOne(idx) {
-    const p = participants[idx];
+    const p   = participants[idx];
     const btn = document.getElementById('btn-' + idx);
-    btn.textContent = '⏳ Generating...';
-    btn.disabled = true;
+    btn.innerHTML = '⏳ Generating...';
+    btn.disabled  = true;
 
     try {
-      const pdfBytes = await buildCertificate(p.name);
-
-      // Show preview
-      currentPdfBytes = pdfBytes;
-      currentName = p.name;
-      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const blob    = await buildCertificate(p.name);
       const blobUrl = URL.createObjectURL(blob);
+
+      // Show preview modal
       document.getElementById('preview-frame').src = blobUrl;
       document.getElementById('modal-name').textContent = '🎓 Certificate — ' + p.name;
       document.getElementById('preview-modal').classList.add('show');
-      document.getElementById('btn-download-cert').onclick = () => downloadCert(pdfBytes, p.name);
+      document.getElementById('btn-download-cert').onclick = () => downloadCert(blob, p.name);
 
-      btn.textContent = '✅ Done';
+      btn.innerHTML = '✅ Done';
       btn.classList.add('done');
     } catch (err) {
       console.error(err);
-      alert('Error generating certificate. Make sure template PDF is deployed.\n' + err.message);
-      btn.textContent = '🎓 Generate';
-      btn.disabled = false;
+      alert('Certificate generation failed:\n' + err.message);
+      btn.innerHTML = '🎓 Generate';
+      btn.disabled  = false;
     }
-  }
-
-  function downloadCert(pdfBytes, name) {
-    const safeName = name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
-    download(pdfBytes, `Certificate_${safeName}.pdf`, 'application/pdf');
   }
 
   function closeModal() {
@@ -337,12 +344,10 @@
     document.getElementById('preview-frame').src = '';
   }
 
-  // ── Generate selected in bulk ──
+  // ── Bulk generate selected ────────────────────────────────
   async function generateSelected() {
     const selected = [...document.querySelectorAll('.part-check')]
-      .map((c, i) => c.checked ? i : -1)
-      .filter(i => i >= 0);
-
+      .map((c, i) => c.checked ? i : -1).filter(i => i >= 0);
     if (!selected.length) return;
 
     const statusEl = document.getElementById('bulk-status');
@@ -354,31 +359,29 @@
     for (let n = 0; n < selected.length; n++) {
       const i = selected[n];
       const p = participants[i];
-      msgEl.textContent = `Generating ${n+1}/${selected.length}: ${p.name}...`;
+      msgEl.textContent  = `Generating ${n+1}/${selected.length}: ${p.name}...`;
       progEl.style.width = ((n / selected.length) * 100) + '%';
-
       try {
-        const pdfBytes = await buildCertificate(p.name);
-        const safeName = p.name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
-        download(pdfBytes, `Certificate_${safeName}.pdf`, 'application/pdf');
+        const blob = await buildCertificate(p.name);
+        downloadCert(blob, p.name);
         const btn = document.getElementById('btn-' + i);
-        if (btn) { btn.textContent = '✅ Done'; btn.classList.add('done'); }
-        await new Promise(r => setTimeout(r, 600)); // small delay between downloads
+        if (btn) { btn.innerHTML = '✅ Done'; btn.classList.add('done'); }
+        await new Promise(r => setTimeout(r, 800));
       } catch (err) {
         console.error(`Failed for ${p.name}:`, err);
       }
     }
 
     progEl.style.width = '100%';
-    msgEl.textContent = `Done! ${selected.length} certificate(s) downloaded.`;
+    msgEl.textContent  = `Done! ${selected.length} certificate(s) downloaded.`;
     document.getElementById('btn-gen-all').disabled = false;
   }
 
-  // ── WhatsApp share ──
+  // ── WhatsApp notify ───────────────────────────────────────
   async function shareWACert(idx) {
-    const p = participants[idx];
+    const p   = participants[idx];
     const msg = `Dear ${p.name},\n\nThank you for attending our workshop!\nYour *Certificate of Participation* from Ansha Montessori Teacher Training Institute is ready.\n\nPlease contact us to receive your certificate.\n\n- Ansha Montessori Team`;
-    const wa = (p.whatsapp || '').replace(/\D/g, '');
+    const wa  = (p.whatsapp || '').replace(/\D/g, '');
     window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, '_blank');
   }
 
