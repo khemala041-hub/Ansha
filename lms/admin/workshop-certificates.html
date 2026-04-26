@@ -246,21 +246,33 @@
 
   // ── Load participants from Supabase ──────────────────────
   async function loadParticipants() {
-    try {
-      const { data } = await _sb
-        .from('workshop_feedback')
-        .select('id, name, whatsapp, city, workshop_title, submitted_at')
-        .order('submitted_at', { ascending: false });
-      participants = (data || []).map(r => ({ ...r, source: 'db' }));
-    } catch (err) {
-      console.warn('Could not load from Supabase:', err.message);
-      participants = [];
-    }
+    // Show UI immediately — never block on Supabase
     const loader = document.getElementById('loading-cert');
     if (loader) loader.remove();
     renderParticipants();
-    // Pre-load template in background for faster first generate
+
+    // Pre-load template in background
     getTemplate().catch(() => {});
+
+    // Try to fetch from Supabase with a 5-second timeout
+    try {
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 5000)
+      );
+      const query = _sb
+        .from('workshop_feedback')
+        .select('id, name, whatsapp, city, workshop_title, submitted_at')
+        .order('submitted_at', { ascending: false });
+
+      const { data, error } = await Promise.race([query, timeout]);
+      if (!error && data && data.length) {
+        participants = data.map(r => ({ ...r, source: 'db' }));
+        renderParticipants();
+      }
+    } catch (err) {
+      console.warn('Supabase load skipped:', err.message);
+      // Page is already usable — manual entry works fine
+    }
   }
 
   function renderParticipants() {
