@@ -72,7 +72,6 @@
     .bulk-status p { font-size:0.85rem; color:#166534; font-weight:600; }
 
     @media(max-width:600px){
-      .btn-wa-cert { display:none; }
       .settings-grid { grid-template-columns:1fr; }
     }
   </style>
@@ -216,11 +215,19 @@
 
   // ── Build PDF ────────────────────────────────────────────
   function buildCertificate(name) {
+    // Read current settings
+    var wsTitle  = (document.getElementById('ws-title')  || {}).value || 'Montessori Materials Exploration';
+    var wsDate   = (document.getElementById('ws-date')   || {}).value || 'Saturday, April 26, 2026';
+    var wsVenue  = (document.getElementById('ws-venue')  || {}).value || 'Chennai';
+    var NAVY = [2, 49, 106];  // #02316A
+
     return getTemplate().then(function(imgData) {
       var jsPDF = window.jspdf.jsPDF;
       var pdf   = new jsPDF({ orientation: 'landscape', unit: 'pt', format: [PAGE_W, PAGE_H] });
       pdf.addImage(imgData, 'JPEG', 0, 0, PAGE_W, PAGE_H);
+      pdf.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
 
+      // ── 1. Participant name (large, bold, auto-size) ──────
       pdf.setFont('helvetica', 'bold');
       var fontSize = 44;
       pdf.setFontSize(fontSize);
@@ -230,9 +237,37 @@
         pdf.setFontSize(fontSize);
         tw = pdf.getTextWidth(name);
       }
-
-      pdf.setTextColor(2, 49, 106);
       pdf.text(name, PAGE_W / 2, NAME_Y, { align: 'center' });
+
+      // ── 2. Workshop description line 1 ───────────────────
+      // "Who has participated in one day Seminar on '<title>'"
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(16);
+      var line1 = 'Who has participated in one day Seminar on “' + wsTitle + '”';
+      pdf.text(line1, PAGE_W / 2, 324, { align: 'center' });
+
+      // ── 3. Hosted-by + date line (mixed bold/normal) ─────
+      // "hosted by the [BOLD: Ansha Teacher Training Institute] on <date>"
+      var p1 = 'hosted by the ';
+      var p2 = 'Ansha Teacher Training Institute';
+      var p3 = ' on ' + wsDate;
+      pdf.setFont('helvetica', 'normal');  pdf.setFontSize(16);
+      var w1 = pdf.getTextWidth(p1);
+      pdf.setFont('helvetica', 'bold');    pdf.setFontSize(16);
+      var w2 = pdf.getTextWidth(p2);
+      pdf.setFont('helvetica', 'normal');  pdf.setFontSize(16);
+      var w3 = pdf.getTextWidth(p3);
+      var lineX = (PAGE_W - (w1 + w2 + w3)) / 2;
+      pdf.text(p1, lineX,        350);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text(p2, lineX + w1,   350);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(p3, lineX + w1 + w2, 350);
+
+      // ── 4. Venue line ─────────────────────────────────────
+      pdf.setFontSize(16);
+      pdf.text('at ' + wsVenue, PAGE_W / 2, 377, { align: 'center' });
+
       return pdf.output('blob');
     });
   }
@@ -275,7 +310,7 @@
           '<div class="part-meta">' + esc(meta) + '</div>' +
         '</div>' +
         '<button class="btn-cert" id="btn-' + i + '" onclick="generateOne(' + i + ')">🎓 Generate</button>' +
-        (p.whatsapp ? '<button class="btn-wa-cert" onclick="shareWACert(' + i + ')">💬 WhatsApp</button>' : '') +
+        '<button class="btn-wa-cert" onclick="generateAndSend(' + i + ')" title="Generate & send to WhatsApp">📲 Send</button>' +
       '</div>';
     }).join('');
   }
@@ -328,6 +363,53 @@
       btn.innerHTML = '🎓 Generate';
       btn.disabled  = false;
     });
+  }
+
+  // ── Generate + send directly to WhatsApp ─────────────────
+  function generateAndSend(idx) {
+    var p   = participants[idx];
+    var btn = document.getElementById('btn-' + idx);
+    btn.innerHTML = '⏳ Generating...';
+    btn.disabled  = true;
+
+    buildCertificate(p.name).then(function(blob) {
+      btn.innerHTML = '✅ Done';
+      btn.classList.add('done');
+
+      var safe = p.name.replace(/[^a-zA-Z0-9 ]/g,'').trim();
+      var file = new File([blob], 'Certificate_' + safe + '.pdf', { type: 'application/pdf' });
+      var msg  = 'Dear ' + p.name + ',\n\nThank you for attending our workshop! 🎓\n\n' +
+                 'Your *Certificate of Participation* from *Ansha Montessori Teacher Training Institute* is attached.\n\n' +
+                 'Keep learning and growing! 🌱\n\n- Ansha Montessori Team';
+      var wa   = (p.whatsapp || '').replace(/\D/g,'');
+
+      // Try native share (works on Android/iOS mobile)
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: 'Certificate — ' + p.name, text: msg })
+          .catch(function(e) {
+            // User cancelled or not supported — fallback
+            downloadAndOpenWhatsApp(blob, p.name, wa, msg);
+          });
+      } else {
+        // Desktop: download PDF then open WhatsApp with message
+        downloadAndOpenWhatsApp(blob, p.name, wa, msg);
+      }
+    }).catch(function(err) {
+      alert('Failed: ' + err.message);
+      btn.innerHTML = '🎓 Generate';
+      btn.disabled  = false;
+    });
+  }
+
+  function downloadAndOpenWhatsApp(blob, name, wa, msg) {
+    // Step 1: download the PDF
+    downloadCert(blob, name);
+    // Step 2: open WhatsApp (with small delay so download starts first)
+    if (wa) {
+      setTimeout(function() {
+        window.open('https://wa.me/' + wa + '?text=' + encodeURIComponent(msg), '_blank');
+      }, 800);
+    }
   }
 
   function closeModal() {
