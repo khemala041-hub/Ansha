@@ -5,74 +5,103 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>Workshop Certificates — Admin</title>
-  <link rel="stylesheet" href="../assets/css/main.css?v=20260426">
-  <link rel="stylesheet" href="../assets/css/components.css?v=20260426">
+  <link rel="stylesheet" href="../assets/css/main.css?v=20260427">
+  <link rel="stylesheet" href="../assets/css/components.css?v=20260427">
   <style>
-    .cert-hero { background: linear-gradient(135deg,#1e3a5f,#2563eb); color:#fff; border-radius:16px; padding:24px 28px; margin-bottom:24px; display:flex; align-items:center; gap:20px; }
+    /* ── Hero ── */
+    .cert-hero { background:linear-gradient(135deg,#1e3a5f,#2563eb); color:#fff; border-radius:16px; padding:24px 28px; margin-bottom:24px; display:flex; align-items:center; gap:20px; }
     .cert-hero-icon { font-size:3rem; }
     .cert-hero h2 { font-size:1.4rem; font-weight:800; margin-bottom:4px; }
-    .cert-hero p { color:rgba(255,255,255,0.75); font-size:0.875rem; }
+    .cert-hero p  { color:rgba(255,255,255,0.75); font-size:0.875rem; }
 
-    /* Workshop settings */
-    .settings-card { background:#fff; border-radius:14px; padding:22px 24px; box-shadow:var(--shadow); margin-bottom:24px; }
-    .settings-card h3 { font-size:0.9rem; font-weight:700; color:var(--gray-700); margin-bottom:16px; border-bottom:1px solid var(--gray-100); padding-bottom:10px; }
+    /* ── Settings cards ── */
+    .settings-card { background:#fff; border-radius:14px; padding:22px 24px; box-shadow:var(--shadow); margin-bottom:20px; }
+    .settings-card h3 { font-size:0.9rem; font-weight:700; color:var(--gray-700); margin-bottom:14px; border-bottom:1px solid var(--gray-100); padding-bottom:10px; display:flex; align-items:center; gap:8px; }
     .settings-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
     .s-field label { font-size:0.75rem; font-weight:700; color:var(--gray-600); display:block; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.05em; }
-    .s-field input { width:100%; padding:9px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:0.875rem; box-sizing:border-box; }
-    .s-field input:focus { outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(13,148,136,0.12); }
+    .s-field input, .s-field select { width:100%; padding:9px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:0.875rem; box-sizing:border-box; }
+    .s-field input:focus, .s-field select:focus { outline:none; border-color:#2563eb; box-shadow:0 0 0 3px rgba(37,99,235,0.12); }
 
-    /* Participant list */
+    /* ── WhatsApp API card ── */
+    .wa-card { border-left:4px solid #25D366; }
+    .wa-card .wa-info { font-size:0.82rem; color:var(--gray-500); margin-bottom:14px; line-height:1.5; }
+    .wa-card .wa-info a { color:#2563eb; }
+    .badge-new { background:#dcfce7; color:#166534; font-size:0.68rem; font-weight:700; padding:2px 8px; border-radius:99px; text-transform:uppercase; }
+    .wa-actions { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; align-items:center; }
+    .btn-save-wa { background:#25D366; color:#fff; border:none; padding:9px 18px; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer; }
+    .btn-test-wa { background:var(--gray-100); color:var(--gray-700); border:none; padding:9px 16px; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer; }
+    .wa-status { font-size:0.82rem; font-weight:600; }
+    .wa-status.ok  { color:#16a34a; }
+    .wa-status.err { color:#dc2626; }
+
+    /* ── Bulk progress ── */
+    .bulk-status { background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:14px 18px; margin-bottom:16px; display:none; }
+    .bulk-status.show { display:block; }
+    .bulk-status p { font-size:0.85rem; color:#166534; font-weight:600; margin-bottom:6px; }
+    .progress-bar-wrap { background:var(--gray-100); border-radius:8px; height:10px; overflow:hidden; }
+    .progress-bar-fill { background:linear-gradient(90deg,#25D366,#1e3a5f); height:100%; border-radius:8px; transition:width 0.3s; }
+
+    /* ── Participant card ── */
     .part-card { background:#fff; border-radius:14px; box-shadow:var(--shadow); overflow:hidden; }
-    .part-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--gray-100); gap:12px; flex-wrap:wrap; }
+    .part-header { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--gray-100); gap:10px; flex-wrap:wrap; }
     .part-header h3 { font-size:0.95rem; font-weight:700; color:var(--gray-800); }
-    .btn-generate-all { background:linear-gradient(135deg,#1e3a5f,#2563eb); color:#fff; border:none; padding:10px 20px; border-radius:10px; font-size:0.85rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; }
-    .btn-generate-all:hover { opacity:0.9; }
-    .btn-generate-all:disabled { opacity:0.5; cursor:not-allowed; }
+    .part-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .btn-gen-selected { background:linear-gradient(135deg,#1e3a5f,#2563eb); color:#fff; border:none; padding:9px 16px; border-radius:10px; font-size:0.82rem; font-weight:700; cursor:pointer; white-space:nowrap; }
+    .btn-gen-selected:disabled { opacity:0.4; cursor:not-allowed; }
+    .btn-send-all { background:linear-gradient(135deg,#16a34a,#25D366); color:#fff; border:none; padding:9px 16px; border-radius:10px; font-size:0.82rem; font-weight:700; cursor:pointer; white-space:nowrap; }
+    .btn-send-all:disabled { opacity:0.4; cursor:not-allowed; }
 
-    /* Manual add */
-    .manual-row { display:flex; gap:10px; padding:14px 20px; background:var(--gray-50); border-bottom:1px solid var(--gray-200); flex-wrap:wrap; align-items:flex-end; }
-    .manual-row input { flex:1; min-width:180px; padding:9px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:0.875rem; }
-    .btn-add-manual { background:var(--primary); color:#fff; border:none; padding:9px 16px; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer; white-space:nowrap; }
+    /* ── Upload row ── */
+    .upload-row { display:flex; gap:10px; padding:12px 20px; background:#f8faff; border-bottom:1px solid var(--gray-200); flex-wrap:wrap; align-items:center; }
+    .btn-upload { background:#eff6ff; color:#1d4ed8; border:1.5px dashed #93c5fd; padding:8px 16px; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer; white-space:nowrap; }
+    .btn-upload:hover { background:#dbeafe; }
+    .btn-sample { background:none; color:var(--gray-500); border:none; font-size:0.78rem; cursor:pointer; text-decoration:underline; }
+    .upload-hint { font-size:0.75rem; color:var(--gray-400); }
 
-    /* Participant rows */
-    .part-row { display:flex; align-items:center; padding:14px 20px; border-bottom:1px solid var(--gray-100); gap:14px; flex-wrap:wrap; }
+    /* ── Manual row ── */
+    .manual-row { display:flex; gap:10px; padding:12px 20px; background:var(--gray-50); border-bottom:1px solid var(--gray-200); flex-wrap:wrap; align-items:flex-end; }
+    .manual-row input { flex:1; min-width:160px; padding:9px 12px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:0.875rem; }
+    .manual-row input:focus { outline:none; border-color:#2563eb; }
+    .manual-row .btn-add { background:var(--primary); color:#fff; border:none; padding:9px 16px; border-radius:8px; font-size:0.82rem; font-weight:700; cursor:pointer; white-space:nowrap; }
+
+    /* ── Participant rows ── */
+    .part-row { display:flex; align-items:center; padding:12px 20px; border-bottom:1px solid var(--gray-100); gap:12px; flex-wrap:wrap; }
     .part-row:last-child { border-bottom:none; }
     .part-row:hover { background:var(--gray-50); }
     .part-check { width:18px; height:18px; cursor:pointer; flex-shrink:0; }
     .part-avatar { width:40px; height:40px; background:linear-gradient(135deg,#1e3a5f,#2563eb); border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.9rem; font-weight:800; flex-shrink:0; }
-    .part-info { flex:1; min-width:120px; }
-    .part-name { font-size:0.9rem; font-weight:700; color:var(--gray-800); }
+    .part-info { flex:1; min-width:100px; }
+    .part-name { font-size:0.88rem; font-weight:700; color:var(--gray-800); }
     .part-meta { font-size:0.72rem; color:var(--gray-400); margin-top:2px; }
-    .btn-cert { background:#1e3a5f; color:#fff; border:none; padding:7px 14px; border-radius:8px; font-size:0.78rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px; white-space:nowrap; }
+    .part-btns { display:flex; gap:6px; flex-wrap:wrap; }
+    .btn-cert { background:#1e3a5f; color:#fff; border:none; padding:6px 12px; border-radius:7px; font-size:0.75rem; font-weight:700; cursor:pointer; white-space:nowrap; }
     .btn-cert:hover { background:#2563eb; }
     .btn-cert.done { background:#10b981; }
-    .btn-wa-cert { background:#25D366; color:#fff; border:none; padding:7px 12px; border-radius:8px; font-size:0.78rem; font-weight:700; cursor:pointer; white-space:nowrap; }
+    .btn-send { background:#25D366; color:#fff; border:none; padding:6px 12px; border-radius:7px; font-size:0.75rem; font-weight:700; cursor:pointer; white-space:nowrap; }
+    .btn-send:hover { background:#16a34a; }
+    .btn-send.sent { background:#10b981; }
+    .btn-send.failed { background:#ef4444; }
+    .sent-badge { font-size:0.7rem; font-weight:700; padding:3px 8px; border-radius:99px; }
+    .sent-badge.ok  { background:#dcfce7; color:#166534; }
+    .sent-badge.err { background:#fee2e2; color:#dc2626; }
 
-    /* Progress */
-    .progress-bar-wrap { background:var(--gray-100); border-radius:8px; height:8px; overflow:hidden; margin-top:6px; }
-    .progress-bar-fill { background:linear-gradient(90deg,#1e3a5f,#2563eb); height:100%; border-radius:8px; transition:width 0.4s; }
-
-    /* Preview modal */
-    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center; }
-    .modal-overlay.show { display:flex; }
-    .modal-box { background:#fff; border-radius:16px; padding:24px; max-width:700px; width:95%; }
-    .modal-box h3 { font-size:1rem; font-weight:700; margin-bottom:14px; }
-    .modal-box iframe { width:100%; height:380px; border:1px solid var(--gray-200); border-radius:8px; }
-    .modal-actions { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
-    .btn-download { background:var(--primary); color:#fff; border:none; padding:10px 20px; border-radius:8px; font-size:0.875rem; font-weight:700; cursor:pointer; }
-    .btn-close-modal { background:var(--gray-200); color:var(--gray-700); border:none; padding:10px 20px; border-radius:8px; font-size:0.875rem; font-weight:700; cursor:pointer; }
-
-    /* Empty */
+    /* ── Empty ── */
     .empty-cert { text-align:center; padding:48px 20px; color:var(--gray-400); }
     .empty-cert .icon { font-size:3rem; margin-bottom:12px; }
 
-    /* Bulk progress */
-    .bulk-status { background:#f0fdf4; border:1px solid #86efac; border-radius:10px; padding:14px 18px; margin-bottom:16px; display:none; }
-    .bulk-status.show { display:block; }
-    .bulk-status p { font-size:0.85rem; color:#166534; font-weight:600; }
+    /* ── Preview modal ── */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:1000; align-items:center; justify-content:center; }
+    .modal-overlay.show { display:flex; }
+    .modal-box { background:#fff; border-radius:16px; padding:24px; max-width:720px; width:95%; }
+    .modal-box h3 { font-size:1rem; font-weight:700; margin-bottom:14px; }
+    .modal-box iframe { width:100%; height:400px; border:1px solid var(--gray-200); border-radius:8px; }
+    .modal-actions { display:flex; gap:10px; margin-top:14px; flex-wrap:wrap; }
+    .btn-dl  { background:var(--primary); color:#fff; border:none; padding:10px 20px; border-radius:8px; font-size:0.875rem; font-weight:700; cursor:pointer; }
+    .btn-cls { background:var(--gray-200); color:var(--gray-700); border:none; padding:10px 20px; border-radius:8px; font-size:0.875rem; font-weight:700; cursor:pointer; }
 
     @media(max-width:600px){
       .settings-grid { grid-template-columns:1fr; }
+      .part-actions { width:100%; }
     }
   </style>
 </head>
@@ -88,11 +117,11 @@
         <div class="cert-hero-icon">🎓</div>
         <div>
           <h2>Workshop Certificate Generator</h2>
-          <p>Auto-generate personalized participation certificates for all workshop attendees</p>
+          <p>Bulk upload participants • Auto-generate certificates • Send directly to WhatsApp</p>
         </div>
       </div>
 
-      <!-- Workshop Settings -->
+      <!-- Certificate Settings -->
       <div class="settings-card">
         <h3>⚙️ Certificate Settings</h3>
         <div class="settings-grid">
@@ -102,7 +131,7 @@
           </div>
           <div class="s-field">
             <label>Workshop Date</label>
-            <input type="text" id="ws-date" value="Saturday, April 26, 2026" placeholder="e.g. Saturday, April 26, 2026">
+            <input type="text" id="ws-date" value="Sunday, April 26, 2026" placeholder="e.g. Sunday, April 26, 2026">
           </div>
           <div class="s-field">
             <label>Venue / City</label>
@@ -111,38 +140,71 @@
         </div>
       </div>
 
+      <!-- WhatsApp API Settings -->
+      <div class="settings-card wa-card">
+        <h3>💬 WhatsApp Auto-Send <span class="badge-new">New</span></h3>
+        <p class="wa-info">
+          Connect <strong>UltraMsg</strong> to send certificates automatically to each participant's WhatsApp number.<br>
+          Free setup: <a href="https://ultramsg.com" target="_blank">ultramsg.com</a> → Create instance → Scan QR with your WhatsApp → Copy Instance ID &amp; Token below.
+        </p>
+        <div class="settings-grid">
+          <div class="s-field">
+            <label>UltraMsg Instance ID</label>
+            <input type="text" id="wa-instance" placeholder="e.g. instance12345">
+          </div>
+          <div class="s-field">
+            <label>UltraMsg API Token</label>
+            <input type="password" id="wa-token" placeholder="••••••••••••">
+          </div>
+        </div>
+        <div class="wa-actions">
+          <button class="btn-save-wa" onclick="saveWASettings()">💾 Save Settings</button>
+          <button class="btn-test-wa" onclick="testWAConnection()">🔌 Test Connection</button>
+          <span class="wa-status" id="wa-status"></span>
+        </div>
+      </div>
+
       <!-- Bulk progress -->
       <div class="bulk-status" id="bulk-status">
-        <p id="bulk-msg">Generating certificates...</p>
-        <div class="progress-bar-wrap" style="margin-top:8px;">
+        <p id="bulk-msg">Processing...</p>
+        <div class="progress-bar-wrap">
           <div class="progress-bar-fill" id="bulk-progress" style="width:0%"></div>
         </div>
       </div>
 
-      <!-- Participant List -->
+      <!-- Participant list -->
       <div class="part-card">
         <div class="part-header">
           <h3>👥 Participants <span id="part-count" style="color:var(--gray-400);font-weight:400;font-size:0.85rem;"></span></h3>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <label style="font-size:0.8rem;color:var(--gray-500);display:flex;align-items:center;gap:6px;cursor:pointer;">
-              <input type="checkbox" id="check-all" onchange="toggleAll(this)"> Select All
+          <div class="part-actions">
+            <label style="font-size:0.8rem;color:var(--gray-500);display:flex;align-items:center;gap:5px;cursor:pointer;">
+              <input type="checkbox" id="check-all" onchange="toggleAll(this)"> All
             </label>
-            <button class="btn-generate-all" id="btn-gen-all" onclick="generateSelected()" disabled>
-              🎓 Generate Selected
-            </button>
+            <button class="btn-gen-selected" id="btn-gen-all" onclick="generateSelected()" disabled>🎓 Generate Selected</button>
+            <button class="btn-send-all" id="btn-send-all" onclick="generateAndSendAll()" disabled>📲 Generate &amp; Send All</button>
           </div>
+        </div>
+
+        <!-- CSV / Excel upload -->
+        <div class="upload-row">
+          <input type="file" id="csv-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFileUpload(event)">
+          <button class="btn-upload" onclick="document.getElementById('csv-input').click()">📁 Upload CSV / Excel</button>
+          <button class="btn-sample" onclick="downloadSampleCSV()">⬇ Download Sample CSV</button>
+          <span class="upload-hint">Columns: name, whatsapp, city &nbsp;|&nbsp; Supports .csv and .xlsx</span>
         </div>
 
         <!-- Manual name entry -->
         <div class="manual-row">
-          <input type="text" id="manual-name" placeholder="Add name manually (e.g. Priya Sharma)" maxlength="60">
-          <button class="btn-add-manual" onclick="addManualName()">+ Add</button>
+          <input type="text" id="manual-name"   placeholder="Name (e.g. Priya Sharma)"  maxlength="60">
+          <input type="text" id="manual-phone"  placeholder="WhatsApp (+91...)"          maxlength="20" style="max-width:180px;">
+          <input type="text" id="manual-city"   placeholder="City"                       maxlength="30" style="max-width:120px;">
+          <button class="btn-add" onclick="addManualName()">+ Add</button>
         </div>
 
         <div id="part-list">
           <div class="empty-cert">
             <div class="icon">📋</div>
-            <p>Type a name above and click <strong>+ Add</strong> to generate a certificate.</p>
+            <p>Upload a CSV or add names manually above to get started.</p>
           </div>
         </div>
       </div>
@@ -157,342 +219,553 @@
     <h3 id="modal-name">Certificate Preview</h3>
     <iframe id="preview-frame" src=""></iframe>
     <div class="modal-actions">
-      <button class="btn-download" id="btn-download-cert">⬇️ Download PDF</button>
-      <button class="btn-close-modal" onclick="closeModal()">Close</button>
+      <button class="btn-dl"  id="btn-dl">⬇️ Download</button>
+      <button class="btn-send" id="btn-modal-send" style="background:#25D366;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-size:0.875rem;font-weight:700;cursor:pointer;">📲 Send WhatsApp</button>
+      <button class="btn-cls" onclick="closeModal()">Close</button>
     </div>
   </div>
 </div>
 
-<!-- jsPDF only — no other external dependencies needed for certificate generation -->
+<!-- SheetJS for Excel parsing -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<!-- jsPDF for certificate generation -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="../assets/js/data.js?v=3"></script>
-<script src="../assets/js/supabase.js?v=3"></script>
-<script src="../assets/js/auth.js?v=3"></script>
-<script src="../assets/js/utils.js?v=3"></script>
+<script src="../assets/js/data.js?v=4"></script>
+<script src="../assets/js/supabase.js?v=4"></script>
+<script src="../assets/js/auth.js?v=4"></script>
+<script src="../assets/js/utils.js?v=4"></script>
 <script>
-  // ── Auth (wrapped — never crash the page) ────────────────
-  var session = null;
+// ── Auth ─────────────────────────────────────────────────────
+var session = null;
+try {
+  session = getSession();
+  if (!session || !['admin','teacher'].includes(session.role)) window.location.href = '../index.html';
+} catch(e) {}
+try {
+  if (session) {
+    document.getElementById('sidebar').innerHTML = buildSidebar('workshop-certificates', session);
+    document.getElementById('top-bar').innerHTML = buildTopBar(session);
+  }
+} catch(e) {}
+
+// ── Constants ─────────────────────────────────────────────────
+var PAGE_W       = 842.2;
+var PAGE_H       = 595.5;
+var NAME_Y       = 276.5;
+var TEMPLATE_IMG = '../assets/certificates/workshop-template.jpg';
+var NAVY         = [2, 49, 106];  // #02316A
+
+var participants  = [];
+var templateCache = null;
+
+// ── WhatsApp settings (localStorage) ─────────────────────────
+function loadWASettings() {
+  document.getElementById('wa-instance').value = localStorage.getItem('wa_instance') || '';
+  document.getElementById('wa-token').value    = localStorage.getItem('wa_token')    || '';
+}
+function saveWASettings() {
+  localStorage.setItem('wa_instance', document.getElementById('wa-instance').value.trim());
+  localStorage.setItem('wa_token',    document.getElementById('wa-token').value.trim());
+  showWAStatus('✅ Saved! Click Test Connection to verify.', 'ok');
+}
+function showWAStatus(msg, cls) {
+  var el = document.getElementById('wa-status');
+  el.textContent = msg;
+  el.className = 'wa-status ' + (cls || '');
+}
+async function testWAConnection() {
+  var inst  = localStorage.getItem('wa_instance') || '';
+  var token = localStorage.getItem('wa_token') || '';
+  if (!inst || !token) { showWAStatus('⚠️ Save settings first', 'err'); return; }
+  showWAStatus('Testing…', '');
   try {
-    session = getSession();
-    if (!session || !['admin','teacher'].includes(session.role)) {
-      window.location.href = '../index.html';
+    var res  = await fetch('https://api.ultramsg.com/' + inst + '/instance/status?token=' + encodeURIComponent(token));
+    var json = await res.json();
+    if (json && json.status && json.status.accountStatus && json.status.accountStatus.status === 'authenticated') {
+      showWAStatus('✅ Connected! WhatsApp is active.', 'ok');
+    } else {
+      showWAStatus('❌ Not connected. Scan QR at ultramsg.com', 'err');
     }
-  } catch(e) { console.warn('Auth error:', e); }
+  } catch(e) {
+    showWAStatus('❌ Error: ' + e.message, 'err');
+  }
+}
 
-  try {
-    if (session) {
-      document.getElementById('sidebar').innerHTML = buildSidebar('workshop-certificates', session);
-      document.getElementById('top-bar').innerHTML = buildTopBar(session);
-    }
-  } catch(e) { console.warn('Sidebar error:', e); }
-
-  // ── Constants ────────────────────────────────────────────
-  const PAGE_W       = 842.2;
-  const PAGE_H       = 595.5;
-  const NAME_Y       = 276.5;   // baseline from top (pts), from PDF analysis
-  const TEMPLATE_IMG = '../assets/certificates/workshop-template.jpg';
-
-  var participants  = [];
-  var templateCache = null;
-
-  // ── Load template image (cached) ─────────────────────────
-  function getTemplate() {
-    if (templateCache) return Promise.resolve(templateCache);
-    return fetch(TEMPLATE_IMG + '?t=' + Date.now())
-      .then(function(r) {
-        if (!r.ok) throw new Error('Template image not found (' + r.status + ')');
-        return r.blob();
-      })
-      .then(function(blob) {
-        return new Promise(function(resolve, reject) {
-          var reader = new FileReader();
-          reader.onload  = function() { templateCache = reader.result; resolve(reader.result); };
-          reader.onerror = reject;
-          reader.readAsDataURL(blob);
-        });
+// ── Template loader ───────────────────────────────────────────
+function getTemplate() {
+  if (templateCache) return Promise.resolve(templateCache);
+  return fetch(TEMPLATE_IMG + '?t=' + Date.now())
+    .then(function(r) {
+      if (!r.ok) throw new Error('Template not found (' + r.status + ')');
+      return r.blob();
+    })
+    .then(function(blob) {
+      return new Promise(function(resolve, reject) {
+        var reader = new FileReader();
+        reader.onload  = function() { templateCache = reader.result; resolve(reader.result); };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
       });
-  }
-
-  // ── Build PDF ────────────────────────────────────────────
-  function buildCertificate(name) {
-    // Read current settings
-    var wsTitle  = (document.getElementById('ws-title')  || {}).value || 'Montessori Materials Exploration';
-    var wsDate   = (document.getElementById('ws-date')   || {}).value || 'Saturday, April 26, 2026';
-    var wsVenue  = (document.getElementById('ws-venue')  || {}).value || 'Chennai';
-    var NAVY = [2, 49, 106];  // #02316A
-
-    return getTemplate().then(function(imgData) {
-      var jsPDF = window.jspdf.jsPDF;
-      var pdf   = new jsPDF({ orientation: 'landscape', unit: 'pt', format: [PAGE_W, PAGE_H] });
-      pdf.addImage(imgData, 'JPEG', 0, 0, PAGE_W, PAGE_H);
-      pdf.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-
-      // ── 1. Participant name (large, bold, auto-size) ──────
-      pdf.setFont('helvetica', 'bold');
-      var fontSize = 44;
-      pdf.setFontSize(fontSize);
-      var tw = pdf.getTextWidth(name);
-      while (tw > 580 && fontSize > 22) {
-        fontSize -= 1;
-        pdf.setFontSize(fontSize);
-        tw = pdf.getTextWidth(name);
-      }
-      pdf.text(name, PAGE_W / 2, NAME_Y, { align: 'center' });
-
-      // ── 2. Workshop description line 1 ───────────────────
-      // "Who has participated in one day Seminar on '<title>'"
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(16);
-      var line1 = 'Who has participated in one day Seminar on “' + wsTitle + '”';
-      pdf.text(line1, PAGE_W / 2, 324, { align: 'center' });
-
-      // ── 3. Hosted-by + date line (mixed bold/normal) ─────
-      // "hosted by the [BOLD: Ansha Teacher Training Institute] on <date>"
-      var p1 = 'hosted by the ';
-      var p2 = 'Ansha Teacher Training Institute';
-      var p3 = ' on ' + wsDate;
-      pdf.setFont('helvetica', 'normal');  pdf.setFontSize(16);
-      var w1 = pdf.getTextWidth(p1);
-      pdf.setFont('helvetica', 'bold');    pdf.setFontSize(16);
-      var w2 = pdf.getTextWidth(p2);
-      pdf.setFont('helvetica', 'normal');  pdf.setFontSize(16);
-      var w3 = pdf.getTextWidth(p3);
-      var lineX = (PAGE_W - (w1 + w2 + w3)) / 2;
-      pdf.text(p1, lineX,        350);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(p2, lineX + w1,   350);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(p3, lineX + w1 + w2, 350);
-
-      // ── 4. Venue line ─────────────────────────────────────
-      pdf.setFontSize(16);
-      pdf.text('at ' + wsVenue, PAGE_W / 2, 377, { align: 'center' });
-
-      return pdf.output('blob');
     });
-  }
+}
 
-  // ── Download ─────────────────────────────────────────────
-  function downloadCert(blob, name) {
-    var safe = name.replace(/[^a-zA-Z0-9 ]/g, '').trim();
-    var url  = URL.createObjectURL(blob);
-    var a    = document.createElement('a');
-    a.href     = url;
-    a.download = 'Certificate_' + safe + '.pdf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
-  }
+// ── Build certificate PDF ─────────────────────────────────────
+function buildCertificate(name) {
+  var wsTitle = (document.getElementById('ws-title') || {}).value || 'Montessori Materials Exploration';
+  var wsDate  = (document.getElementById('ws-date')  || {}).value || 'Sunday, April 26, 2026';
+  var wsVenue = (document.getElementById('ws-venue') || {}).value || 'Chennai';
 
-  // ── Render participant list ───────────────────────────────
-  function renderParticipants() {
-    var list = document.getElementById('part-list');
-    var cnt  = document.getElementById('part-count');
-    if (cnt) cnt.textContent = participants.length ? '(' + participants.length + ')' : '';
+  return getTemplate().then(function(imgData) {
+    var jsPDF = window.jspdf.jsPDF;
+    var pdf   = new jsPDF({ orientation: 'landscape', unit: 'pt', format: [PAGE_W, PAGE_H] });
+    pdf.addImage(imgData, 'JPEG', 0, 0, PAGE_W, PAGE_H);
+    pdf.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
 
-    if (!participants.length) {
-      list.innerHTML = '<div class="empty-cert"><div class="icon">📋</div>' +
-        '<p>Type a name above and click <strong>+ Add</strong> to generate a certificate.</p></div>';
-      return;
-    }
+    // 1. Name
+    pdf.setFont('helvetica', 'bold');
+    var fs = 44;
+    pdf.setFontSize(fs);
+    var tw = pdf.getTextWidth(name);
+    while (tw > 580 && fs > 22) { fs--; pdf.setFontSize(fs); tw = pdf.getTextWidth(name); }
+    pdf.text(name, PAGE_W / 2, NAME_Y, { align: 'center' });
 
-    list.innerHTML = participants.map(function(p, i) {
-      var initials = p.name.split(' ').map(function(w){ return w[0]||''; })
-                           .join('').substring(0,2).toUpperCase();
-      var meta = [p.city, p.workshop_title, p.whatsapp ? '📱 ' + p.whatsapp : '']
-                   .filter(Boolean).join(' · ');
-      return '<div class="part-row" id="row-' + i + '">' +
-        '<input type="checkbox" class="part-check" id="chk-' + i + '" onchange="updateGenBtn()">' +
-        '<div class="part-avatar">' + initials + '</div>' +
-        '<div class="part-info">' +
-          '<div class="part-name">' + esc(p.name) + '</div>' +
-          '<div class="part-meta">' + esc(meta) + '</div>' +
-        '</div>' +
-        '<button class="btn-cert" id="btn-' + i + '" onclick="generateOne(' + i + ')">🎓 Generate</button>' +
-        '<button class="btn-wa-cert" onclick="generateAndSend(' + i + ')" title="Generate & send to WhatsApp">📲 Send</button>' +
-      '</div>';
-    }).join('');
-  }
+    // 2. Line 1 — description
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(16);
+    pdf.text('Who has participated in one day Seminar on "' + wsTitle + '"', PAGE_W / 2, 324, { align: 'center' });
 
-  // ── Add name manually ────────────────────────────────────
-  function addManualName() {
-    var inp  = document.getElementById('manual-name');
-    var name = inp.value.trim();
-    if (!name) return;
-    participants.unshift({
-      name: name, whatsapp: '', city: '',
-      workshop_title: (document.getElementById('ws-title') || {}).value || '',
-      source: 'manual'
-    });
-    inp.value = '';
-    renderParticipants();
-  }
+    // 3. Line 2 — hosted by (mixed bold/normal)
+    var p1 = 'hosted by the ', p2 = 'Ansha Teacher Training Institute', p3 = ' on ' + wsDate;
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(16); var w1 = pdf.getTextWidth(p1);
+    pdf.setFont('helvetica', 'bold');   pdf.setFontSize(16); var w2 = pdf.getTextWidth(p2);
+    pdf.setFont('helvetica', 'normal'); pdf.setFontSize(16); var w3 = pdf.getTextWidth(p3);
+    var lx = (PAGE_W - (w1 + w2 + w3)) / 2;
+    pdf.text(p1, lx,         350);
+    pdf.setFont('helvetica', 'bold');   pdf.text(p2, lx + w1,       350);
+    pdf.setFont('helvetica', 'normal'); pdf.text(p3, lx + w1 + w2,  350);
 
-  document.getElementById('manual-name').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') addManualName();
+    // 4. Line 3 — venue
+    pdf.setFontSize(16);
+    pdf.text('at ' + wsVenue, PAGE_W / 2, 377, { align: 'center' });
+
+    return pdf.output('blob');
+  });
+}
+
+// ── Blob → base64 helper ─────────────────────────────────────
+function blobToBase64(blob) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload  = function() { resolve(reader.result.split(',')[1]); };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+// ── Download PDF ──────────────────────────────────────────────
+function downloadCert(blob, name) {
+  var safe = name.replace(/[^a-zA-Z0-9 ]/g,'').trim();
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = 'Certificate_' + safe + '.pdf';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function() { URL.revokeObjectURL(url); }, 5000);
+}
+
+// ── Send via UltraMsg API ─────────────────────────────────────
+async function sendViaUltraMsg(blob, name, phone) {
+  var inst  = localStorage.getItem('wa_instance') || '';
+  var token = localStorage.getItem('wa_token')    || '';
+  if (!inst || !token) return false;
+
+  var wa  = phone.replace(/\D/g,'');
+  if (!wa) return false;
+  // Ensure country code (add 91 if 10 digits)
+  if (wa.length === 10) wa = '91' + wa;
+
+  var b64  = await blobToBase64(blob);
+  var safe = name.replace(/[^a-zA-Z0-9 ]/g,'').trim();
+  var cap  = 'Dear ' + name + ', 🎓\n\nYour *Certificate of Participation* from *Ansha Montessori Teacher Training Institute* is attached!\n\nThank you for attending our workshop. Keep growing! 🌱\n\n— Ansha Montessori Team';
+
+  var body = new URLSearchParams({
+    token:    token,
+    to:       wa,
+    document: 'data:application/pdf;base64,' + b64,
+    filename: 'Certificate_' + safe + '.pdf',
+    caption:  cap
   });
 
-  function toggleAll(cb) {
-    document.querySelectorAll('.part-check').forEach(function(c){ c.checked = cb.checked; });
-    updateGenBtn();
-  }
-
-  function updateGenBtn() {
-    var any = Array.from(document.querySelectorAll('.part-check')).some(function(c){ return c.checked; });
-    document.getElementById('btn-gen-all').disabled = !any;
-  }
-
-  // ── Generate one ─────────────────────────────────────────
-  function generateOne(idx) {
-    var p   = participants[idx];
-    var btn = document.getElementById('btn-' + idx);
-    btn.innerHTML = '⏳ Generating...';
-    btn.disabled  = true;
-
-    buildCertificate(p.name).then(function(blob) {
-      var url = URL.createObjectURL(blob);
-      document.getElementById('preview-frame').src = url;
-      document.getElementById('modal-name').textContent = '🎓 Certificate — ' + p.name;
-      document.getElementById('preview-modal').classList.add('show');
-      document.getElementById('btn-download-cert').onclick = function(){ downloadCert(blob, p.name); };
-      btn.innerHTML = '✅ Done';
-      btn.classList.add('done');
-    }).catch(function(err) {
-      alert('Failed: ' + err.message);
-      btn.innerHTML = '🎓 Generate';
-      btn.disabled  = false;
-    });
-  }
-
-  // ── Generate + send directly to WhatsApp ─────────────────
-  function generateAndSend(idx) {
-    var p   = participants[idx];
-    var btn = document.getElementById('btn-' + idx);
-    btn.innerHTML = '⏳ Generating...';
-    btn.disabled  = true;
-
-    buildCertificate(p.name).then(function(blob) {
-      btn.innerHTML = '✅ Done';
-      btn.classList.add('done');
-
-      var safe = p.name.replace(/[^a-zA-Z0-9 ]/g,'').trim();
-      var file = new File([blob], 'Certificate_' + safe + '.pdf', { type: 'application/pdf' });
-      var msg  = 'Dear ' + p.name + ',\n\nThank you for attending our workshop! 🎓\n\n' +
-                 'Your *Certificate of Participation* from *Ansha Montessori Teacher Training Institute* is attached.\n\n' +
-                 'Keep learning and growing! 🌱\n\n- Ansha Montessori Team';
-      var wa   = (p.whatsapp || '').replace(/\D/g,'');
-
-      // Try native share (works on Android/iOS mobile)
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: 'Certificate — ' + p.name, text: msg })
-          .catch(function(e) {
-            // User cancelled or not supported — fallback
-            downloadAndOpenWhatsApp(blob, p.name, wa, msg);
-          });
-      } else {
-        // Desktop: download PDF then open WhatsApp with message
-        downloadAndOpenWhatsApp(blob, p.name, wa, msg);
-      }
-    }).catch(function(err) {
-      alert('Failed: ' + err.message);
-      btn.innerHTML = '🎓 Generate';
-      btn.disabled  = false;
-    });
-  }
-
-  function downloadAndOpenWhatsApp(blob, name, wa, msg) {
-    // Step 1: download the PDF
-    downloadCert(blob, name);
-    // Step 2: open WhatsApp (with small delay so download starts first)
-    if (wa) {
-      setTimeout(function() {
-        window.open('https://wa.me/' + wa + '?text=' + encodeURIComponent(msg), '_blank');
-      }, 800);
-    }
-  }
-
-  function closeModal() {
-    document.getElementById('preview-modal').classList.remove('show');
-    document.getElementById('preview-frame').src = '';
-  }
-
-  // ── Bulk generate ─────────────────────────────────────────
-  function generateSelected() {
-    var selected = Array.from(document.querySelectorAll('.part-check'))
-      .map(function(c, i){ return c.checked ? i : -1; }).filter(function(i){ return i >= 0; });
-    if (!selected.length) return;
-
-    var statusEl = document.getElementById('bulk-status');
-    var msgEl    = document.getElementById('bulk-msg');
-    var progEl   = document.getElementById('bulk-progress');
-    statusEl.classList.add('show');
-    document.getElementById('btn-gen-all').disabled = true;
-
-    var n = 0;
-    function next() {
-      if (n >= selected.length) {
-        progEl.style.width = '100%';
-        msgEl.textContent  = 'Done! ' + selected.length + ' certificate(s) downloaded.';
-        document.getElementById('btn-gen-all').disabled = false;
-        return;
-      }
-      var i = selected[n];
-      var p = participants[i];
-      msgEl.textContent  = 'Generating ' + (n+1) + '/' + selected.length + ': ' + p.name + '...';
-      progEl.style.width = ((n / selected.length) * 100) + '%';
-      buildCertificate(p.name).then(function(blob) {
-        downloadCert(blob, p.name);
-        var btn = document.getElementById('btn-' + i);
-        if (btn) { btn.innerHTML = '✅ Done'; btn.classList.add('done'); }
-        n++;
-        setTimeout(next, 800);
-      }).catch(function(err) {
-        console.error('Failed for ' + p.name + ':', err);
-        n++;
-        setTimeout(next, 200);
-      });
-    }
-    next();
-  }
-
-  // ── WhatsApp ──────────────────────────────────────────────
-  function shareWACert(idx) {
-    var p   = participants[idx];
-    var msg = 'Dear ' + p.name + ',\n\nThank you for attending our workshop!\n' +
-              'Your *Certificate of Participation* from Ansha Montessori Teacher Training Institute is ready.\n\n' +
-              'Please contact us to receive your certificate.\n\n- Ansha Montessori Team';
-    var wa  = (p.whatsapp || '').replace(/\D/g, '');
-    window.open('https://wa.me/' + wa + '?text=' + encodeURIComponent(msg), '_blank');
-  }
-
-  function esc(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  }
-
-  // ── Init: render immediately, then try Supabase ───────────
-  renderParticipants();
-  getTemplate().catch(function(){});  // pre-warm template cache
-
-  // Try loading from Supabase silently (5s timeout)
   try {
-    var sbTimeout = setTimeout(function(){}, 5000);
-    var sbClient = (typeof _sb !== 'undefined') ? _sb : null;
-    if (sbClient) {
-      Promise.race([
-        sbClient.from('workshop_feedback')
-          .select('id,name,whatsapp,city,workshop_title,submitted_at')
-          .order('submitted_at', { ascending: false }),
-        new Promise(function(_, rej){ setTimeout(function(){ rej('timeout'); }, 5000); })
-      ]).then(function(result) {
-        var data = result && result.data;
-        if (data && data.length) {
-          participants = data.map(function(r){ return Object.assign({}, r, { source: 'db' }); });
-          renderParticipants();
+    var res  = await fetch('https://api.ultramsg.com/' + inst + '/messages/document', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString()
+    });
+    var json = await res.json();
+    return json.sent === 'true' || json.id != null;
+  } catch(e) {
+    console.error('UltraMsg error:', e);
+    return false;
+  }
+}
+
+// ── Send certificate to WhatsApp (with fallback) ──────────────
+async function sendToWhatsApp(blob, name, phone) {
+  var wa  = (phone || '').replace(/\D/g,'');
+  var msg = 'Dear ' + name + ',\n\nYour 🎓 *Certificate of Participation* from *Ansha Montessori Teacher Training Institute* is ready!\n\nThank you for attending our workshop.\n\n— Ansha Montessori Team';
+
+  // Try UltraMsg first (fully automated)
+  var inst  = localStorage.getItem('wa_instance') || '';
+  var token = localStorage.getItem('wa_token')    || '';
+  if (inst && token && wa) {
+    var ok = await sendViaUltraMsg(blob, name, wa);
+    if (ok) return { method: 'ultramsg', ok: true };
+  }
+
+  // Try native Web Share (mobile — can attach file directly)
+  var safe = name.replace(/[^a-zA-Z0-9 ]/g,'').trim();
+  var file = new File([blob], 'Certificate_' + safe + '.pdf', { type: 'application/pdf' });
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: 'Certificate — ' + name, text: msg });
+      return { method: 'share', ok: true };
+    } catch(e) { /* cancelled */ }
+  }
+
+  // Desktop fallback: download + open WhatsApp chat
+  downloadCert(blob, name);
+  if (wa) {
+    setTimeout(function() {
+      window.open('https://wa.me/' + (wa.length === 10 ? '91' + wa : wa) + '?text=' + encodeURIComponent(msg), '_blank');
+    }, 600);
+  }
+  return { method: 'manual', ok: true };
+}
+
+// ── Render participant list ───────────────────────────────────
+function renderParticipants() {
+  var list = document.getElementById('part-list');
+  var cnt  = document.getElementById('part-count');
+  if (cnt) cnt.textContent = participants.length ? '(' + participants.length + ')' : '';
+  var anyBtn  = document.getElementById('btn-gen-all');
+  var sendBtn = document.getElementById('btn-send-all');
+
+  if (!participants.length) {
+    list.innerHTML = '<div class="empty-cert"><div class="icon">📋</div><p>Upload a CSV or add names manually to get started.</p></div>';
+    if (anyBtn) anyBtn.disabled = true;
+    if (sendBtn) sendBtn.disabled = true;
+    return;
+  }
+  if (anyBtn) anyBtn.disabled = false;
+  if (sendBtn) sendBtn.disabled = false;
+
+  list.innerHTML = participants.map(function(p, i) {
+    var initials = p.name.split(' ').map(function(w){ return (w[0]||''); }).join('').substring(0,2).toUpperCase();
+    var meta = [p.city, p.whatsapp ? '📱 ' + p.whatsapp : ''].filter(Boolean).join(' · ');
+    return '<div class="part-row" id="row-' + i + '">' +
+      '<input type="checkbox" class="part-check" id="chk-' + i + '" onchange="syncSelectAll()">' +
+      '<div class="part-avatar">' + initials + '</div>' +
+      '<div class="part-info">' +
+        '<div class="part-name">' + esc(p.name) + '</div>' +
+        '<div class="part-meta">' + esc(meta) + '</div>' +
+      '</div>' +
+      '<div class="part-btns">' +
+        '<button class="btn-cert" id="btn-' + i + '" onclick="generateOne(' + i + ')">🎓 Generate</button>' +
+        '<button class="btn-send" id="snd-' + i + '" onclick="generateAndSend(' + i + ')" title="Generate & send to WhatsApp">📲 Send</button>' +
+        '<span id="badge-' + i + '"></span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── Add name manually ─────────────────────────────────────────
+function addManualName() {
+  var name  = (document.getElementById('manual-name')  || {}).value || '';
+  var phone = (document.getElementById('manual-phone') || {}).value || '';
+  var city  = (document.getElementById('manual-city')  || {}).value || '';
+  name = name.trim();
+  if (!name) { document.getElementById('manual-name').focus(); return; }
+  participants.unshift({ name: name, whatsapp: phone.trim(), city: city.trim(), source: 'manual' });
+  document.getElementById('manual-name').value  = '';
+  document.getElementById('manual-phone').value = '';
+  document.getElementById('manual-city').value  = '';
+  renderParticipants();
+}
+document.getElementById('manual-name').addEventListener('keydown', function(e){ if(e.key==='Enter') addManualName(); });
+
+// ── CSV / Excel upload ────────────────────────────────────────
+function handleFileUpload(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';  // reset so same file can be re-uploaded
+
+  var ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'csv') {
+    var reader = new FileReader();
+    reader.onload = function(e) { parseCSV(e.target.result); };
+    reader.readAsText(file, 'UTF-8');
+  } else if (ext === 'xlsx' || ext === 'xls') {
+    var reader2 = new FileReader();
+    reader2.onload = function(e) {
+      var wb   = XLSX.read(e.target.result, { type: 'array' });
+      var ws   = wb.Sheets[wb.SheetNames[0]];
+      var data = XLSX.utils.sheet_to_csv(ws);
+      parseCSV(data);
+    };
+    reader2.readAsArrayBuffer(file);
+  } else {
+    alert('Please upload a .csv or .xlsx file');
+  }
+}
+
+function parseCSV(text) {
+  var lines   = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
+  if (!lines.length) { alert('File is empty'); return; }
+
+  var headers = lines[0].split(',').map(function(h){ return h.trim().toLowerCase().replace(/"/g,''); });
+  var nameIdx  = headers.findIndex(function(h){ return h.includes('name'); });
+  var waIdx    = headers.findIndex(function(h){ return h.includes('whatsapp')||h.includes('phone')||h.includes('mobile')||h.includes('wa')||h.includes('contact'); });
+  var cityIdx  = headers.findIndex(function(h){ return h.includes('city')||h.includes('location')||h.includes('place'); });
+
+  if (nameIdx < 0) { alert('Column "name" not found.\nExpected: name, whatsapp, city'); return; }
+
+  var added = 0;
+  for (var i = 1; i < lines.length; i++) {
+    var cols = splitCSVLine(lines[i]);
+    var nm   = clean(cols[nameIdx]);
+    if (!nm) continue;
+    // Skip if already in list
+    if (participants.some(function(p){ return p.name.toLowerCase() === nm.toLowerCase(); })) continue;
+    participants.push({
+      name:     nm,
+      whatsapp: waIdx   >= 0 ? clean(cols[waIdx])   : '',
+      city:     cityIdx >= 0 ? clean(cols[cityIdx]) : '',
+      source:   'csv'
+    });
+    added++;
+  }
+  renderParticipants();
+  alert('✅ Imported ' + added + ' participant(s) from file.');
+}
+
+function splitCSVLine(line) {
+  var result = [], cur = '', inQ = false;
+  for (var i = 0; i < line.length; i++) {
+    var c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur.trim());
+  return result;
+}
+function clean(s) { return (s || '').replace(/^"|"$/g,'').trim(); }
+
+// ── Download sample CSV ───────────────────────────────────────
+function downloadSampleCSV() {
+  var csv = 'name,whatsapp,city\nPriya Sharma,+919876543210,Chennai\nAnita Reddy,+919812345678,Bangalore\nMeena Krishnan,+919988776655,Coimbatore\n';
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = 'participants_sample.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 3000);
+}
+
+// ── Select all / sync ─────────────────────────────────────────
+function toggleAll(cb) {
+  document.querySelectorAll('.part-check').forEach(function(c){ c.checked = cb.checked; });
+}
+function syncSelectAll() {
+  var all     = document.querySelectorAll('.part-check');
+  var checked = document.querySelectorAll('.part-check:checked');
+  var master  = document.getElementById('check-all');
+  if (master) master.indeterminate = (checked.length > 0 && checked.length < all.length);
+  if (master) master.checked = (checked.length === all.length && all.length > 0);
+}
+
+// ── Generate single certificate (preview) ────────────────────
+function generateOne(idx) {
+  var p   = participants[idx];
+  var btn = document.getElementById('btn-' + idx);
+  btn.innerHTML = '⏳'; btn.disabled = true;
+
+  buildCertificate(p.name).then(function(blob) {
+    var url = URL.createObjectURL(blob);
+    document.getElementById('preview-frame').src = url;
+    document.getElementById('modal-name').textContent = '🎓 ' + p.name;
+    document.getElementById('preview-modal').classList.add('show');
+    document.getElementById('btn-dl').onclick = function(){ downloadCert(blob, p.name); };
+    document.getElementById('btn-modal-send').onclick = function(){
+      sendToWhatsApp(blob, p.name, p.whatsapp).then(function(res){
+        if (res.ok) {
+          document.getElementById('btn-modal-send').textContent = '✅ Sent!';
+          markSent(idx, true);
         }
-      }).catch(function(e){ console.warn('Supabase skipped:', e); });
+      });
+    };
+    btn.innerHTML = '✅ Done'; btn.classList.add('done');
+  }).catch(function(err){
+    alert('Error: ' + err.message);
+    btn.innerHTML = '🎓 Generate'; btn.disabled = false;
+  });
+}
+
+function closeModal() {
+  document.getElementById('preview-modal').classList.remove('show');
+  document.getElementById('preview-frame').src = '';
+  document.getElementById('btn-modal-send').textContent = '📲 Send WhatsApp';
+}
+
+// ── Generate + send one participant ──────────────────────────
+function generateAndSend(idx) {
+  var p   = participants[idx];
+  var btn = document.getElementById('snd-' + idx);
+  btn.innerHTML = '⏳'; btn.disabled = true;
+
+  buildCertificate(p.name).then(function(blob) {
+    return sendToWhatsApp(blob, p.name, p.whatsapp);
+  }).then(function(res) {
+    btn.innerHTML = res.ok ? '✅ Sent' : '❌ Failed';
+    btn.classList.add(res.ok ? 'sent' : 'failed');
+    markSent(idx, res.ok);
+    if (res.method === 'ultramsg') showBulkMsg('✅ Sent to ' + p.name + ' via WhatsApp!');
+  }).catch(function(err){
+    btn.innerHTML = '❌ Err'; btn.disabled = false;
+  });
+}
+
+function markSent(idx, ok) {
+  var badge = document.getElementById('badge-' + idx);
+  if (badge) badge.innerHTML = ok
+    ? '<span class="sent-badge ok">Sent ✓</span>'
+    : '<span class="sent-badge err">Failed ✗</span>';
+}
+
+// ── Bulk generate + send ALL (or selected) ────────────────────
+function generateAndSendAll() {
+  var checked = Array.from(document.querySelectorAll('.part-check:checked'))
+    .map(function(c){ return parseInt(c.id.replace('chk-','')); });
+  var targets = checked.length ? checked : participants.map(function(_,i){ return i; });
+  if (!targets.length) return;
+
+  var statusEl = document.getElementById('bulk-status');
+  var msgEl    = document.getElementById('bulk-msg');
+  var progEl   = document.getElementById('bulk-progress');
+  statusEl.classList.add('show');
+  document.getElementById('btn-send-all').disabled = true;
+  document.getElementById('btn-gen-all').disabled  = true;
+
+  var inst  = localStorage.getItem('wa_instance') || '';
+  var token = localStorage.getItem('wa_token')    || '';
+  var useAPI = !!(inst && token);
+
+  var n = 0;
+  function next() {
+    if (n >= targets.length) {
+      progEl.style.width = '100%';
+      msgEl.textContent  = '🎉 Done! ' + targets.length + ' certificate(s) processed.';
+      document.getElementById('btn-send-all').disabled = false;
+      document.getElementById('btn-gen-all').disabled  = false;
+      return;
     }
-  } catch(e) { console.warn('Supabase init skipped:', e); }
+    var i = targets[n];
+    var p = participants[i];
+    msgEl.textContent  = (useAPI ? '📲 Sending ' : '🎓 Generating ') + (n+1) + '/' + targets.length + ': ' + p.name + '…';
+    progEl.style.width = ((n / targets.length) * 100) + '%';
+
+    buildCertificate(p.name).then(function(blob) {
+      if (useAPI && p.whatsapp) {
+        return sendToWhatsApp(blob, p.name, p.whatsapp).then(function(res){
+          markSent(i, res.ok);
+          var sndBtn = document.getElementById('snd-' + i);
+          if (sndBtn) { sndBtn.innerHTML = res.ok ? '✅ Sent' : '❌ Fail'; }
+        });
+      } else {
+        // No API — just download each certificate
+        downloadCert(blob, p.name);
+        var sndBtn = document.getElementById('snd-' + i);
+        if (sndBtn) { sndBtn.innerHTML = '📥 Downloaded'; }
+      }
+    }).then(function(){
+      var btn = document.getElementById('btn-' + i);
+      if (btn) { btn.innerHTML = '✅ Done'; btn.classList.add('done'); }
+      n++;
+      setTimeout(next, useAPI ? 2000 : 800);  // 2s delay for API (avoid rate limit)
+    }).catch(function(err){
+      console.error('Failed for ' + p.name, err);
+      n++;
+      setTimeout(next, 500);
+    });
+  }
+  next();
+}
+
+// ── Generate selected only ────────────────────────────────────
+function generateSelected() {
+  var checked = Array.from(document.querySelectorAll('.part-check:checked'))
+    .map(function(c){ return parseInt(c.id.replace('chk-','')); });
+  if (!checked.length) return;
+
+  var statusEl = document.getElementById('bulk-status');
+  var msgEl    = document.getElementById('bulk-msg');
+  var progEl   = document.getElementById('bulk-progress');
+  statusEl.classList.add('show');
+  document.getElementById('btn-gen-all').disabled = true;
+
+  var n = 0;
+  function next() {
+    if (n >= checked.length) {
+      progEl.style.width = '100%';
+      msgEl.textContent  = '✅ ' + checked.length + ' certificate(s) downloaded!';
+      document.getElementById('btn-gen-all').disabled = false;
+      return;
+    }
+    var i = checked[n];
+    var p = participants[i];
+    msgEl.textContent  = 'Generating ' + (n+1) + '/' + checked.length + ': ' + p.name + '…';
+    progEl.style.width = ((n / checked.length) * 100) + '%';
+    buildCertificate(p.name).then(function(blob){
+      downloadCert(blob, p.name);
+      var btn = document.getElementById('btn-' + i);
+      if (btn) { btn.innerHTML = '✅ Done'; btn.classList.add('done'); }
+      n++;
+      setTimeout(next, 800);
+    }).catch(function(){ n++; setTimeout(next, 300); });
+  }
+  next();
+}
+
+function showBulkMsg(msg) {
+  var statusEl = document.getElementById('bulk-status');
+  var msgEl    = document.getElementById('bulk-msg');
+  statusEl.classList.add('show');
+  msgEl.textContent = msg;
+}
+
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Init ──────────────────────────────────────────────────────
+loadWASettings();
+renderParticipants();
+getTemplate().catch(function(){});  // pre-warm
+
+// Try Supabase silently
+try {
+  if (typeof _sb !== 'undefined') {
+    Promise.race([
+      _sb.from('workshop_feedback')
+        .select('id,name,whatsapp,city,workshop_title,submitted_at')
+        .order('submitted_at', { ascending: false }),
+      new Promise(function(_,r){ setTimeout(function(){ r('timeout'); }, 5000); })
+    ]).then(function(res){
+      var data = res && res.data;
+      if (data && data.length) {
+        participants = data.map(function(r){ return Object.assign({},r,{source:'db'}); });
+        renderParticipants();
+      }
+    }).catch(function(){});
+  }
+} catch(e) {}
 </script>
 </body>
 </html>
