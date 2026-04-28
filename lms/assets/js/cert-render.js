@@ -9,13 +9,21 @@
      - qrious (window.QRious)
    ========================================================= */
 
-/* ── LMS root path — works whether page is at lms/ or lms/admin/ ── */
+/* ── LMS root path ──────────────────────────────────────────
+   Works for both deploy modes used by this project:
+     - Repo-root publish (local dev):  /lms/admin/foo.html   → /lms/
+     - lms/ as site root  (Netlify):   /admin/foo.html       → /
+   Detected by walking up from the current page rather than
+   hard-coding a "/lms/" segment.                            */
 var LMS_ROOT = (function () {
   try {
     var p = window.location.pathname;
-    var i = p.indexOf('/lms/');
-    return i >= 0 ? p.substring(0, i + 5) : '/lms/';
-  } catch (e) { return '/lms/'; }
+    // Inside an admin/teacher/student subfolder → root is the parent.
+    var m = p.match(/^(.*\/)(admin|teacher|student)\//);
+    if (m) return m[1];
+    // Otherwise we're at the LMS root level (verify.html, index.html, ...).
+    return p.replace(/[^/]*$/, '') || '/';
+  } catch (e) { return '/'; }
 })();
 
 /* ── Where the QR code points (single source of truth) ─────
