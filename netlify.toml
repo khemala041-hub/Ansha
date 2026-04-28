@@ -1,3 +1,8 @@
+[build]
+  # The LMS lives in lms/ in this repo; publish that folder as the site root
+  # so URLs like /admin/marksheets.html and /verify.html match production.
+  publish = "lms"
+
 [[headers]]
   for = "/*"
   [headers.values]
